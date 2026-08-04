@@ -1,0 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: "Poppins", system-ui, sans-serif;
+
+  --color-forest-50: #f0fdf4;
+  --color-forest-100: #dcfce7;
+  --color-forest-200: #bbf7d0;
+  --color-forest-300: #86efac;
+  --color-forest-400: #4ade80;
+  --color-forest-500: #22c55e;
+  --color-forest-600: #16a34a;
+  --color-forest-700: #15803d;
+  --color-forest-800: #166534;
+  --color-forest-900: #14532d;
+  --color-forest-950: #052e16;
+
+  --color-sun-50: #fffbeb;
+  --color-sun-100: #fef3c7;
+  --color-sun-400: #fbbf24;
+  --color-sun-500: #f59e0b;
+  --color-sun-600: #d97706;
+  --color-sun-700: #b45309;
+
+  --color-cream-50: #fbfaf5;
+  --color-cream-100: #f4f0e3;
+
+  --shadow-soft: 0 1px 2px rgb(16 83 45 / 0.05), 0 8px 24px -6px rgb(16 83 45 / 0.12);
+  --shadow-card: 0 1px 3px rgb(16 83 45 / 0.06), 0 12px 32px -12px rgb(16 83 45 / 0.15);
+}
+
+@keyframes dropdownIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes backdropIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  @apply bg-gray-50 text-slate-800 antialiased;
+}
+
+::selection {
+  background-color: var(--color-forest-600);
+  color: white;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-forest-600);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-forest-400);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  @apply font-medium tracking-tight text-slate-900;
+}
+
+input,
+select,
+textarea,
+button {
+  font-family: inherit;
+}
