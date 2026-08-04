@@ -1,8 +1,9 @@
 import { Building2 } from "lucide-react";
-import { Input, Select } from "../ui";
+import { DatePicker, Input, Select } from "../ui";
 import { CardHeader, CardShell, Field } from "../shared/formControls";
 import type { FormMode } from "../shared/formControls";
-import type { Productor } from "../../pages/productores/productorMock";
+import type { Productor } from "../../services/productores";
+import { useProductorForm } from "../../contexts/ProductorFormContext";
 
 type OrganizacionCardProps = {
   mode: FormMode;
@@ -10,24 +11,30 @@ type OrganizacionCardProps = {
 };
 
 const estadoOptions = [
-  { value: "Activo", label: "Activo" },
-  { value: "Inactivo", label: "Inactivo" },
-  { value: "Suspendido", label: "Suspendido" },
+  { value: "ACTIVO", label: "Activo" },
+  { value: "INACTIVO", label: "Inactivo" },
+  { value: "SUSPENDIDO", label: "Suspendido" },
 ];
 
 const cargoOptions = [
-  { value: "Socio", label: "Socio" },
-  { value: "Directivo", label: "Directivo" },
-  { value: "Presidente", label: "Presidente" },
-  { value: "Vicepresidente", label: "Vicepresidente" },
-  { value: "Secretario", label: "Secretario" },
-  { value: "Tesorero", label: "Tesorero" },
-  { value: "Vocal", label: "Vocal" },
-  { value: "Otro", label: "Otro" },
+  { value: "SOCIO", label: "Socio" },
+  { value: "DIRECTIVO", label: "Directivo" },
+  { value: "PRESIDENTE", label: "Presidente" },
+  { value: "VICEPRESIDENTE", label: "Vicepresidente" },
+  { value: "SECRETARIO", label: "Secretario" },
+  { value: "TESORERO", label: "Tesorero" },
+  { value: "VOCAL", label: "Vocal" },
+  { value: "OTRO", label: "Otro" },
 ];
 
 export function OrganizacionCard({ mode, values }: OrganizacionCardProps) {
   const editable = mode !== "view";
+  const { data, updateData } = useProductorForm();
+
+  const display = (field: keyof Productor) => {
+    if (mode === "view") return values?.[field] ?? "";
+    return data?.[field] ?? "";
+  };
 
   return (
     <CardShell>
@@ -42,23 +49,39 @@ export function OrganizacionCard({ mode, values }: OrganizacionCardProps) {
           <Select
             options={estadoOptions}
             placeholder="Seleccione"
-            defaultValue={editable ? values?.estado : undefined}
+            value={display("estado") as string}
+            onChange={(val) => updateData({ estado: val as Productor["estado"] })}
+            disabled={!editable}
           />
         </Field>
 
         <Field label="Fecha de Ingreso" mode={mode} value={values?.fechaIngreso}>
-          <Input type="date" defaultValue={editable ? values?.fechaIngreso : undefined} />
+          <DatePicker
+            selected={display("fechaIngreso") ? new Date(display("fechaIngreso") + "T00:00:00") : null}
+            onChange={(date) =>
+              updateData({ fechaIngreso: date ? date.toISOString().split("T")[0] : "" })
+            }
+            disabled={!editable}
+          />
         </Field>
 
         <Field label="Organización / Base" mode={mode} value={values?.organizacion}>
-          <Input type="text" placeholder="Ej. Asociación Virgen de Fátima" defaultValue={values?.organizacion} />
+          <Input
+            type="text"
+            placeholder="Ej. Asociación Virgen de Fátima"
+            value={display("organizacion") as string}
+            onChange={(e) => updateData({ organizacion: e.target.value })}
+            disabled={!editable}
+          />
         </Field>
 
         <Field label="Cargo" mode={mode} value={values?.cargo}>
           <Select
             options={cargoOptions}
             placeholder="Seleccione"
-            defaultValue={editable ? values?.cargo : undefined}
+            value={display("cargo") as string}
+            onChange={(val) => updateData({ cargo: val as Productor["cargo"] })}
+            disabled={!editable}
           />
         </Field>
       </div>

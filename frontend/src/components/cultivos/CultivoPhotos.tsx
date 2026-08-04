@@ -1,9 +1,11 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Leaf, Sprout, Flower2, Wheat, Image as ImageIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { ImageUpload, Input } from "../ui";
+import { ImageUpload, Input, DatePicker } from "../ui";
 import { cultivoFotosMock, type CultivoFoto } from "../../pages/cultivos/cultivoMock";
 import type { FormMode } from "../shared/formControls";
+
+const parseDate = (s?: string) => (s ? new Date(s + "T00:00:00") : null);
 
 interface CultivoPhotosProps {
   mode: FormMode;
@@ -45,6 +47,8 @@ function MetaRow({
 }
 
 function FotoCard({ foto, icon: Icon, readOnly }: { foto: CultivoFoto; icon: LucideIcon; readOnly: boolean }) {
+  const [fecha, setFecha] = useState<Date | null>(parseDate(foto.fecha));
+
   return (
     <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-4">
       <div className="mb-3 flex items-center gap-2">
@@ -79,7 +83,7 @@ function FotoCard({ foto, icon: Icon, readOnly }: { foto: CultivoFoto; icon: Luc
           {readOnly ? (
             <p className="text-sm font-medium text-[#111827]">{foto.fecha || "—"}</p>
           ) : (
-            <Input type="date" defaultValue={foto.fecha} />
+            <DatePicker selected={fecha} onChange={(d) => setFecha(d)} />
           )}
         </MetaRow>
 

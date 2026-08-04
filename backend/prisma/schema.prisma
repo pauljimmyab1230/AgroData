@@ -1,0 +1,177 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Rol {
+  ADMIN
+  USER
+}
+
+enum Sexo {
+  MASCULINO
+  FEMENINO
+}
+
+enum EstadoCivil {
+  SOLTERO
+  CASADO
+  CONVIVIENTE
+  VIUDO
+}
+
+enum NivelEducativo {
+  SIN_ESTUDIOS
+  PRIMARIA
+  SECUNDARIA
+  TECNICO
+  UNIVERSITARIO
+}
+
+enum Idioma {
+  QUECHUA
+  ESPANOL
+  OTRO
+  NINGUNO
+}
+
+enum EstadoProductor {
+  ACTIVO
+  INACTIVO
+  SUSPENDIDO
+}
+
+enum CargoProductor {
+  SOCIO
+  DIRECTIVO
+  PRESIDENTE
+  VICEPRESIDENTE
+  SECRETARIO
+  TESORERO
+  VOCAL
+  OTRO
+}
+
+enum CertificacionParcela {
+  ORGANICA
+  EN_TRANSICION
+  CONVENCIONAL
+}
+
+enum EstadoParcela {
+  ACTIVA
+  INACTIVA
+}
+
+enum CategoriaDocumento {
+  PERSONAL
+  INSTITUCIONAL
+  OTROS
+}
+
+enum EstadoDocumento {
+  PENDIENTE
+  VERIFICADO
+  RECHAZADO
+}
+
+model usuarios {
+  id         String   @id @default(uuid()) @db.VarChar(36)
+  nombre     String   @db.VarChar(100)
+  email      String   @unique @db.VarChar(150)
+  password   String   @db.VarChar(255)
+  rol        Rol      @default(USER)
+  activo     Boolean  @default(true)
+  created_at DateTime @default(now()) @db.DateTime(3)
+  updated_at DateTime @updatedAt @db.DateTime(3)
+}
+
+model productores {
+  id                String          @id @default(uuid()) @db.VarChar(36)
+  codigo            String          @unique @db.VarChar(20)
+  dni               String          @db.VarChar(8)
+  nombres           String          @db.VarChar(100)
+  apellido_paterno  String          @db.VarChar(100)
+  apellido_materno  String          @db.VarChar(100)
+  sexo              Sexo
+  fecha_nacimiento  DateTime        @db.DateTime(3)
+  estado_civil      EstadoCivil
+  telefono          String?         @db.VarChar(20)
+  correo            String?         @db.VarChar(150)
+  departamento      String          @db.VarChar(100)
+  provincia         String          @db.VarChar(100)
+  distrito          String          @db.VarChar(100)
+  comunidad         String          @db.VarChar(150)
+  direccion         String?         @db.Text
+  nivel_educativo   NivelEducativo
+  idioma_principal  Idioma
+  idioma_secundario Idioma          @default(NINGUNO)
+  estado            EstadoProductor @default(ACTIVO)
+  fecha_ingreso     DateTime        @db.DateTime(3)
+  organizacion      String          @db.VarChar(200)
+  cargo             CargoProductor
+  foto_url          String?         @db.VarChar(500)
+  firma_url         String?         @db.VarChar(500)
+  created_at        DateTime        @default(now()) @db.DateTime(3)
+  updated_at        DateTime        @updatedAt @db.DateTime(3)
+
+  familiares  familiares_productor[]
+  parcelas    parcelas_productor[]
+  documentos  documentos_productor[]
+}
+
+model familiares_productor {
+  id                 String   @id @default(uuid()) @db.VarChar(36)
+  productor_id       String   @db.VarChar(36)
+  nombres            String   @db.VarChar(200)
+  parentesco         String   @db.VarChar(50)
+  dni                String?  @db.VarChar(8)
+  sexo               Sexo
+  fecha_nacimiento   DateTime @db.DateTime(3)
+  ocupacion          String?  @db.VarChar(100)
+  nivel_educativo    NivelEducativo?
+  telefono           String?  @db.VarChar(20)
+  dependiente        Boolean  @default(false)
+  vive_con_productor Boolean  @default(true)
+  created_at         DateTime @default(now()) @db.DateTime(3)
+  updated_at         DateTime @updatedAt @db.DateTime(3)
+
+  productor productores @relation(fields: [productor_id], references: [id], onDelete: Cascade)
+}
+
+model parcelas_productor {
+  id              String              @id @default(uuid()) @db.VarChar(36)
+  productor_id    String              @db.VarChar(36)
+  codigo          String              @db.VarChar(20)
+  nombre          String              @db.VarChar(200)
+  cultivo         String              @db.VarChar(100)
+  area            Decimal             @db.Decimal(10, 2)
+  area_unidad     String              @default("ha") @db.VarChar(10)
+  ubicacion       String              @db.VarChar(200)
+  certificacion   CertificacionParcela @default(CONVENCIONAL)
+  estado          EstadoParcela       @default(ACTIVA)
+  created_at      DateTime            @default(now()) @db.DateTime(3)
+  updated_at      DateTime            @updatedAt @db.DateTime(3)
+
+  productor productores @relation(fields: [productor_id], references: [id], onDelete: Cascade)
+}
+
+model documentos_productor {
+  id              String             @id @default(uuid()) @db.VarChar(36)
+  productor_id    String             @db.VarChar(36)
+  tipo            String             @db.VarChar(100)
+  categoria       CategoriaDocumento
+  nombre_archivo  String             @db.VarChar(255)
+  ruta_archivo    String             @db.VarChar(500)
+  tamano_bytes    Int
+  mime_type       String             @db.VarChar(100)
+  estado          EstadoDocumento    @default(PENDIENTE)
+  created_at      DateTime           @default(now()) @db.DateTime(3)
+  updated_at      DateTime           @updatedAt @db.DateTime(3)
+
+  productor productores @relation(fields: [productor_id], references: [id], onDelete: Cascade)
+}

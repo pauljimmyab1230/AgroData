@@ -1,5 +1,5 @@
 import { ClipboardList } from "lucide-react";
-import { Input, Select } from "../ui";
+import { DatePicker, Input, Select } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import {
   campaniasOpciones,
@@ -62,10 +62,9 @@ export function InformacionGeneralCard({ mode, value, onChange }: InformacionGen
         </Field>
 
         <Field label="Fecha" mode={mode} value={formatearFecha(value.fecha)} required>
-          <Input
-            type="date"
-            value={value.fecha}
-            onChange={(e) => onChange?.({ fecha: e.target.value })}
+          <DatePicker
+            selected={value.fecha ? new Date(value.fecha + "T00:00:00") : null}
+            onChange={(date) => onChange?.({ fecha: date?.toISOString().split("T")[0] ?? "" })}
           />
         </Field>
 

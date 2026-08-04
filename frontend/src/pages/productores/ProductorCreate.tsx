@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, ChevronLeft, Save } from "lucide-react";
 import {
   Breadcrumb,
@@ -14,11 +14,29 @@ import { OrganizacionCard } from "../../components/productores/OrganizacionCard"
 import { FamiliarTable } from "../../components/productores/FamiliarTable";
 import { ParcelaTable } from "../../components/productores/ParcelaTable";
 import { DocumentoUploader } from "../../components/productores/DocumentoUploader";
+import { ProductorFormProvider, useProductorForm } from "../../contexts/ProductorFormContext";
+import { createProductor } from "../../services/productores";
 
 const totalPasos = 4;
 
-export default function ProductorCreate() {
+function ProductorCreateForm() {
+  const { data } = useProductorForm();
+  const navigate = useNavigate();
   const [pasoActual, setPasoActual] = useState(1);
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const result = await createProductor(data);
+      navigate(`/productores/${result.id}`);
+    } catch (err) {
+      console.error(err);
+      alert("Error al guardar. Verifique los datos.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div>
@@ -71,7 +89,9 @@ export default function ProductorCreate() {
         </p>
 
         {pasoActual === totalPasos ? (
-          <Button iconLeft={<Save className="h-4 w-4" />}>Guardar Productor</Button>
+          <Button onClick={handleSave} disabled={saving} iconLeft={<Save className="h-4 w-4" />}>
+            {saving ? "Guardando..." : "Guardar Productor"}
+          </Button>
         ) : (
           <Button
             onClick={() => setPasoActual((paso) => Math.min(totalPasos, paso + 1))}
@@ -88,5 +108,13 @@ export default function ProductorCreate() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function ProductorCreate() {
+  return (
+    <ProductorFormProvider>
+      <ProductorCreateForm />
+    </ProductorFormProvider>
   );
 }

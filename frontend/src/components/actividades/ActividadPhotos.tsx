@@ -1,6 +1,6 @@
 import { useRef, type ChangeEvent } from "react";
 import { Camera, Image as ImageIcon, RefreshCw, Trash2, Upload } from "lucide-react";
-import { FormField, Input, Select } from "../ui";
+import { DatePicker, FormField, Input, Select } from "../ui";
 import type { FormMode } from "../shared/formControls";
 import { responsablesFotoOpciones, type ActividadFoto } from "../../pages/actividades/actividadMock";
 
@@ -62,10 +62,9 @@ export function ActividadPhotos({ fotos, mode, onChange }: ActividadPhotosProps)
             {editable ? (
               <div className="mb-4 space-y-3">
                 <FormField label="Fecha">
-                  <Input
-                    type="date"
-                    value={foto.fecha ?? ""}
-                    onChange={(e) => updateFoto(foto.id, { fecha: e.target.value })}
+                  <DatePicker
+                    selected={foto.fecha ? new Date(foto.fecha + "T00:00:00") : null}
+                    onChange={(date) => updateFoto(foto.id, { fecha: date?.toISOString().split("T")[0] ?? "" })}
                   />
                 </FormField>
                 <FormField label="Responsable">

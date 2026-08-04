@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Camera, Image as ImageIcon } from "lucide-react";
-import { EmptyState, FormField, ImageUpload, Input, Select, Textarea } from "../ui";
+import { EmptyState, FormField, ImageUpload, Input, Select, Textarea, DatePicker } from "../ui";
 import { CardHeader, CardShell, type FormMode } from "../shared/formControls";
 import {
   formatFecha,
@@ -72,10 +72,11 @@ export function EvidenciasCard({ mode, values }: EvidenciasCardProps) {
                 <div className="mb-3 space-y-3">
                   <div className="grid gap-3 sm:grid-cols-2">
                     <FormField label="Fecha">
-                      <Input
-                        type="date"
-                        value={evidencia.fecha}
-                        onChange={(e) => setCampo(evidencia.id, "fecha", e.target.value)}
+                      <DatePicker
+                        selected={evidencia.fecha ? new Date(evidencia.fecha + "T00:00:00") : null}
+                        onChange={(date) =>
+                          setCampo(evidencia.id, "fecha", date ? date.toISOString().split("T")[0] : "")
+                        }
                       />
                     </FormField>
                     <FormField label="Responsable">

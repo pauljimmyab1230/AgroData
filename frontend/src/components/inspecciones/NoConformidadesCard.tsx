@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FileWarning, Plus, Trash2 } from "lucide-react";
-import { Button, EmptyState, FormField, Input, Modal, Select, Textarea } from "../ui";
+import { Button, DatePicker, EmptyState, FormField, Modal, Select, Textarea } from "../ui";
 import { CardHeader, CardShell, type FormMode } from "../shared/formControls";
 import { EstadoNoConformidadBadge, SeveridadBadge } from "./badges";
 import {
@@ -212,10 +212,11 @@ export function NoConformidadesCard({ mode, values }: NoConformidadesCardProps) 
             />
           </FormField>
           <FormField label="Fecha Compromiso" required>
-            <Input
-              type="date"
-              value={draft.fechaCompromiso}
-              onChange={(e) => setDraft((prev) => ({ ...prev, fechaCompromiso: e.target.value }))}
+            <DatePicker
+              selected={draft.fechaCompromiso ? new Date(draft.fechaCompromiso + "T00:00:00") : null}
+              onChange={(date) =>
+                setDraft((prev) => ({ ...prev, fechaCompromiso: date ? date.toISOString().split("T")[0] : "" }))
+              }
             />
           </FormField>
           <FormField label="Estado" required>

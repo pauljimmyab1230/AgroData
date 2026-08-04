@@ -9,6 +9,7 @@ type FamiliarTableProps = {
 
 export function FamiliarTable({ mode }: FamiliarTableProps) {
   const readOnly = mode === "view";
+  const data = mode === "create" ? [] : familiaresMock;
 
   const columns = [
     {
@@ -96,7 +97,7 @@ export function FamiliarTable({ mode }: FamiliarTableProps) {
 
       <DataTable
         columns={columns}
-        data={familiaresMock}
+        data={data}
         keyField="id"
         emptyTitle="Sin familiares registrados"
         emptyDescription="Agrega los familiares del productor para completar la información."

@@ -1,10 +1,13 @@
+import { useState } from "react";
 import { Package } from "lucide-react";
-import { Input, Select } from "../ui";
+import { DatePicker, Input, Select } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import {
   destinosProduccionOpciones,
   type Cultivo,
 } from "../../pages/cultivos/cultivoMock";
+
+const parseDate = (s?: string) => (s ? new Date(s + "T00:00:00") : null);
 
 type EstimacionProduccionCardProps = {
   mode: FormMode;
@@ -15,6 +18,8 @@ const toOptions = (items: string[]) => items.map((item) => ({ value: item, label
 
 export function EstimacionProduccionCard({ mode, values }: EstimacionProduccionCardProps) {
   const editable = mode !== "view";
+
+  const [fechaCosecha, setFechaCosecha] = useState<Date | null>(parseDate(values?.fechaCosecha));
 
   return (
     <CardShell>
@@ -34,7 +39,7 @@ export function EstimacionProduccionCard({ mode, values }: EstimacionProduccionC
         </Field>
 
         <Field label="Fecha Estimada de Cosecha" mode={mode} value={values?.fechaCosecha}>
-          <Input type="date" defaultValue={values?.fechaCosecha} />
+          <DatePicker selected={fechaCosecha} onChange={(d) => setFechaCosecha(d)} />
         </Field>
 
         <Field label="Destino de Producción" mode={mode} value={values?.destinoProduccion}>

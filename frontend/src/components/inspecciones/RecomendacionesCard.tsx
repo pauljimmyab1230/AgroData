@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Lightbulb } from "lucide-react";
-import { Input, Select, Textarea } from "../ui";
+import { DatePicker, Select, Textarea } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import {
   prioridadesOpciones,
@@ -14,8 +15,13 @@ type RecomendacionesCardProps = {
 
 const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: item }));
 
+const parseDate = (s?: string) => (s ? new Date(s + "T00:00:00") : null);
+
 export function RecomendacionesCard({ mode, values }: RecomendacionesCardProps) {
   const editable = mode !== "view";
+  const [fechaRecomendacion, setFechaRecomendacion] = useState<Date | null>(() =>
+    parseDate(values?.fechaRecomendacion),
+  );
 
   return (
     <CardShell>
@@ -43,9 +49,10 @@ export function RecomendacionesCard({ mode, values }: RecomendacionesCardProps) 
         </Field>
 
         <Field label="Fecha Recomendada de Cumplimiento" mode={mode} value={values?.fechaRecomendacion}>
-          <Input
-            type="date"
-            defaultValue={editable ? values?.fechaRecomendacion : undefined}
+          <DatePicker
+            selected={fechaRecomendacion}
+            onChange={(date) => setFechaRecomendacion(date)}
+            disabled={!editable}
           />
         </Field>
       </div>

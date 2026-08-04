@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Pencil, Eye, Trash2, Download, Users, MapPin, Ruler } from "lucide-react";
 import {
@@ -8,30 +8,25 @@ import {
   Card,
   ConfirmDialog,
   DataTable,
+  LoadingSpinner,
   SearchInput,
   SectionHeader,
   Select,
 } from "../../components/ui";
-import { productoresMock, type Productor } from "./productorMock";
+import { fetchProductores, deleteProductor, type Productor } from "../../services/productores";
 
 const estadoBadge = (estado: string) => {
   switch (estado) {
-    case "Activo":
+    case "ACTIVO":
       return <Badge variant="green">Activo</Badge>;
-    case "Suspendido":
+    case "SUSPENDIDO":
       return <Badge variant="yellow">Suspendido</Badge>;
-    case "Inactivo":
+    case "INACTIVO":
       return <Badge variant="gray">Inactivo</Badge>;
     default:
       return <Badge>{estado}</Badge>;
   }
 };
-
-const kpis = [
-  { label: "Productores", value: "144", icon: Users, iconClass: "bg-forest-600/10 text-forest-600" },
-  { label: "Parcelas", value: "186", icon: MapPin, iconClass: "bg-sun-100 text-sun-700" },
-  { label: "Área Total", value: "188.13 ha", icon: Ruler, iconClass: "bg-forest-600/10 text-forest-600" },
-];
 
 const pageSize = 5;
 
@@ -40,9 +35,32 @@ export default function ProductorList() {
   const [search, setSearch] = useState("");
   const [estadoFilter, setEstadoFilter] = useState("");
   const [page, setPage] = useState(1);
-  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [productores, setProductores] = useState<Productor[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filtrados = productoresMock.filter((productor) => {
+  useEffect(() => {
+    fetchProductores()
+      .then(res => setProductores(res.data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const kpis = [
+    { label: "Productores", value: String(productores.length), icon: Users, iconClass: "bg-forest-600/10 text-forest-600" },
+    { label: "Parcelas", value: String(productores.reduce((sum, p) => sum + (p._count?.parcelas ?? 0), 0)), icon: MapPin, iconClass: "bg-sun-100 text-sun-700" },
+    { label: "Área Total", value: "—", icon: Ruler, iconClass: "bg-forest-600/10 text-forest-600" },
+  ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  const filtrados = productores.filter((productor) => {
     const texto = `${productor.codigo} ${productor.nombres} ${productor.apellidoPaterno} ${productor.apellidoMaterno} ${productor.dni} ${productor.comunidad}`.toLowerCase();
     const matchTexto = texto.includes(search.toLowerCase());
     const matchEstado = !estadoFilter || productor.estado === estadoFilter;
@@ -186,9 +204,9 @@ export default function ProductorList() {
           <Select
             options={[
               { value: "", label: "Todos" },
-              { value: "Activo", label: "Activos" },
-              { value: "Inactivo", label: "Inactivos" },
-              { value: "Suspendido", label: "Suspendidos" },
+              { value: "ACTIVO", label: "Activos" },
+              { value: "INACTIVO", label: "Inactivos" },
+              { value: "SUSPENDIDO", label: "Suspendidos" },
             ]}
             placeholder="Todos"
             value={estadoFilter}
@@ -216,7 +234,16 @@ export default function ProductorList() {
       <ConfirmDialog
         open={deleteId !== null}
         onClose={() => setDeleteId(null)}
-        onConfirm={() => setDeleteId(null)}
+        onConfirm={async () => {
+          if (!deleteId) return;
+          try {
+            await deleteProductor(deleteId);
+            setProductores(prev => prev.filter(p => p.id !== deleteId));
+            setDeleteId(null);
+          } catch (err) {
+            console.error(err);
+          }
+        }}
         title="Eliminar Productor"
         message="¿Estás seguro de eliminar este productor? Esta acción no se puede deshacer."
         confirmText="Eliminar"

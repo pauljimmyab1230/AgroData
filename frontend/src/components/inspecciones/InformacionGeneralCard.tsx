@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { ClipboardList } from "lucide-react";
-import { Input, Select } from "../ui";
+import { DatePicker, Input, Select } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import {
   campaniasOpciones,
@@ -15,8 +16,11 @@ type InformacionGeneralCardProps = {
   values?: Partial<Inspeccion>;
 };
 
+const parseDate = (s?: string) => (s ? new Date(s + "T00:00:00") : null);
+
 export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardProps) {
   const editable = mode !== "view";
+  const [fecha, setFecha] = useState<Date | null>(() => parseDate(values?.fecha));
 
   const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: item }));
 
@@ -34,7 +38,7 @@ export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardP
         </Field>
 
         <Field label="Fecha de Inspección" mode={mode} value={values?.fecha}>
-          <Input type="date" defaultValue={editable ? values?.fecha : undefined} />
+          <DatePicker selected={fecha} onChange={(date) => setFecha(date)} disabled={!editable} />
         </Field>
 
         <Field label="Campaña" mode={mode} value={values?.campania}>

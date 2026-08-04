@@ -2,6 +2,7 @@ import { NavLink } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
 import {
   Sprout,
+  LayoutDashboard,
   Users,
   MapPin,
   CalendarDays,
@@ -18,6 +19,7 @@ import {
   ChevronRight,
   LogOut,
 } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
 
 type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean };
 type Section = { section: string };
@@ -32,6 +34,7 @@ interface AdminSidebarProps {
 }
 
 const navItems: SidebarEntry[] = [
+  { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
   { section: "Producción" },
   { to: "/productores", icon: Users, label: "Productores" },
   { to: "/parcelas", icon: MapPin, label: "Parcelas" },
@@ -49,6 +52,8 @@ const navItems: SidebarEntry[] = [
 ];
 
 export default function AdminSidebar({ collapsed, mobileOpen, onToggle, onMobileClose }: AdminSidebarProps) {
+  const { user, logout } = useAuth();
+  const initials = user?.nombre?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "?";
   const sidebarContent = (
     <div className="flex h-full flex-col bg-gradient-to-b from-white to-forest-50/60">
       <div
@@ -127,15 +132,16 @@ export default function AdminSidebar({ collapsed, mobileOpen, onToggle, onMobile
         {!collapsed ? (
           <div className="flex items-center gap-3 rounded-xl border border-forest-100 bg-forest-50/70 p-2.5">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-forest-500 to-forest-700 text-sm font-semibold text-white ring-2 ring-white">
-              P
+              {initials}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-[#111827]">Paul</p>
-              <p className="truncate text-xs text-gray-500">Administrador</p>
+              <p className="truncate text-sm font-medium text-[#111827]">{user?.nombre || "Usuario"}</p>
+              <p className="truncate text-xs text-gray-500">{user?.rol || "Sin rol"}</p>
             </div>
             <button
               type="button"
-              className="flex items-center justify-center rounded-lg p-2 text-gray-400 transition-colors hover:bg-forest-600/10 hover:text-forest-700"
+              onClick={logout}
+              className="flex items-center justify-center rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
               aria-label="Cerrar sesión"
             >
               <LogOut className="h-4 w-4" />
@@ -144,7 +150,8 @@ export default function AdminSidebar({ collapsed, mobileOpen, onToggle, onMobile
         ) : (
           <button
             type="button"
-            className="flex w-full items-center justify-center rounded-lg p-2 text-gray-400 transition-colors hover:bg-forest-600/10 hover:text-forest-700"
+            onClick={logout}
+            className="flex w-full items-center justify-center rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
             aria-label="Cerrar sesión"
           >
             <LogOut className="h-5 w-5" />

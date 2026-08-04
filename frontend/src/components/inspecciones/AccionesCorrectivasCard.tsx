@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Plus, Trash2, Wrench } from "lucide-react";
-import { Button, EmptyState, FormField, Input, Modal, Select, Textarea } from "../ui";
+import { Button, DatePicker, EmptyState, FormField, Modal, Select, Textarea } from "../ui";
 import { CardHeader, CardShell, type FormMode } from "../shared/formControls";
 import { EstadoAccionCorrectivaBadge } from "./badges";
 import {
@@ -177,17 +177,19 @@ export function AccionesCorrectivasCard({ mode, values }: AccionesCorrectivasCar
             />
           </FormField>
           <FormField label="Fecha de Inicio" required>
-            <Input
-              type="date"
-              value={draft.fechaInicio}
-              onChange={(e) => setDraft((prev) => ({ ...prev, fechaInicio: e.target.value }))}
+            <DatePicker
+              selected={draft.fechaInicio ? new Date(draft.fechaInicio + "T00:00:00") : null}
+              onChange={(date) =>
+                setDraft((prev) => ({ ...prev, fechaInicio: date ? date.toISOString().split("T")[0] : "" }))
+              }
             />
           </FormField>
           <FormField label="Fecha Límite" required>
-            <Input
-              type="date"
-              value={draft.fechaLimite}
-              onChange={(e) => setDraft((prev) => ({ ...prev, fechaLimite: e.target.value }))}
+            <DatePicker
+              selected={draft.fechaLimite ? new Date(draft.fechaLimite + "T00:00:00") : null}
+              onChange={(date) =>
+                setDraft((prev) => ({ ...prev, fechaLimite: date ? date.toISOString().split("T")[0] : "" }))
+              }
             />
           </FormField>
           <FormField label="Observaciones" className="sm:col-span-2">

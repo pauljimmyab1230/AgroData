@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -12,7 +13,7 @@ import {
   History,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { Badge, Breadcrumb, Button, Card } from "../../components/ui";
+import { Badge, Breadcrumb, Button, Card, LoadingSpinner } from "../../components/ui";
 import { ProductorStepper } from "../../components/productores/ProductorStepper";
 import { DatosPersonalesCard } from "../../components/productores/DatosPersonalesCard";
 import { ContactoUbicacionCard } from "../../components/productores/ContactoUbicacionCard";
@@ -21,8 +22,9 @@ import { OrganizacionCard } from "../../components/productores/OrganizacionCard"
 import { FamiliarTable } from "../../components/productores/FamiliarTable";
 import { ParcelaTable } from "../../components/productores/ParcelaTable";
 import { DocumentoUploader } from "../../components/productores/DocumentoUploader";
+import { fetchProductor, type Productor } from "../../services/productores";
+import { ProductorFormProvider } from "../../contexts/ProductorFormContext";
 import {
-  productoresMock,
   parcelasMock,
   documentosMock,
   historialMock,
@@ -44,12 +46,37 @@ const historialIcons: Record<HistorialItem["tipo"], LucideIcon> = {
 
 export default function ProductorView() {
   const { id } = useParams();
-  const productor = productoresMock.find((p) => p.id === Number(id)) ?? productoresMock[0];
+  const [productor, setProductor] = useState<Productor | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!id) return;
+    fetchProductor(id)
+      .then(setProductor)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (!productor) {
+    return (
+      <div className="py-20 text-center text-gray-500">
+        <p>No se encontró el productor.</p>
+      </div>
+    );
+  }
 
   const estadoBadge =
-    productor.estado === "Activo" ? (
+    productor.estado === "ACTIVO" ? (
       <Badge variant="green">Activo</Badge>
-    ) : productor.estado === "Suspendido" ? (
+    ) : productor.estado === "SUSPENDIDO" ? (
       <Badge variant="yellow">Suspendido</Badge>
     ) : (
       <Badge variant="gray">Inactivo</Badge>
@@ -168,10 +195,12 @@ export default function ProductorView() {
       </div>
 
       <div className="grid gap-6">
-        <DatosPersonalesCard mode="view" values={productor} />
-        <ContactoUbicacionCard mode="view" values={productor} />
-        <SocioculturalCard mode="view" values={productor} />
-        <OrganizacionCard mode="view" values={productor} />
+        <ProductorFormProvider initial={productor}>
+          <DatosPersonalesCard mode="view" values={productor} />
+          <ContactoUbicacionCard mode="view" values={productor} />
+          <SocioculturalCard mode="view" values={productor} />
+          <OrganizacionCard mode="view" values={productor} />
+        </ProductorFormProvider>
         <FamiliarTable mode="view" />
         <ParcelaTable mode="view" />
         <DocumentoUploader mode="view" />

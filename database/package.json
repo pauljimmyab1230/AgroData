@@ -1,0 +1,29 @@
+{
+  "name": "agrodata-database",
+  "version": "1.0.0",
+  "description": "Database configuration and migrations for AgroData",
+  "private": true,
+  "scripts": {
+    "db:migrate": "npx prisma migrate dev",
+    "db:migrate:prod": "npx prisma migrate deploy",
+    "db:generate": "npx prisma generate",
+    "db:seed": "npx tsx prisma/seed.ts",
+    "db:studio": "npx prisma studio",
+    "db:reset": "npx prisma migrate reset",
+    "db:push": "npx prisma db push"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.10.1",
+    "bcrypt": "^5.1.1"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "prisma": "^6.10.1",
+    "tsx": "^4.19.4",
+    "typescript": "~5.7.2",
+    "@types/node": "^22.15.3"
+  }
+}

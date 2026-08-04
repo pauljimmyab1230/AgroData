@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Award } from "lucide-react";
-import { Input, Select, Textarea } from "../ui";
+import { DatePicker, Select, Textarea } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import { ResultadoBadge, RiesgoBadge } from "./badges";
 import {
@@ -14,8 +15,13 @@ type ResultadoCardProps = {
   values?: Partial<Inspeccion>;
 };
 
+const parseDate = (s?: string) => (s ? new Date(s + "T00:00:00") : null);
+
 export function ResultadoCard({ mode, values }: ResultadoCardProps) {
   const editable = mode !== "view";
+  const [fechaProximaInspeccion, setFechaProximaInspeccion] = useState<Date | null>(() =>
+    parseDate(values?.fechaProximaInspeccion),
+  );
 
   const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: item }));
 
@@ -45,7 +51,11 @@ export function ResultadoCard({ mode, values }: ResultadoCardProps) {
         </Field>
 
         <Field label="Fecha Próxima Inspección" mode={mode} value={values?.fechaProximaInspeccion}>
-          <Input type="date" defaultValue={editable ? values?.fechaProximaInspeccion : undefined} />
+          <DatePicker
+            selected={fechaProximaInspeccion}
+            onChange={(date) => setFechaProximaInspeccion(date)}
+            disabled={!editable}
+          />
         </Field>
       </div>
 

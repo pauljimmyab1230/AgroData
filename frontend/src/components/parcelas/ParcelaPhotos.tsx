@@ -1,7 +1,10 @@
-import { CalendarDays, Camera, Image as ImageIcon, User, StickyNote } from "lucide-react";
-import { ImageUpload, Input, Textarea } from "../ui";
+import { useState } from "react";
+import { Camera, Image as ImageIcon, User, StickyNote } from "lucide-react";
+import { DatePicker, ImageUpload, Input, Textarea } from "../ui";
 import { Field, type FormMode } from "../shared/formControls";
 import { parcelaFotosMock } from "../../pages/parcelas/parcelaMock";
+
+const parseDate = (s?: string) => (s ? new Date(s + "T00:00:00") : null);
 
 const categoriaLabels: Record<string, string> = {
   general: "General",
@@ -58,12 +61,11 @@ export function ParcelaPhotos({ mode }: ParcelaPhotosProps) {
           <div className="mt-3 grid gap-3 rounded-xl border border-gray-100 bg-white p-3">
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Fecha" mode={mode} value={foto.fecha}>
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                    <CalendarDays className="h-4 w-4" />
-                  </span>
-                  <Input type="date" defaultValue={!readOnly ? foto.fecha : undefined} className="pl-10" />
-                </div>
+                {readOnly ? (
+                  <p className="text-sm font-medium text-[#111827]">{foto.fecha || "—"}</p>
+                ) : (
+                  <FotoFechaInput fecha={foto.fecha} />
+                )}
               </Field>
 
               <Field label="Autor" mode={mode} value={foto.autor}>
@@ -99,4 +101,9 @@ export function ParcelaPhotos({ mode }: ParcelaPhotosProps) {
       ))}
     </div>
   );
+}
+
+function FotoFechaInput({ fecha }: { fecha?: string }) {
+  const [dateValue, setDateValue] = useState<Date | null>(parseDate(fecha));
+  return <DatePicker selected={dateValue} onChange={(d) => setDateValue(d)} />;
 }

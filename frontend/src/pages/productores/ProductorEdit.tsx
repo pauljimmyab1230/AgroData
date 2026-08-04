@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, ChevronLeft, Save } from "lucide-react";
 import {
   Breadcrumb,
   Button,
+  LoadingSpinner,
   SectionHeader,
 } from "../../components/ui";
 import { ProductorStepper } from "../../components/productores/ProductorStepper";
@@ -14,20 +15,36 @@ import { OrganizacionCard } from "../../components/productores/OrganizacionCard"
 import { FamiliarTable } from "../../components/productores/FamiliarTable";
 import { ParcelaTable } from "../../components/productores/ParcelaTable";
 import { DocumentoUploader } from "../../components/productores/DocumentoUploader";
-import { mockProductor } from "./productorMock";
+import { fetchProductor, updateProductor, type Productor } from "../../services/productores";
+import { ProductorFormProvider, useProductorForm } from "../../contexts/ProductorFormContext";
 
 const totalPasos = 4;
 
-export default function ProductorEdit() {
-  const [pasoActual, setPasoActual] = useState(1);
+function ProductorEditForm({ id }: { id: string }) {
+  const { data } = useProductorForm();
   const navigate = useNavigate();
+  const [pasoActual, setPasoActual] = useState(1);
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await updateProductor(id, data);
+      navigate(`/productores/${id}`);
+    } catch (err) {
+      console.error(err);
+      alert("Error al guardar. Verifique los datos.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div>
       <Breadcrumb
         items={[
           { label: "Productores", to: "/productores" },
-          { label: mockProductor.codigo, to: `/productores/${mockProductor.id}` },
+          { label: id, to: `/productores/${id}` },
           { label: "Editar Productor" },
         ]}
       />
@@ -36,14 +53,14 @@ export default function ProductorEdit() {
         <Button
           variant="ghost"
           as="link"
-          to={`/productores/${mockProductor.id}`}
+          to={`/productores/${id}`}
           iconLeft={<ArrowLeft className="h-4 w-4" />}
         >
           Volver
         </Button>
         <SectionHeader
           title="Editar Productor"
-          description={`Actualizando la información de ${mockProductor.nombres} ${mockProductor.apellidoPaterno} ${mockProductor.apellidoMaterno} (${mockProductor.codigo})`}
+          description="Actualizando la información del productor"
         />
       </div>
 
@@ -54,10 +71,10 @@ export default function ProductorEdit() {
       <div className="space-y-6">
         {pasoActual === 1 && (
           <>
-            <DatosPersonalesCard mode="edit" values={mockProductor} />
-            <ContactoUbicacionCard mode="edit" values={mockProductor} />
-            <SocioculturalCard mode="edit" values={mockProductor} />
-            <OrganizacionCard mode="edit" values={mockProductor} />
+            <DatosPersonalesCard mode="edit" />
+            <ContactoUbicacionCard mode="edit" />
+            <SocioculturalCard mode="edit" />
+            <OrganizacionCard mode="edit" />
           </>
         )}
 
@@ -85,10 +102,11 @@ export default function ProductorEdit() {
 
         {pasoActual === totalPasos ? (
           <Button
-            onClick={() => navigate(`/productores/${mockProductor.id}`)}
+            onClick={handleSave}
+            disabled={saving}
             iconLeft={<Save className="h-4 w-4" />}
           >
-            Guardar Cambios
+            {saving ? "Guardando..." : "Guardar Cambios"}
           </Button>
         ) : (
           <Button
@@ -103,12 +121,48 @@ export default function ProductorEdit() {
       <div className="mt-4 flex justify-end">
         <button
           type="button"
-          onClick={() => navigate(`/productores/${mockProductor.id}`)}
+          onClick={() => navigate(`/productores/${id}`)}
           className="text-sm text-gray-500 transition-colors hover:text-forest-700"
         >
           Cancelar
         </button>
       </div>
     </div>
+  );
+}
+
+export default function ProductorEdit() {
+  const { id } = useParams();
+  const [productor, setProductor] = useState<Productor | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!id) return;
+    fetchProductor(id)
+      .then(setProductor)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (!productor) {
+    return (
+      <div className="py-20 text-center text-gray-500">
+        <p>No se encontró el productor.</p>
+      </div>
+    );
+  }
+
+  return (
+    <ProductorFormProvider initial={productor}>
+      <ProductorEditForm id={id!} />
+    </ProductorFormProvider>
   );
 }

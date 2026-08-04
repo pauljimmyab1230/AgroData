@@ -1,8 +1,11 @@
-import { Eraser, Hexagon, PenLine, Ruler, User, CalendarDays, Spline } from "lucide-react";
-import { Button, Input } from "../ui";
+import { useState } from "react";
+import { Eraser, Hexagon, PenLine, Ruler, User, Spline } from "lucide-react";
+import { Button, DatePicker, Input } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import PolygonViewer from "./PolygonViewer";
 import type { Parcela } from "../../pages/parcelas/parcelaMock";
+
+const parseDate = (s?: string) => (s ? new Date(s + "T00:00:00") : null);
 
 type PoligonoCardProps = {
   mode: FormMode;
@@ -11,6 +14,8 @@ type PoligonoCardProps = {
 
 export function PoligonoCard({ mode, values }: PoligonoCardProps) {
   const readOnly = mode === "view";
+
+  const [fechaLevantamiento, setFechaLevantamiento] = useState<Date | null>(parseDate(values?.fechaLevantamiento));
 
   return (
     <CardShell>
@@ -78,16 +83,7 @@ export function PoligonoCard({ mode, values }: PoligonoCardProps) {
           </Field>
 
           <Field label="Fecha de levantamiento" mode={mode} value={values?.fechaLevantamiento}>
-            <div className="relative">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                <CalendarDays className="h-4 w-4" />
-              </span>
-              <Input
-                type="date"
-                defaultValue={mode !== "view" ? values?.fechaLevantamiento : undefined}
-                className="pl-10"
-              />
-            </div>
+            <DatePicker selected={fechaLevantamiento} onChange={(d) => setFechaLevantamiento(d)} />
           </Field>
 
           <Field label="Responsable" mode={mode} value={values?.responsable}>

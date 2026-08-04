@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { CalendarClock, Flower2, Sun, Sprout } from "lucide-react";
-import { Input } from "../ui";
+import { DatePicker } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import CultivoTimeline from "./CultivoTimeline";
 import type { Cultivo } from "../../pages/cultivos/cultivoMock";
+
+const parseDate = (s?: string) => (s ? new Date(s + "T00:00:00") : null);
 
 type CronogramaCardProps = {
   mode: FormMode;
@@ -11,6 +14,10 @@ type CronogramaCardProps = {
 
 export function CronogramaCard({ mode, values }: CronogramaCardProps) {
   const editable = mode !== "view";
+
+  const [fechaEmergencia, setFechaEmergencia] = useState<Date | null>(parseDate(values?.fechaEmergencia));
+  const [fechaFloracion, setFechaFloracion] = useState<Date | null>(parseDate(values?.fechaFloracion));
+  const [fechaCosecha, setFechaCosecha] = useState<Date | null>(parseDate(values?.fechaCosecha));
 
   const etapas = [
     { label: "Siembra", date: values?.fechaSiembra, icon: Sprout },
@@ -29,15 +36,15 @@ export function CronogramaCard({ mode, values }: CronogramaCardProps) {
 
       <div className="mb-8 grid gap-6 sm:grid-cols-3">
         <Field label="Fecha Estimada de Emergencia" mode={mode} value={values?.fechaEmergencia}>
-          <Input type="date" defaultValue={values?.fechaEmergencia} disabled={!editable} />
+          <DatePicker selected={fechaEmergencia} onChange={(d) => setFechaEmergencia(d)} disabled={!editable} />
         </Field>
 
         <Field label="Fecha Estimada de Floración" mode={mode} value={values?.fechaFloracion}>
-          <Input type="date" defaultValue={values?.fechaFloracion} disabled={!editable} />
+          <DatePicker selected={fechaFloracion} onChange={(d) => setFechaFloracion(d)} disabled={!editable} />
         </Field>
 
         <Field label="Fecha Estimada de Cosecha" mode={mode} value={values?.fechaCosecha}>
-          <Input type="date" defaultValue={values?.fechaCosecha} disabled={!editable} />
+          <DatePicker selected={fechaCosecha} onChange={(d) => setFechaCosecha(d)} disabled={!editable} />
         </Field>
       </div>
 

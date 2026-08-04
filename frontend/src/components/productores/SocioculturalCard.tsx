@@ -2,7 +2,8 @@ import { GraduationCap } from "lucide-react";
 import { Select } from "../ui";
 import { CardHeader, CardShell, Field } from "../shared/formControls";
 import type { FormMode } from "../shared/formControls";
-import type { Productor } from "../../pages/productores/productorMock";
+import type { Productor } from "../../services/productores";
+import { useProductorForm } from "../../contexts/ProductorFormContext";
 
 type SocioculturalCardProps = {
   mode: FormMode;
@@ -10,28 +11,34 @@ type SocioculturalCardProps = {
 };
 
 const nivelEducativoOptions = [
-  { value: "Sin Estudios", label: "Sin Estudios" },
-  { value: "Primaria", label: "Primaria" },
-  { value: "Secundaria", label: "Secundaria" },
-  { value: "Técnico", label: "Técnico" },
-  { value: "Universitario", label: "Universitario" },
+  { value: "SIN_ESTUDIOS", label: "Sin Estudios" },
+  { value: "PRIMARIA", label: "Primaria" },
+  { value: "SECUNDARIA", label: "Secundaria" },
+  { value: "TECNICO", label: "Técnico" },
+  { value: "UNIVERSITARIO", label: "Universitario" },
 ];
 
 const idiomaOptions = [
-  { value: "Quechua", label: "Quechua" },
-  { value: "Español", label: "Español" },
-  { value: "Otro", label: "Otro" },
+  { value: "QUECHUA", label: "Quechua" },
+  { value: "ESPANOL", label: "Español" },
+  { value: "OTRO", label: "Otro" },
 ];
 
 const idiomaSecundarioOptions = [
-  { value: "Ninguno", label: "Ninguno" },
-  { value: "Quechua", label: "Quechua" },
-  { value: "Español", label: "Español" },
-  { value: "Otro", label: "Otro" },
+  { value: "NINGUNO", label: "Ninguno" },
+  { value: "QUECHUA", label: "Quechua" },
+  { value: "ESPANOL", label: "Español" },
+  { value: "OTRO", label: "Otro" },
 ];
 
 export function SocioculturalCard({ mode, values }: SocioculturalCardProps) {
   const editable = mode !== "view";
+  const { data, updateData } = useProductorForm();
+
+  const display = (field: keyof Productor) => {
+    if (mode === "view") return values?.[field] ?? "";
+    return data?.[field] ?? "";
+  };
 
   return (
     <CardShell>
@@ -46,7 +53,9 @@ export function SocioculturalCard({ mode, values }: SocioculturalCardProps) {
           <Select
             options={nivelEducativoOptions}
             placeholder="Seleccione"
-            defaultValue={editable ? values?.nivelEducativo : undefined}
+            value={display("nivelEducativo") as string}
+            onChange={(val) => updateData({ nivelEducativo: val as Productor["nivelEducativo"] })}
+            disabled={!editable}
           />
         </Field>
 
@@ -54,7 +63,9 @@ export function SocioculturalCard({ mode, values }: SocioculturalCardProps) {
           <Select
             options={idiomaOptions}
             placeholder="Seleccione"
-            defaultValue={editable ? values?.idiomaPrincipal : undefined}
+            value={display("idiomaPrincipal") as string}
+            onChange={(val) => updateData({ idiomaPrincipal: val as Productor["idiomaPrincipal"] })}
+            disabled={!editable}
           />
         </Field>
 
@@ -62,7 +73,9 @@ export function SocioculturalCard({ mode, values }: SocioculturalCardProps) {
           <Select
             options={idiomaSecundarioOptions}
             placeholder="Seleccione"
-            defaultValue={editable ? values?.idiomaSecundario : undefined}
+            value={display("idiomaSecundario") as string}
+            onChange={(val) => updateData({ idiomaSecundario: val as Productor["idiomaSecundario"] })}
+            disabled={!editable}
           />
         </Field>
       </div>

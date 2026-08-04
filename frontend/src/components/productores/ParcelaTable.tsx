@@ -9,14 +9,15 @@ type ParcelaTableProps = {
 
 export function ParcelaTable({ mode }: ParcelaTableProps) {
   const readOnly = mode === "view";
+  const data = mode === "create" ? [] : parcelasMock;
 
-  const totalParcelas = parcelasMock.length;
-  const areaTotal = parcelasMock.reduce((sum, p) => sum + parseFloat(p.area), 0);
-  const areaCertificada = parcelasMock
+  const totalParcelas = data.length;
+  const areaTotal = data.reduce((sum, p) => sum + parseFloat(p.area), 0);
+  const areaCertificada = data
     .filter((p) => p.certificacion === "Orgánica")
     .reduce((sum, p) => sum + parseFloat(p.area), 0);
   const cultivosActivos = new Set(
-    parcelasMock.filter((p) => p.estado === "Activa").map((p) => p.cultivo),
+    data.filter((p) => p.estado === "Activa").map((p) => p.cultivo),
   ).size;
 
   const kpis = [
@@ -136,7 +137,7 @@ export function ParcelaTable({ mode }: ParcelaTableProps) {
 
       <DataTable
         columns={columns}
-        data={parcelasMock}
+        data={data}
         keyField="id"
         emptyTitle="Sin parcelas registradas"
         emptyDescription="Agrega las parcelas del productor para el proceso de certificación."

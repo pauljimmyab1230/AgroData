@@ -1,5 +1,5 @@
 import { ClipboardList } from "lucide-react";
-import { Input, Select, Textarea } from "../ui";
+import { DatePicker, Input, Select, Textarea } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import {
   aniosAgricolas,
@@ -53,18 +53,16 @@ export function DatosGeneralesCard({ mode, value, onChange }: DatosGeneralesCard
         </Field>
 
         <Field label="Fecha de Inicio" mode={mode} value={formatearFecha(value.fechaInicio)} required>
-          <Input
-            type="date"
-            value={value.fechaInicio}
-            onChange={(e) => onChange?.({ fechaInicio: e.target.value })}
+          <DatePicker
+            selected={value.fechaInicio ? new Date(value.fechaInicio + "T00:00:00") : null}
+            onChange={(date) => onChange?.({ fechaInicio: date?.toISOString().split("T")[0] ?? "" })}
           />
         </Field>
 
         <Field label="Fecha de Fin" mode={mode} value={formatearFecha(value.fechaFin)} required>
-          <Input
-            type="date"
-            value={value.fechaFin}
-            onChange={(e) => onChange?.({ fechaFin: e.target.value })}
+          <DatePicker
+            selected={value.fechaFin ? new Date(value.fechaFin + "T00:00:00") : null}
+            onChange={(date) => onChange?.({ fechaFin: date?.toISOString().split("T")[0] ?? "" })}
           />
         </Field>
 

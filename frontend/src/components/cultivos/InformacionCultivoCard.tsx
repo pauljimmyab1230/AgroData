@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Sprout } from "lucide-react";
-import { Input, Select } from "../ui";
+import { DatePicker, Input, Select } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import {
   cultivosOpciones,
@@ -7,6 +8,8 @@ import {
   variedadesOpciones,
   type Cultivo,
 } from "../../pages/cultivos/cultivoMock";
+
+const parseDate = (s?: string) => (s ? new Date(s + "T00:00:00") : null);
 
 type InformacionCultivoCardProps = {
   mode: FormMode;
@@ -17,6 +20,8 @@ const toOptions = (items: string[]) => items.map((item) => ({ value: item, label
 
 export function InformacionCultivoCard({ mode, values }: InformacionCultivoCardProps) {
   const editable = mode !== "view";
+
+  const [fechaSiembra, setFechaSiembra] = useState<Date | null>(parseDate(values?.fechaSiembra));
 
   return (
     <CardShell>
@@ -50,7 +55,7 @@ export function InformacionCultivoCard({ mode, values }: InformacionCultivoCardP
         </Field>
 
         <Field label="Fecha de Siembra" mode={mode} value={values?.fechaSiembra} required>
-          <Input type="date" defaultValue={values?.fechaSiembra} required />
+          <DatePicker selected={fechaSiembra} onChange={(d) => setFechaSiembra(d)} />
         </Field>
 
         <Field label="Método de Siembra" mode={mode} value={values?.metodoSiembra} required>

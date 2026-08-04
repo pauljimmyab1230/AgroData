@@ -79,7 +79,7 @@ const formatSize = (bytes: number) =>
 
 export function DocumentoUploader({ mode }: DocumentoUploaderProps) {
   const readOnly = mode === "view";
-  const [documentos, setDocumentos] = useState<Documento[]>(documentosMock);
+  const [documentos, setDocumentos] = useState<Documento[]>(mode === "create" ? [] : documentosMock);
   const [verDoc, setVerDoc] = useState<Documento | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const uploadTargetRef = useRef<{ categoria: Documento["categoria"]; tipo: string } | null>(null);

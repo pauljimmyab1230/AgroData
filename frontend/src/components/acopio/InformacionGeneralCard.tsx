@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { ClipboardList } from "lucide-react";
-import { Input, Select } from "../ui";
+import { DatePicker, Input, Select } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import {
   acopiadoresOpciones,
@@ -10,6 +11,8 @@ import {
   type Acopio,
 } from "../../pages/acopio/acopioMock";
 
+const parseDate = (s?: string) => (s ? new Date(s + "T00:00:00") : null);
+
 type InformacionGeneralCardProps = {
   mode: FormMode;
   values?: Partial<Acopio>;
@@ -19,6 +22,8 @@ const toOptions = (items: string[]) => items.map((item) => ({ value: item, label
 
 export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardProps) {
   const editable = mode !== "view";
+
+  const [fecha, setFecha] = useState<Date | null>(parseDate(values?.fecha));
 
   return (
     <CardShell>
@@ -34,7 +39,7 @@ export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardP
         </Field>
 
         <Field label="Fecha" mode={mode} value={values?.fecha}>
-          <Input type="date" defaultValue={editable ? values?.fecha : undefined} />
+          <DatePicker selected={fecha} onChange={(d) => setFecha(d)} />
         </Field>
 
         <Field label="Campaña" mode={mode} value={values?.campania}>
