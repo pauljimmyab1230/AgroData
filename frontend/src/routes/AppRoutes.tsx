@@ -27,6 +27,9 @@ import AcopioCreate from "../pages/acopio/AcopioCreate";
 import AcopioView from "../pages/acopio/AcopioView";
 import AcopioEdit from "../pages/acopio/AcopioEdit";
 import RecepcionList from "../pages/recepcion/RecepcionList";
+import RecepcionCreate from "../pages/recepcion/RecepcionCreate";
+import RecepcionView from "../pages/recepcion/RecepcionView";
+import RecepcionEdit from "../pages/recepcion/RecepcionEdit";
 import ProcesamientoPage from "../pages/procesamiento/ProcesamientoPage";
 import InventarioPage from "../pages/inventario/InventarioPage";
 import LoteList from "../pages/lotes/LoteList";
@@ -66,6 +69,9 @@ export default function AppRoutes() {
                 <Route path="/acopio/:id" element={<AcopioView />} />
                 <Route path="/acopio/:id/editar" element={<AcopioEdit />} />
                 <Route path="/recepcion" element={<RecepcionList />} />
+                <Route path="/recepcion/nuevo" element={<RecepcionCreate />} />
+                <Route path="/recepcion/:id" element={<RecepcionView />} />
+                <Route path="/recepcion/:id/editar" element={<RecepcionEdit />} />
                 <Route path="/procesamiento" element={<ProcesamientoPage />} />
                 <Route path="/lotes" element={<LoteList />} />
                 <Route path="/inventario" element={<InventarioPage />} />
