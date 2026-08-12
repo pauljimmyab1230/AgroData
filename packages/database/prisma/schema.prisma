@@ -1,0 +1,1112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Rol {
+  ADMIN
+  USER
+}
+
+enum Sexo {
+  MASCULINO
+  FEMENINO
+}
+
+enum EstadoCivil {
+  SOLTERO
+  CASADO
+  CONVIVIENTE
+  VIUDO
+}
+
+enum NivelEducativo {
+  SIN_ESTUDIOS
+  PRIMARIA
+  SECUNDARIA
+  TECNICO
+  UNIVERSITARIO
+}
+
+enum Idioma {
+  QUECHUA
+  ESPANOL
+  OTRO
+  NINGUNO
+}
+
+enum EstadoProductor {
+  ACTIVO
+  INACTIVO
+  SUSPENDIDO
+}
+
+enum CargoProductor {
+  SOCIO
+  DIRECTIVO
+  PRESIDENTE
+  VICEPRESIDENTE
+  SECRETARIO
+  TESORERO
+  VOCAL
+  OTRO
+}
+
+enum CertificacionParcela {
+  ORGANICA
+  EN_TRANSICION
+  CONVENCIONAL
+}
+
+enum EstadoParcela {
+  ACTIVA
+  INACTIVA
+}
+
+enum EstadoCultivo {
+  ACTIVO
+  EN_DESARROLLO
+  COSECHADO
+  FINALIZADO
+}
+
+enum MetodoSiembra {
+  DIRECTA
+  TRASPLANTE
+  ALMACIGO
+  OTRO
+}
+
+enum SistemaProductivo {
+  AGROECOLOGICO
+  ORGANICO
+  CONVENCIONAL
+  EN_TRANSICION
+}
+
+enum TipoAgricultura {
+  TRADICIONAL
+  TECNIFICADA
+  MIXTA
+}
+
+enum CertificacionCultivo {
+  ORGANICA
+  EN_TRANSICION
+  SIN_CERTIFICAR
+}
+
+enum ProcedenciaSemilla {
+  CERTIFICADA
+  COMUN
+  PRODUCIDA_EN_CAMPO
+  CONSERVADA_POR_AGRICULTOR
+}
+
+enum DestinoProduccion {
+  VENTA_COOPERATIVA
+  COMERCIALIZACION_LOCAL
+  AUTOCONSUMO
+  SEMILLA
+}
+
+enum EstadoInspeccion {
+  PENDIENTE
+  APROBADA
+  NO_CONFORME
+}
+
+enum ResultadoInspeccion {
+  CONFORME
+  CONFORME_CON_OBSERVACIONES
+  NO_CONFORME
+}
+
+enum CumplimientoCriterio {
+  CUMPLE
+  NO_CUMPLE
+  NO_APLICA
+}
+
+enum RiesgoNivel {
+  BAJO
+  MEDIO
+  ALTO
+}
+
+enum SeveridadNoConformidad {
+  LEVE
+  MODERADA
+  CRITICA
+}
+
+enum EstadoNoConformidad {
+  PENDIENTE
+  EN_PROCESO
+  CORREGIDA
+  VERIFICADA
+}
+
+model inspecciones {
+  id                          String                @id @default(uuid()) @db.VarChar(36)
+  codigo                      String                @unique @db.VarChar(20)
+  campania_id                 String                @db.VarChar(36)
+  productor_id                String                @db.VarChar(36)
+  parcela_id                  String                @db.VarChar(36)
+  cultivo_id                  String?               @db.VarChar(36)
+  fecha                       DateTime              @db.DateTime(3)
+  inspector                   String                @db.VarChar(150)
+  estado                      EstadoInspeccion      @default(PENDIENTE)
+  resultado                   ResultadoInspeccion?
+  latitud                     String?               @db.VarChar(30)
+  longitud                    String?               @db.VarChar(30)
+  altitud                     String?               @db.VarChar(50)
+  precision_gps               String?               @db.VarChar(20)
+  observaciones               String?               @db.Text
+  comentarios_productor       String?               @db.Text
+  recomendaciones             String?               @db.Text
+  prioridad_recomendacion     String?               @db.VarChar(150)
+  responsable_recomendacion   String?               @db.VarChar(150)
+  fecha_recomendacion         DateTime?             @db.DateTime(3)
+  riesgo_general              RiesgoNivel?          @default(BAJO)
+  resumen_ejecutivo           String?               @db.Text
+  fecha_proxima_inspeccion    DateTime?             @db.DateTime(3)
+  nivel_cumplimiento          String?               @db.VarChar(50)
+  activo                      Boolean               @default(true)
+  created_by                  String?               @db.VarChar(36)
+  updated_by                  String?               @db.VarChar(36)
+  created_at                  DateTime              @default(now()) @db.DateTime(3)
+  updated_at                  DateTime              @updatedAt @db.DateTime(3)
+
+  campania            campanias           @relation(fields: [campania_id], references: [id], onDelete: Cascade)
+  productor           productores         @relation(fields: [productor_id], references: [id], onDelete: Cascade)
+  parcela             parcelas_productor  @relation(fields: [parcela_id], references: [id], onDelete: Cascade)
+  cultivo             cultivos?           @relation(fields: [cultivo_id], references: [id], onDelete: SetNull)
+
+  checklist           inspeccion_checklist[]
+  no_conformidades    inspeccion_no_conformidades[]
+  acciones_correctivas inspeccion_acciones_correctivas[]
+  evidencias          inspeccion_evidencias[]
+  historial           inspeccion_historial[]
+}
+
+model inspeccion_checklist {
+  id               String              @id @default(uuid()) @db.VarChar(36)
+  inspeccion_id    String              @db.VarChar(36)
+  criterio         String              @db.VarChar(200)
+  cumplimiento     CumplimientoCriterio?
+  riesgo           RiesgoNivel         @default(BAJO)
+  observacion      String?             @db.Text
+  evidencia        String?             @db.VarChar(500)
+  created_at       DateTime            @default(now()) @db.DateTime(3)
+  updated_at       DateTime            @updatedAt @db.DateTime(3)
+
+  inspeccion inspecciones @relation(fields: [inspeccion_id], references: [id], onDelete: Cascade)
+}
+
+model inspeccion_no_conformidades {
+  id                    String                    @id @default(uuid()) @db.VarChar(36)
+  inspeccion_id         String                    @db.VarChar(36)
+  codigo                String                    @db.VarChar(20)
+  tipo                  String                    @db.VarChar(100)
+  categoria             String                    @db.VarChar(100)
+  descripcion           String                    @db.Text
+  severidad             SeveridadNoConformidad    @default(LEVE)
+  responsable           String                    @db.VarChar(150)
+  fecha_compromiso      DateTime?                 @db.DateTime(3)
+  estado                EstadoNoConformidad       @default(PENDIENTE)
+  accion_correctiva     String?                   @db.Text
+  created_at            DateTime                  @default(now()) @db.DateTime(3)
+  updated_at            DateTime                  @updatedAt @db.DateTime(3)
+
+  inspeccion inspecciones @relation(fields: [inspeccion_id], references: [id], onDelete: Cascade)
+}
+
+model inspeccion_acciones_correctivas {
+  id               String   @id @default(uuid()) @db.VarChar(36)
+  inspeccion_id    String   @db.VarChar(36)
+  accion           String   @db.Text
+  responsable      String   @db.VarChar(150)
+  fecha_inicio     DateTime? @db.DateTime(3)
+  fecha_limite     DateTime? @db.DateTime(3)
+  estado           String   @default("PENDIENTE") @db.VarChar(20)
+  observaciones    String?  @db.Text
+  created_at       DateTime @default(now()) @db.DateTime(3)
+  updated_at       DateTime @updatedAt @db.DateTime(3)
+
+  inspeccion inspecciones @relation(fields: [inspeccion_id], references: [id], onDelete: Cascade)
+}
+
+model inspeccion_evidencias {
+  id               String   @id @default(uuid()) @db.VarChar(36)
+  inspeccion_id    String   @db.VarChar(36)
+  nombre           String   @db.VarChar(255)
+  descripcion      String?  @db.VarChar(500)
+  tipo             String?  @db.VarChar(100)
+  ruta_archivo     String?  @db.VarChar(500)
+  fecha            DateTime? @db.DateTime(3)
+  responsable      String?  @db.VarChar(150)
+  created_at       DateTime @default(now()) @db.DateTime(3)
+  updated_at       DateTime @updatedAt @db.DateTime(3)
+
+  inspeccion inspecciones @relation(fields: [inspeccion_id], references: [id], onDelete: Cascade)
+}
+
+model inspeccion_historial {
+  id               String   @id @default(uuid()) @db.VarChar(36)
+  inspeccion_id    String   @db.VarChar(36)
+  fecha            DateTime @db.DateTime(3)
+  titulo           String   @db.VarChar(200)
+  descripcion      String?  @db.Text
+  tipo             String   @db.VarChar(50)
+  created_at       DateTime @default(now()) @db.DateTime(3)
+
+  inspeccion inspecciones @relation(fields: [inspeccion_id], references: [id], onDelete: Cascade)
+}
+
+enum EstadoAcopio {
+  EN_PROCESO
+  COMPLETADO
+  EN_PLANTA
+}
+
+enum EstadoProducto {
+  EXCELENTE
+  BUENO
+  REGULAR
+  RECHAZADO
+}
+
+enum EstadoCampania {
+  PLANIFICADA
+  ACTIVA
+  FINALIZADA
+  CANCELADA
+}
+
+enum TipoActividad {
+  PREPARACION_TERRENO
+  SIEMBRA
+  RESIEMBRA
+  FERTILIZACION
+  COMPOSTAJE
+  APLICACION_BIOLES
+  CONTROL_BIOLOGICO
+  MANEJO_PLAGAS
+  MANEJO_ENFERMEDADES
+  DESHIERBIE
+  RIEGO
+  PODA
+  APORQUE
+  COSECHA
+  OTRA
+}
+
+enum PrioridadActividad {
+  ALTA
+  MEDIA
+  BAJA
+}
+
+enum EstadoActividad {
+  PROGRAMADA
+  EN_PROCESO
+  COMPLETADA
+}
+
+model actividades {
+  id                       String             @id @default(uuid()) @db.VarChar(36)
+  codigo                   String             @unique @db.VarChar(20)
+  campania_id              String             @db.VarChar(36)
+  productor_id             String             @db.VarChar(36)
+  parcela_id               String             @db.VarChar(36)
+  cultivo_id               String?            @db.VarChar(36)
+  fecha                    DateTime           @db.DateTime(3)
+  tipo_actividad           TipoActividad
+  descripcion              String?            @db.Text
+  responsable_tecnico      String             @db.VarChar(150)
+  hora_inicio              String?            @db.VarChar(5)
+  hora_fin                 String?            @db.VarChar(5)
+  duracion_estimada        String?            @db.VarChar(50)
+  prioridad                PrioridadActividad @default(MEDIA)
+  estado                   EstadoActividad    @default(PROGRAMADA)
+  jornales                 Int?               @default(0)
+  latitud                  String?            @db.VarChar(30)
+  longitud                 String?            @db.VarChar(30)
+  altitud                  String?            @db.VarChar(50)
+  precision_gps            String?            @db.VarChar(20)
+  observaciones_tecnicas   String?            @db.Text
+  recomendaciones          String?            @db.Text
+  objetivo                 String?            @db.Text
+  resultado                String?            @db.Text
+  proxima_actividad        String?            @db.VarChar(200)
+  activo                   Boolean            @default(true)
+  created_by               String?            @db.VarChar(36)
+  updated_by               String?            @db.VarChar(36)
+  created_at               DateTime           @default(now()) @db.DateTime(3)
+  updated_at               DateTime           @updatedAt @db.DateTime(3)
+
+  campania  campanias          @relation(fields: [campania_id], references: [id], onDelete: Cascade)
+  productor productores        @relation(fields: [productor_id], references: [id], onDelete: Cascade)
+  parcela   parcelas_productor @relation(fields: [parcela_id], references: [id], onDelete: Cascade)
+  cultivo   cultivos?          @relation(fields: [cultivo_id], references: [id], onDelete: SetNull)
+
+  insumos      actividad_insumos[]
+  mano_obra    actividad_manobra[]
+  maquinaria   actividad_maquinaria[]
+  fotos        actividad_fotos[]
+}
+
+model actividad_insumos {
+  id               String   @id @default(uuid()) @db.VarChar(36)
+  actividad_id     String   @db.VarChar(36)
+  producto         String   @db.VarChar(150)
+  categoria        String?  @db.VarChar(100)
+  fabricante       String?  @db.VarChar(150)
+  cantidad         Decimal? @db.Decimal(10, 2)
+  unidad           String?  @db.VarChar(20)
+  lote             String?  @db.VarChar(100)
+  costo_unitario   Decimal? @db.Decimal(10, 2)
+  costo_total      Decimal? @db.Decimal(10, 2)
+  observaciones    String?  @db.Text
+  created_at       DateTime @default(now()) @db.DateTime(3)
+  updated_at       DateTime @updatedAt @db.DateTime(3)
+
+  actividad actividades @relation(fields: [actividad_id], references: [id], onDelete: Cascade)
+}
+
+model actividad_manobra {
+  id               String   @id @default(uuid()) @db.VarChar(36)
+  actividad_id     String   @db.VarChar(36)
+  trabajador       String   @db.VarChar(150)
+  funcion          String?  @db.VarChar(100)
+  jornales         Decimal? @db.Decimal(5, 2)
+  horas            Decimal? @db.Decimal(5, 2)
+  observaciones    String?  @db.Text
+  created_at       DateTime @default(now()) @db.DateTime(3)
+  updated_at       DateTime @updatedAt @db.DateTime(3)
+
+  actividad actividades @relation(fields: [actividad_id], references: [id], onDelete: Cascade)
+}
+
+model actividad_maquinaria {
+  id               String   @id @default(uuid()) @db.VarChar(36)
+  actividad_id     String   @db.VarChar(36)
+  equipo           String   @db.VarChar(150)
+  operador         String?  @db.VarChar(150)
+  horas_uso        Decimal? @db.Decimal(5, 2)
+  combustible      Decimal? @db.Decimal(10, 2)
+  observaciones    String?  @db.Text
+  created_at       DateTime @default(now()) @db.DateTime(3)
+  updated_at       DateTime @updatedAt @db.DateTime(3)
+
+  actividad actividades @relation(fields: [actividad_id], references: [id], onDelete: Cascade)
+}
+
+model actividad_fotos {
+  id               String   @id @default(uuid()) @db.VarChar(36)
+  actividad_id     String   @db.VarChar(36)
+  titulo           String   @db.VarChar(150)
+  descripcion      String?  @db.VarChar(500)
+  ruta_archivo     String?  @db.VarChar(500)
+  fecha            DateTime? @db.DateTime(3)
+  responsable      String?  @db.VarChar(150)
+  created_at       DateTime @default(now()) @db.DateTime(3)
+  updated_at       DateTime @updatedAt @db.DateTime(3)
+
+  actividad actividades @relation(fields: [actividad_id], references: [id], onDelete: Cascade)
+}
+
+model cultivos {
+  id                       String              @id @default(uuid()) @db.VarChar(36)
+  codigo                   String              @unique @db.VarChar(20)
+  campania_id              String              @db.VarChar(36)
+  productor_id             String              @db.VarChar(36)
+  parcela_id               String              @db.VarChar(36)
+  cultivo                  String              @db.VarChar(100)
+  variedad                 String?             @db.VarChar(100)
+  area_sembrada            Decimal?            @db.Decimal(10, 2)
+  fecha_siembra            DateTime?           @db.DateTime(3)
+  metodo_siembra           MetodoSiembra?
+  sistema_productivo       SistemaProductivo?
+  tipo_agricultura         TipoAgricultura?
+  certificacion            CertificacionCultivo? @default(SIN_CERTIFICAR)
+  procedencia_semilla      ProcedenciaSemilla?
+  cantidad_semilla         Decimal?            @db.Decimal(10, 2)
+  unidad_semilla           String?             @db.VarChar(10)
+  fecha_emergencia         DateTime?           @db.DateTime(3)
+  fecha_floracion          DateTime?           @db.DateTime(3)
+  fecha_cosecha            DateTime?           @db.DateTime(3)
+  estado                   EstadoCultivo       @default(ACTIVO)
+  observaciones            String?             @db.Text
+  estado_fenologico        String?             @db.VarChar(100)
+  rendimiento_esperado     Decimal?            @db.Decimal(10, 2)
+  produccion_estimada      Decimal?            @db.Decimal(10, 2)
+  destino_produccion       DestinoProduccion?
+  distanciamiento_surcos   String?             @db.VarChar(50)
+  distanciamiento_plantas  String?             @db.VarChar(50)
+  densidad_siembra         String?             @db.VarChar(50)
+  tipo_semilla             String?             @db.VarChar(100)
+  lote_semilla             String?             @db.VarChar(100)
+  proveedor_semilla        String?             @db.VarChar(150)
+  activo                   Boolean             @default(true)
+  created_by               String?             @db.VarChar(36)
+  updated_by               String?             @db.VarChar(36)
+  created_at               DateTime            @default(now()) @db.DateTime(3)
+  updated_at               DateTime            @updatedAt @db.DateTime(3)
+
+  campania  campanias       @relation(fields: [campania_id], references: [id], onDelete: Cascade)
+  productor productores     @relation(fields: [productor_id], references: [id], onDelete: Cascade)
+  parcela   parcelas_productor @relation(fields: [parcela_id], references: [id], onDelete: Cascade)
+
+  actividades  actividades[]
+  inspecciones inspecciones[]
+  acopios acopios[]
+}
+
+enum CategoriaDocumento {
+  PERSONAL
+  INSTITUCIONAL
+  OTROS
+}
+
+enum EstadoDocumento {
+  PENDIENTE
+  VERIFICADO
+  RECHAZADO
+}
+
+enum EstadoRecepcion {
+  PENDIENTE_PESAJE
+  EN_CONTROL_CALIDAD
+  DISPONIBLE
+  RECHAZADA
+}
+
+enum CategoriaRecepcion {
+  PRIMERA
+  SEGUNDA
+  INDUSTRIAL
+  DESCARTE
+}
+
+enum DestinoRecepcion {
+  PROCESAMIENTO
+  ALMACEN_TEMPORAL
+  RECHAZADO
+}
+
+enum ResultadoRecepcion {
+  ACEPTADO
+  ACEPTADO_CON_OBSERVACIONES
+  RECHAZADO
+}
+
+enum EstadoProcesamiento {
+  REGISTRADA
+  EN_PROCESO
+  COMPLETADA
+  PAUSADA
+  CANCELADA
+}
+
+enum EstadoOperacion {
+  PENDIENTE
+  EN_CURSO
+  COMPLETADA
+  NO_APLICA
+}
+
+enum CalidadProducto {
+  PRIMERA
+  SEGUNDA
+  TERCERA
+  DESCARTE
+}
+
+enum LineaProcesamiento {
+  GRANOS
+  TUBERCULOS
+  LEGUMBRES
+  SEMILLAS
+}
+
+enum EstadoLote {
+  REGISTRADO
+  EN_PROCESAMIENTO
+  DISPONIBLE
+  CONSUMIDO
+  VENCIDO
+}
+
+enum EstadoInventario {
+  DISPONIBLE
+  RESERVADO
+  CONSUMIDO
+  VENCIDO
+}
+
+enum TipoMovimiento {
+  ENTRADA
+  SALIDA
+  TRANSFERENCIA
+  AJUSTE
+}
+
+model usuarios {
+  id         String   @id @default(uuid()) @db.VarChar(36)
+  nombre     String   @db.VarChar(100)
+  email      String   @unique @db.VarChar(150)
+  password   String   @db.VarChar(255)
+  rol        Rol      @default(USER)
+  activo     Boolean  @default(true)
+  created_at DateTime @default(now()) @db.DateTime(3)
+  updated_at DateTime @updatedAt @db.DateTime(3)
+}
+
+model productores {
+  id                String          @id @default(uuid()) @db.VarChar(36)
+  codigo            String          @unique @db.VarChar(20)
+  dni               String          @unique @db.VarChar(8)
+  nombres           String          @db.VarChar(100)
+  apellido_paterno  String          @db.VarChar(100)
+  apellido_materno  String          @db.VarChar(100)
+  sexo              Sexo
+  fecha_nacimiento  DateTime        @db.DateTime(3)
+  estado_civil      EstadoCivil
+  telefono          String?         @db.VarChar(20)
+  correo            String?         @db.VarChar(150)
+  departamento      String          @db.VarChar(100)
+  provincia         String          @db.VarChar(100)
+  distrito          String          @db.VarChar(100)
+  comunidad         String          @db.VarChar(150)
+  direccion         String?         @db.Text
+  nivel_educativo   NivelEducativo
+  idioma_principal  Idioma
+  idioma_secundario Idioma          @default(NINGUNO)
+  estado            EstadoProductor @default(ACTIVO)
+  activo            Boolean         @default(true)
+  fecha_ingreso     DateTime        @db.DateTime(3)
+  organizacion      String          @db.VarChar(200)
+  cargo             CargoProductor
+  foto_url          String?         @db.VarChar(500)
+  firma_url         String?         @db.VarChar(500)
+  created_by        String?         @db.VarChar(36)
+  updated_by        String?         @db.VarChar(36)
+  created_at        DateTime        @default(now()) @db.DateTime(3)
+  updated_at        DateTime        @updatedAt @db.DateTime(3)
+
+  familiares  familiares_productor[]
+  parcelas    parcelas_productor[]
+  documentos  documentos_productor[]
+  cultivos    cultivos[]
+  actividades actividades[]
+  inspecciones inspecciones[]
+  acopios acopios[]
+}
+
+model familiares_productor {
+  id                 String   @id @default(uuid()) @db.VarChar(36)
+  productor_id       String   @db.VarChar(36)
+  nombres            String   @db.VarChar(200)
+  parentesco         String   @db.VarChar(50)
+  dni                String?  @db.VarChar(8)
+  sexo               Sexo
+  fecha_nacimiento   DateTime @db.DateTime(3)
+  ocupacion          String?  @db.VarChar(100)
+  nivel_educativo    NivelEducativo?
+  telefono           String?  @db.VarChar(20)
+  dependiente        Boolean  @default(false)
+  vive_con_productor Boolean  @default(true)
+  created_at         DateTime @default(now()) @db.DateTime(3)
+  updated_at         DateTime @updatedAt @db.DateTime(3)
+
+  productor productores @relation(fields: [productor_id], references: [id], onDelete: Cascade)
+}
+
+// ─── Recepciones ────────────────────────────────────────────
+
+model recepciones {
+  id                     String              @id @default(uuid()) @db.VarChar(36)
+  codigo                 String              @unique @db.VarChar(20)
+  campania_id            String              @db.VarChar(36)
+  acopio_id              String?             @db.VarChar(36)
+  lote_productor         String              @db.VarChar(100)
+  fecha                  DateTime            @db.DateTime(3)
+  responsable            String              @db.VarChar(150)
+  planta                 String              @db.VarChar(100)
+  sacos                  Int                 @default(0)
+  peso_campo             Decimal?            @db.Decimal(10, 2)
+  peso_bruto             Decimal?            @db.Decimal(10, 2)
+  tara                   Decimal?            @db.Decimal(10, 2)
+  peso_neto              Decimal?            @db.Decimal(10, 2)
+  diferencia             Decimal?            @db.Decimal(10, 2)
+  merma                  Decimal?            @db.Decimal(5, 2)
+  humedad                Decimal?            @db.Decimal(5, 2)
+  impurezas              Decimal?            @db.Decimal(5, 2)
+  materia_extrana        Decimal?            @db.Decimal(5, 2)
+  color                  String?             @db.VarChar(50)
+  olor                   String?             @db.VarChar(50)
+  presencia_insectos     String?             @db.VarChar(50)
+  estado_producto        EstadoProducto?
+  categoria              CategoriaRecepcion?
+  destino                DestinoRecepcion?
+  resultado              ResultadoRecepcion?
+  motivo                 String?             @db.Text
+  estado                 EstadoRecepcion      @default(PENDIENTE_PESAJE)
+  observaciones          String?             @db.Text
+  documento_firmado      Boolean             @default(false)
+  firma_responsable_url  String?             @db.VarChar(500)
+  activo                 Boolean             @default(true)
+  created_by             String?             @db.VarChar(36)
+  updated_by             String?             @db.VarChar(36)
+  created_at             DateTime            @default(now()) @db.DateTime(3)
+  updated_at             DateTime            @updatedAt @db.DateTime(3)
+
+  campania   campanias @relation(fields: [campania_id], references: [id], onDelete: Cascade)
+  acopio     acopios?  @relation(fields: [acopio_id], references: [id], onDelete: SetNull)
+
+  evidencias recepcion_evidencias[]
+  historial  recepcion_historial[]
+}
+
+model recepcion_evidencias {
+  id            String   @id @default(uuid()) @db.VarChar(36)
+  recepcion_id  String   @db.VarChar(36)
+  nombre        String   @db.VarChar(255)
+  descripcion   String?  @db.VarChar(500)
+  ruta_archivo  String?  @db.VarChar(500)
+  created_at    DateTime @default(now()) @db.DateTime(3)
+  updated_at    DateTime @updatedAt @db.DateTime(3)
+
+  recepcion recepciones @relation(fields: [recepcion_id], references: [id], onDelete: Cascade)
+}
+
+model recepcion_historial {
+  id            String   @id @default(uuid()) @db.VarChar(36)
+  recepcion_id  String   @db.VarChar(36)
+  fecha         DateTime @db.DateTime(3)
+  titulo        String   @db.VarChar(200)
+  descripcion   String?  @db.Text
+  tipo          String   @db.VarChar(50)
+  created_at    DateTime @default(now()) @db.DateTime(3)
+
+  recepcion recepciones @relation(fields: [recepcion_id], references: [id], onDelete: Cascade)
+}
+
+// ─── Procesamiento ──────────────────────────────────────────
+
+model procesamientos {
+  id                     String               @id @default(uuid()) @db.VarChar(36)
+  codigo                 String               @unique @db.VarChar(20)
+  campania_id            String               @db.VarChar(36)
+  fecha                  DateTime             @db.DateTime(3)
+  producto               String               @db.VarChar(100)
+  responsable            String               @db.VarChar(150)
+  planta                 String               @db.VarChar(100)
+  linea_procesamiento    LineaProcesamiento
+  estado                 EstadoProcesamiento  @default(REGISTRADA)
+  observaciones          String?              @db.Text
+  peso_entrada           Decimal?             @db.Decimal(10, 2)
+  peso_salida            Decimal?             @db.Decimal(10, 2)
+  merma                  Decimal?             @db.Decimal(10, 2)
+  rendimiento            Decimal?             @db.Decimal(5, 2)
+  producto_base          String?              @db.VarChar(100)
+  calidad_producto       CalidadProducto?
+  peso_final             Decimal?             @db.Decimal(10, 2)
+  humedad_final          Decimal?             @db.Decimal(5, 2)
+  activo                 Boolean              @default(true)
+  created_by             String?              @db.VarChar(36)
+  updated_by             String?              @db.VarChar(36)
+  created_at             DateTime             @default(now()) @db.DateTime(3)
+  updated_at             DateTime             @updatedAt @db.DateTime(3)
+
+  campania    campanias @relation(fields: [campania_id], references: [id], onDelete: Cascade)
+  lotes       procesamiento_lotes[]
+  operaciones procesamiento_operaciones[]
+  evidencias  procesamiento_evidencias[]
+  historial   procesamiento_historial[]
+}
+
+model procesamiento_lotes {
+  id                String   @id @default(uuid()) @db.VarChar(36)
+  procesamiento_id  String   @db.VarChar(36)
+  lote_productor    String   @db.VarChar(100)
+  productor_nombre  String?  @db.VarChar(200)
+  parcela_nombre    String?  @db.VarChar(200)
+  cultivo_nombre    String?  @db.VarChar(100)
+  peso_recepcionado Decimal? @db.Decimal(10, 2)
+  created_at        DateTime @default(now()) @db.DateTime(3)
+  updated_at        DateTime @updatedAt @db.DateTime(3)
+
+  procesamiento procesamientos @relation(fields: [procesamiento_id], references: [id], onDelete: Cascade)
+}
+
+model procesamiento_operaciones {
+  id                String           @id @default(uuid()) @db.VarChar(36)
+  procesamiento_id  String           @db.VarChar(36)
+  nombre            String           @db.VarChar(100)
+  responsable       String?          @db.VarChar(150)
+  estado            EstadoOperacion  @default(PENDIENTE)
+  observaciones     String?          @db.Text
+  created_at        DateTime         @default(now()) @db.DateTime(3)
+  updated_at        DateTime         @updatedAt @db.DateTime(3)
+
+  procesamiento procesamientos @relation(fields: [procesamiento_id], references: [id], onDelete: Cascade)
+}
+
+model procesamiento_evidencias {
+  id               String   @id @default(uuid()) @db.VarChar(36)
+  procesamiento_id String   @db.VarChar(36)
+  nombre           String   @db.VarChar(255)
+  descripcion      String?  @db.VarChar(500)
+  tipo             String?  @db.VarChar(50)
+  ruta_archivo     String?  @db.VarChar(500)
+  created_at       DateTime @default(now()) @db.DateTime(3)
+  updated_at       DateTime @updatedAt @db.DateTime(3)
+
+  procesamiento procesamientos @relation(fields: [procesamiento_id], references: [id], onDelete: Cascade)
+}
+
+model procesamiento_historial {
+  id               String   @id @default(uuid()) @db.VarChar(36)
+  procesamiento_id String   @db.VarChar(36)
+  fecha            DateTime @db.DateTime(3)
+  titulo           String   @db.VarChar(200)
+  descripcion      String?  @db.Text
+  tipo             String   @db.VarChar(50)
+  created_at       DateTime @default(now()) @db.DateTime(3)
+
+  procesamiento procesamientos @relation(fields: [procesamiento_id], references: [id], onDelete: Cascade)
+}
+
+// ─── Lotes ──────────────────────────────────────────────────
+
+model lotes {
+  id                     String      @id @default(uuid()) @db.VarChar(36)
+  codigo                 String      @unique @db.VarChar(20)
+  nombre                 String      @db.VarChar(200)
+  campania_id            String      @db.VarChar(36)
+  cultivo                String      @db.VarChar(100)
+  origen                 String      @db.VarChar(100)
+  peso_inicial           Decimal     @db.Decimal(10, 2)
+  peso_disponible        Decimal     @db.Decimal(10, 2)
+  unidad                 String      @default("kg") @db.VarChar(10)
+  estado                 EstadoLote  @default(REGISTRADO)
+  fecha_produccion       DateTime?   @db.DateTime(3)
+  fecha_vencimiento      DateTime?   @db.DateTime(3)
+  calidad                String?     @db.VarChar(50)
+  certificacion          String?     @db.VarChar(50)
+  ubicacion              String?     @db.VarChar(200)
+  observaciones          String?     @db.Text
+  activo                 Boolean     @default(true)
+  created_by             String?     @db.VarChar(36)
+  updated_by             String?     @db.VarChar(36)
+  created_at             DateTime    @default(now()) @db.DateTime(3)
+  updated_at             DateTime    @updatedAt @db.DateTime(3)
+
+  campania   campanias        @relation(fields: [campania_id], references: [id], onDelete: Cascade)
+  movimientos lote_movimientos[]
+}
+
+model lote_movimientos {
+  id            String        @id @default(uuid()) @db.VarChar(36)
+  lote_id       String        @db.VarChar(36)
+  tipo          TipoMovimiento
+  cantidad      Decimal       @db.Decimal(10, 2)
+  destino       String?       @db.VarChar(200)
+  referencia    String?       @db.VarChar(200)
+  responsable   String?       @db.VarChar(150)
+  observaciones String?       @db.Text
+  fecha         DateTime      @default(now()) @db.DateTime(3)
+  created_at    DateTime      @default(now()) @db.DateTime(3)
+
+  lote lotes @relation(fields: [lote_id], references: [id], onDelete: Cascade)
+}
+
+// ─── Inventario ─────────────────────────────────────────────
+
+model inventario {
+  id               String          @id @default(uuid()) @db.VarChar(36)
+  codigo           String          @unique @db.VarChar(20)
+  producto         String          @db.VarChar(200)
+  categoria        String          @db.VarChar(100)
+  unidad           String          @default("kg") @db.VarChar(10)
+  cantidad_actual  Decimal         @default(0) @db.Decimal(10, 2)
+  cantidad_minima  Decimal?        @db.Decimal(10, 2)
+  cantidad_maxima  Decimal?        @db.Decimal(10, 2)
+  ubicacion        String?         @db.VarChar(200)
+  estado           EstadoInventario @default(DISPONIBLE)
+  lote_id          String?         @db.VarChar(36)
+  fecha_ingreso    DateTime        @db.DateTime(3)
+  fecha_vencimiento DateTime?      @db.DateTime(3)
+  proveedor        String?         @db.VarChar(200)
+  costo_unitario   Decimal?        @db.Decimal(10, 2)
+  observaciones    String?         @db.Text
+  activo           Boolean         @default(true)
+  created_by       String?         @db.VarChar(36)
+  updated_by       String?         @db.VarChar(36)
+  created_at       DateTime        @default(now()) @db.DateTime(3)
+  updated_at       DateTime        @updatedAt @db.DateTime(3)
+
+  movimientos inventario_movimientos[]
+}
+
+model inventario_movimientos {
+  id               String        @id @default(uuid()) @db.VarChar(36)
+  inventario_id    String        @db.VarChar(36)
+  tipo             TipoMovimiento
+  cantidad         Decimal       @db.Decimal(10, 2)
+  referencia       String?       @db.VarChar(200)
+  responsable      String?       @db.VarChar(150)
+  observaciones    String?       @db.Text
+  fecha            DateTime      @default(now()) @db.DateTime(3)
+  created_at       DateTime      @default(now()) @db.DateTime(3)
+
+  inventario inventario @relation(fields: [inventario_id], references: [id], onDelete: Cascade)
+}
+
+// ─── Trazabilidad ───────────────────────────────────────────
+
+model trazabilidad {
+  id               String   @id @default(uuid()) @db.VarChar(36)
+  codigo           String   @unique @db.VarChar(20)
+  lote_id          String?  @db.VarChar(36)
+  producto         String   @db.VarChar(200)
+  cultivo          String   @db.VarChar(100)
+  origen           String   @db.VarChar(200)
+  productor        String?  @db.VarChar(200)
+  parcela          String?  @db.VarChar(200)
+  comunidad        String?  @db.VarChar(150)
+  fecha_siembra    DateTime? @db.DateTime(3)
+  fecha_cosecha    DateTime? @db.DateTime(3)
+  fecha_procesamiento DateTime? @db.DateTime(3)
+  peso_total       Decimal? @db.Decimal(10, 2)
+  unidad           String?  @db.VarChar(10)
+  calidad          String?  @db.VarChar(50)
+  certificacion    String?  @db.VarChar(50)
+  destino          String?  @db.VarChar(200)
+  estado           String   @default("REGISTRADO") @db.VarChar(50)
+  observaciones    String?  @db.Text
+  activo           Boolean  @default(true)
+  created_by       String?  @db.VarChar(36)
+  updated_by       String?  @db.VarChar(36)
+  created_at       DateTime @default(now()) @db.DateTime(3)
+  updated_at       DateTime @updatedAt @db.DateTime(3)
+
+  eventos trazabilidad_eventos[]
+}
+
+model trazabilidad_eventos {
+  id               String   @id @default(uuid()) @db.VarChar(36)
+  trazabilidad_id  String   @db.VarChar(36)
+  fecha            DateTime @db.DateTime(3)
+  titulo           String   @db.VarChar(200)
+  descripcion      String?  @db.Text
+  tipo             String   @db.VarChar(50)
+  ubicacion        String?  @db.VarChar(200)
+  responsable      String?  @db.VarChar(150)
+  created_at       DateTime @default(now()) @db.DateTime(3)
+
+  trazabilidad trazabilidad @relation(fields: [trazabilidad_id], references: [id], onDelete: Cascade)
+}
+model acopios {
+  id                     String          @id @default(uuid()) @db.VarChar(36)
+  codigo                 String          @unique @db.VarChar(20)
+  campania_id            String          @db.VarChar(36)
+  productor_id           String          @db.VarChar(36)
+  parcela_id             String          @db.VarChar(36)
+  cultivo_id             String?         @db.VarChar(36)
+  fecha                  DateTime        @db.DateTime(3)
+  acopiador              String          @db.VarChar(150)
+  vehiculo               String?         @db.VarChar(100)
+  ruta_acopio            String?         @db.VarChar(200)
+  lote_productor         String?         @db.VarChar(100)
+  total_sacos            Int             @default(0)
+  peso_total             Decimal         @default(0) @db.Decimal(10, 2)
+  peso_promedio          Decimal?        @db.Decimal(10, 2)
+  peso_maximo            Decimal?        @db.Decimal(10, 2)
+  peso_minimo            Decimal?        @db.Decimal(10, 2)
+  estado                 EstadoAcopio    @default(EN_PROCESO)
+  estado_producto        EstadoProducto?
+  humedad                Decimal?        @db.Decimal(5, 2)
+  impurezas              Decimal?        @db.Decimal(5, 2)
+  observaciones_calidad  String?         @db.Text
+  firma_productor_url    String?         @db.VarChar(500)
+  firma_acopiador_url    String?         @db.VarChar(500)
+  observaciones          String?         @db.Text
+  activo                 Boolean         @default(true)
+  created_by             String?         @db.VarChar(36)
+  updated_by             String?         @db.VarChar(36)
+  created_at             DateTime        @default(now()) @db.DateTime(3)
+  updated_at             DateTime        @updatedAt @db.DateTime(3)
+
+  campania   campanias          @relation(fields: [campania_id], references: [id], onDelete: Cascade)
+  productor  productores        @relation(fields: [productor_id], references: [id], onDelete: Cascade)
+  parcela    parcelas_productor @relation(fields: [parcela_id], references: [id], onDelete: Cascade)
+  cultivo    cultivos?          @relation(fields: [cultivo_id], references: [id], onDelete: SetNull)
+
+  sacos   acopio_sacos[]
+  fotos   acopio_fotos[]
+  recepciones recepciones[]
+}
+
+model acopio_sacos {
+  id            String   @id @default(uuid()) @db.VarChar(36)
+  acopio_id     String   @db.VarChar(36)
+  codigo        String   @db.VarChar(50)
+  peso          Decimal  @db.Decimal(10, 2)
+  observaciones String?  @db.Text
+  created_at    DateTime @default(now()) @db.DateTime(3)
+  updated_at    DateTime @updatedAt @db.DateTime(3)
+
+  acopio acopios @relation(fields: [acopio_id], references: [id], onDelete: Cascade)
+}
+
+model acopio_fotos {
+  id            String   @id @default(uuid()) @db.VarChar(36)
+  acopio_id     String   @db.VarChar(36)
+  nombre        String   @db.VarChar(255)
+  descripcion   String?  @db.VarChar(500)
+  ruta_archivo  String?  @db.VarChar(500)
+  created_at    DateTime @default(now()) @db.DateTime(3)
+  updated_at    DateTime @updatedAt @db.DateTime(3)
+
+  acopio acopios @relation(fields: [acopio_id], references: [id], onDelete: Cascade)
+}
+model campanias {
+  id                     String          @id @default(uuid()) @db.VarChar(36)
+  codigo                 String          @unique @db.VarChar(20)
+  nombre                 String          @db.VarChar(200)
+  anio_agricola          String          @db.VarChar(10)
+  fecha_inicio           DateTime        @db.DateTime(3)
+  fecha_fin              DateTime        @db.DateTime(3)
+  descripcion            String?         @db.Text
+  estado                 EstadoCampania  @default(PLANIFICADA)
+  responsable            String          @db.VarChar(150)
+  tecnico_coordinador    String          @db.VarChar(150)
+  objetivo               String?         @db.Text
+  permitir_cultivos      Boolean         @default(true)
+  permitir_actividades   Boolean         @default(true)
+  permitir_cosechas      Boolean         @default(true)
+  permitir_inspecciones  Boolean         @default(true)
+  permitir_acopio        Boolean         @default(true)
+  permitir_procesamiento Boolean         @default(true)
+  visible                Boolean         @default(true)
+  activa                 Boolean         @default(false)
+  observaciones          String?         @db.Text
+  activo                 Boolean         @default(true)
+  created_by             String?         @db.VarChar(36)
+  updated_by             String?         @db.VarChar(36)
+  created_at             DateTime        @default(now()) @db.DateTime(3)
+  updated_at             DateTime        @updatedAt @db.DateTime(3)
+
+  cultivos cultivos[]
+  actividades actividades[]
+  inspecciones inspecciones[]
+  acopios acopios[]
+  recepciones recepciones[]
+  procesamientos procesamientos[]
+  lotes lotes[]
+}
+model parcelas_productor {
+  id                  String               @id @default(uuid()) @db.VarChar(36)
+  productor_id        String               @db.VarChar(36)
+  codigo              String               @unique @db.VarChar(20)
+  nombre              String               @db.VarChar(200)
+  cultivo             String               @db.VarChar(100)
+  area                Decimal              @db.Decimal(10, 2)
+  area_certificada    Decimal?             @db.Decimal(10, 2)
+  area_unidad         String               @default("ha") @db.VarChar(10)
+  ubicacion           String?              @db.VarChar(200)
+  comunidad           String?              @db.VarChar(150)
+  sector              String?              @db.VarChar(150)
+  altitud             String?              @db.VarChar(50)
+  departamento        String?              @db.VarChar(100)
+  provincia           String?              @db.VarChar(100)
+  distrito            String?              @db.VarChar(100)
+  centro_poblado      String?              @db.VarChar(150)
+  ubigeo              String?              @db.VarChar(6)
+  latitud             String?              @db.VarChar(30)
+  longitud            String?              @db.VarChar(30)
+  precision_gps       String?              @db.VarChar(20)
+  tipo_suelo          String?              @db.VarChar(100)
+  textura             String?              @db.VarChar(50)
+  pendiente           String?              @db.VarChar(100)
+  fuente_agua         String?              @db.VarChar(100)
+  sistema_riego       String?              @db.VarChar(100)
+  zona_agroecologica  String?              @db.VarChar(100)
+  disponibilidad_agua String?              @db.VarChar(50)
+  observaciones       String?              @db.Text
+  area_calculada      String?              @db.VarChar(50)
+  perimetro           String?              @db.VarChar(50)
+  vertices            Int?
+  poligono            Json?
+  fecha_levantamiento DateTime?            @db.DateTime(3)
+  responsable         String?              @db.VarChar(150)
+  certificacion       CertificacionParcela @default(CONVENCIONAL)
+  estado              EstadoParcela        @default(ACTIVA)
+  activo              Boolean              @default(true)
+  created_by          String?              @db.VarChar(36)
+  updated_by          String?              @db.VarChar(36)
+  created_at          DateTime             @default(now()) @db.DateTime(3)
+  updated_at          DateTime             @updatedAt @db.DateTime(3)
+
+  productor  productores          @relation(fields: [productor_id], references: [id], onDelete: Cascade)
+  documentos parcela_documentos[]
+  fotos      parcela_fotos[]
+  cultivos   cultivos[]
+  actividades actividades[]
+  inspecciones inspecciones[]
+  acopios acopios[]
+}
+
+model parcela_documentos {
+  id             String   @id @default(uuid()) @db.VarChar(36)
+  parcela_id     String   @db.VarChar(36)
+  tipo           String   @db.VarChar(100)
+  nombre_archivo String   @db.VarChar(255)
+  ruta_archivo   String   @db.VarChar(500)
+  tamano_bytes   Int
+  mime_type      String   @db.VarChar(100)
+  estado         String   @default("PENDIENTE") @db.VarChar(20)
+  created_at     DateTime @default(now()) @db.DateTime(3)
+  updated_at     DateTime @updatedAt @db.DateTime(3)
+
+  parcela parcelas_productor @relation(fields: [parcela_id], references: [id], onDelete: Cascade)
+}
+
+model parcela_fotos {
+  id            String    @id @default(uuid()) @db.VarChar(36)
+  parcela_id    String    @db.VarChar(36)
+  titulo        String    @db.VarChar(150)
+  descripcion   String?   @db.VarChar(500)
+  fecha         DateTime? @db.DateTime(3)
+  autor         String?   @db.VarChar(150)
+  observaciones String?   @db.Text
+  ruta_archivo  String?   @db.VarChar(500)
+  created_at    DateTime  @default(now()) @db.DateTime(3)
+  updated_at    DateTime  @updatedAt @db.DateTime(3)
+
+  parcela parcelas_productor @relation(fields: [parcela_id], references: [id], onDelete: Cascade)
+}
+
+model documentos_productor {
+  id              String             @id @default(uuid()) @db.VarChar(36)
+  productor_id    String             @db.VarChar(36)
+  tipo            String             @db.VarChar(100)
+  categoria       CategoriaDocumento
+  nombre_archivo  String             @db.VarChar(255)
+  ruta_archivo    String             @db.VarChar(500)
+  tamano_bytes    Int
+  mime_type       String             @db.VarChar(100)
+  estado          EstadoDocumento    @default(PENDIENTE)
+  created_at      DateTime           @default(now()) @db.DateTime(3)
+  updated_at      DateTime           @updatedAt @db.DateTime(3)
+
+  productor productores @relation(fields: [productor_id], references: [id], onDelete: Cascade)
+}

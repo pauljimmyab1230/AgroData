@@ -1,0 +1,104 @@
+﻿node.exe : npm notice run agrodata@1.0.0 npx
+En línea: 1 Carácter: 1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\Usuario\AppData\Roamin ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm notice run agrodata@1.0.0 npx:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+npm notice run vite build
+[36mvite v8.2.1 [32mbuilding client environment for production...[36m[39m
+[2K
+transforming...Ô£ô 2453 modules transformed.
+[31mÔ£ù[39m Build failed in 332ms
+[31merror during build:
+[31mBuild failed with 15 errors:
+
+[31m[builtin:vite-transform] [0mLogical expressions and coalesce expressions cannot be mixed
+    [38;5;246mÔò¡[0m[38;5;246mÔöÇ[0m[38;5;246m[[0m src/components/recepcion/RecepcionForm.tsx:41:22 
+[38;5;246m][0m
+    [38;5;246mÔöé[0m
+ [38;5;246m41 Ôöé[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m
+[38;5;249ml[0m[38;5;249mo[0m[38;5;249mt[0m[38;5;249me[0m[38;5;249mP[0m[38;5;249mr[0m[38;5;249mo[0m[38;5;
+249md[0m[38;5;249mu[0m[38;5;249mc[0m[38;5;249mt[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249m:[0m[38;5;249m 
+[0mgetVal('[name="loteProductor"]') || values?.loteProductor ?? ""[38;5;249m,[0m
+ [38;5;240m   Ôöé[0m                      ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ  
+ [38;5;240m   Ôöé[0m                                                     
+Ôò░ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ 
+ [38;5;240m   Ôöé[0m 
+ [38;5;240m   Ôöé[0m [38;5;115mHelp[0m: Wrap either expression by parentheses
+[38;5;246mÔöÇÔöÇÔöÇÔöÇÔò»[0m
+
+[31m[builtin:vite-transform] [0mLogical expressions and coalesce expressions cannot be mixed
+    [38;5;246mÔò¡[0m[38;5;246mÔöÇ[0m[38;5;246m[[0m src/components/recepcion/RecepcionForm.tsx:43:20 
+[38;5;246m][0m
+    [38;5;246mÔöé[0m
+ [38;5;246m43 Ôöé[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m
+[38;5;249mr[0m[38;5;249me[0m[38;5;249ms[0m[38;5;249mp[0m[38;5;249mo[0m[38;5;249mn[0m[38;5;249ms[0m[38;5;
+249ma[0m[38;5;249mb[0m[38;5;249ml[0m[38;5;249me[0m[38;5;249m:[0m[38;5;249m 
+[0mgetVal('[name="responsable"]') || values?.responsable ?? ""[38;5;249m,[0m
+ [38;5;240m   Ôöé[0m                    ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö
+ÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ  
+ [38;5;240m   Ôöé[0m                                                 
+Ôò░ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ 
+ [38;5;240m   Ôöé[0m 
+ [38;5;240m   Ôöé[0m [38;5;115mHelp[0m: Wrap either expression by parentheses
+[38;5;246mÔöÇÔöÇÔöÇÔöÇÔò»[0m
+
+[31m[builtin:vite-transform] [0mLogical expressions and coalesce expressions cannot be mixed
+    [38;5;246mÔò¡[0m[38;5;246mÔöÇ[0m[38;5;246m[[0m src/components/recepcion/RecepcionForm.tsx:44:15 
+[38;5;246m][0m
+    [38;5;246mÔöé[0m
+ [38;5;246m44 Ôöé[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m
+[38;5;249mp[0m[38;5;249ml[0m[38;5;249ma[0m[38;5;249mn[0m[38;5;249mt[0m[38;5;249ma[0m[38;5;249m:[0m[38;5;
+249m [0mgetVal('[name="planta"]') || values?.planta ?? ""[38;5;249m,[0m
+ [38;5;240m   Ôöé[0m               ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔ
+öÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ  
+ [38;5;240m   Ôöé[0m                                       
+Ôò░ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ 
+ [38;5;240m   Ôöé[0m 
+ [38;5;240m   Ôöé[0m [38;5;115mHelp[0m: Wrap either expression by parentheses
+[38;5;246mÔöÇÔöÇÔöÇÔöÇÔò»[0m
+
+[31m[builtin:vite-transform] [0mLogical expressions and coalesce expressions cannot be mixed
+    [38;5;246mÔò¡[0m[38;5;246mÔöÇ[0m[38;5;246m[[0m src/components/recepcion/RecepcionForm.tsx:52:16 
+[38;5;246m][0m
+    [38;5;246mÔöé[0m
+ [38;5;246m52 Ôöé[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m
+[38;5;249mh[0m[38;5;249mu[0m[38;5;249mm[0m[38;5;249me[0m[38;5;249md[0m[38;5;249ma[0m[38;5;249md[0m[38;5;
+249m:[0m[38;5;249m [0mgetNum('[name="humedad"]') || values?.humedad ?? 0[38;5;249m,[0m
+ [38;5;240m   Ôöé[0m                ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇ
+ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ  
+ [38;5;240m   Ôöé[0m                                         
+Ôò░ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ 
+ [38;5;240m   Ôöé[0m 
+ [38;5;240m   Ôöé[0m [38;5;115mHelp[0m: Wrap either expression by parentheses
+[38;5;246mÔöÇÔöÇÔöÇÔöÇÔò»[0m
+
+[31m[builtin:vite-transform] [0mLogical expressions and coalesce expressions cannot be mixed
+    [38;5;246mÔò¡[0m[38;5;246mÔöÇ[0m[38;5;246m[[0m src/components/recepcion/RecepcionForm.tsx:53:18 
+[38;5;246m][0m
+    [38;5;246mÔöé[0m
+ [38;5;246m53 Ôöé[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m
+[38;5;249mi[0m[38;5;249mm[0m[38;5;249mp[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mz[0m[38;5;
+249ma[0m[38;5;249ms[0m[38;5;249m:[0m[38;5;249m [0mgetNum('[name="impurezas"]') || values?.impurezas ?? 
+0[38;5;249m,[0m
+ [38;5;240m   Ôöé[0m                  ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔ
+öÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ  
+ [38;5;240m   Ôöé[0m                                             
+Ôò░ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ 
+ [38;5;240m   Ôöé[0m 
+ [38;5;240m   Ôöé[0m [38;5;115mHelp[0m: Wrap either expression by parentheses
+[38;5;246mÔöÇÔöÇÔöÇÔöÇÔò»[0m
+
+...[31m
+    at aggregateBindingErrorsIntoJsError 
+(file:///E:/AgroData/node_modules/rolldown/dist/shared/error-CVc7IgvG.mjs:48:18)
+    at unwrapBindingResult (file:///E:/AgroData/node_modules/rolldown/dist/shared/error-CVc7IgvG.mjs:18:128)
+    at #build (file:///E:/AgroData/node_modules/rolldown/dist/shared/rolldown-DiYVDns9.mjs:132:34)
+    at async buildEnvironment (file:///E:/AgroData/node_modules/vite/dist/node/chunks/node.js:33730:66)
+    at async Object.build (file:///E:/AgroData/node_modules/vite/dist/node/chunks/node.js:34150:19)
+    at async Object.buildApp (file:///E:/AgroData/node_modules/vite/dist/node/chunks/node.js:34147:153)
+    at async CAC.<anonymous> (file:///E:/AgroData/node_modules/vite/dist/node/cli.js:776:3) {
+  errors: [Getter/Setter]
+}[39m

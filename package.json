@@ -1,0 +1,32 @@
+{
+  "name": "agrodata",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AgroData - Sistema de gestión cooperativa agrícola (monorepo)",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c blue,green \"npm run dev -w @agrodata/api\" \"npm run dev -w @agrodata/web\"",
+    "build": "npm run build -w @agrodata/api && npm run build -w @agrodata/web",
+    "lint": "npm run lint -w @agrodata/api && npm run lint -w @agrodata/web",
+    "db:migrate": "npm run db:migrate -w @agrodata/database",
+    "db:migrate:prod": "npm run db:migrate:prod -w @agrodata/database",
+    "db:generate": "npm run db:generate -w @agrodata/database",
+    "db:seed": "npm run db:seed -w @agrodata/database",
+    "db:studio": "npm run db:studio -w @agrodata/database",
+    "db:reset": "npm run db:reset -w @agrodata/database",
+    "db:push": "npm run db:push -w @agrodata/database"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "allowScripts": {
+    "@prisma/client@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "prisma@6.19.3": true,
+    "bcrypt@5.1.1": true,
+    "esbuild@0.28.2": true
+  }
+}
