@@ -35,7 +35,7 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
             <span className="text-sm font-medium text-gray-700">{user?.nombre}</span>
           </div>
 
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-forest-500 to-forest-700 text-xs font-semibold text-white shadow-md shadow-forest-600/25">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-forest-600 text-xs font-semibold text-white">
             {initials}
           </div>
 

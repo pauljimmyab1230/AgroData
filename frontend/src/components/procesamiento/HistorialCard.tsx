@@ -7,7 +7,6 @@ import {
   Scale,
   Tags,
   Zap,
-  XCircle,
   type LucideIcon,
 } from "lucide-react";
 import { CardHeader, CardShell } from "../shared/formControls";

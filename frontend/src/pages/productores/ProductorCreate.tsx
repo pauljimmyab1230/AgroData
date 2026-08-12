@@ -15,20 +15,35 @@ import { FamiliarTable } from "../../components/productores/FamiliarTable";
 import { ParcelaTable } from "../../components/productores/ParcelaTable";
 import { DocumentoUploader } from "../../components/productores/DocumentoUploader";
 import { ProductorFormProvider, useProductorForm } from "../../contexts/ProductorFormContext";
-import { createProductor } from "../../services/productores";
+import { createProductor, createFamiliar, createParcela } from "../../services/productores";
 
 const totalPasos = 4;
 
 function ProductorCreateForm() {
-  const { data } = useProductorForm();
+  const { data, familiares, parcelas, validateStep } = useProductorForm();
   const navigate = useNavigate();
   const [pasoActual, setPasoActual] = useState(1);
   const [saving, setSaving] = useState(false);
 
+  const handleNext = () => {
+    if (!validateStep(pasoActual)) return;
+    setPasoActual((paso) => Math.min(totalPasos, paso + 1));
+  };
+
   const handleSave = async () => {
+    if (!validateStep(1)) {
+      setPasoActual(1);
+      return;
+    }
     setSaving(true);
     try {
       const result = await createProductor(data);
+      for (const familiar of familiares) {
+        await createFamiliar(result.id, familiar);
+      }
+      for (const parcela of parcelas) {
+        await createParcela(result.id, parcela);
+      }
       navigate(`/productores/${result.id}`);
     } catch (err) {
       console.error(err);
@@ -94,7 +109,7 @@ function ProductorCreateForm() {
           </Button>
         ) : (
           <Button
-            onClick={() => setPasoActual((paso) => Math.min(totalPasos, paso + 1))}
+            onClick={handleNext}
             iconRight={<ArrowRight className="h-4 w-4" />}
           >
             Siguiente

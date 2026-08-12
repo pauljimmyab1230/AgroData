@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -7,90 +8,141 @@ import {
   Sprout,
   BadgeCheck,
   Layers,
-  CalendarCheck,
-  ClipboardCheck,
   History,
+  FileText,
+  Camera,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { Badge, Breadcrumb, Button, Card } from "../../components/ui";
+import { Badge, Breadcrumb, Button, Card, LoadingSpinner } from "../../components/ui";
 import { DatosGeneralesCard } from "../../components/parcelas/DatosGeneralesCard";
 import { InformacionAgroecologicaCard } from "../../components/parcelas/InformacionAgroecologicaCard";
 import { UbicacionCard } from "../../components/parcelas/UbicacionCard";
 import { PoligonoCard } from "../../components/parcelas/PoligonoCard";
 import { FotografiaCard } from "../../components/parcelas/FotografiaCard";
 import { DocumentoCard } from "../../components/parcelas/DocumentoCard";
-import {
-  parcelasMock,
-  parcelaHistorialMock,
-  parcelaCultivosMock,
-  parcelaCampaniasMock,
-  parcelaInspeccionesMock,
-  type ParcelaHistorialItem,
-} from "./parcelaMock";
+import { fetchParcela, type Parcela } from "../../services/parcelas";
+import { ParcelaFormProvider } from "../../contexts/ParcelaFormContext";
 
 const formatFecha = (fecha: string) => {
-  const [y, m, d] = fecha.split("-").map(Number);
+  if (!fecha) return "—";
+  const [y, m, d] = fecha.slice(0, 10).split("-").map(Number);
   const meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
   return `${d} ${meses[m - 1]} ${y}`;
 };
 
-const historialIcons: Record<ParcelaHistorialItem["tipo"], LucideIcon> = {
+type HistorialItem = {
+  id: string;
+  tipo: "registro" | "documento";
+  titulo: string;
+  descripcion: string;
+  fecha: string;
+};
+
+const historialIcons: Record<HistorialItem["tipo"], LucideIcon> = {
   registro: Layers,
-  documento: BadgeCheck,
-  cultivo: Sprout,
-  campania: CalendarCheck,
-  inspeccion: ClipboardCheck,
+  documento: FileText,
 };
 
 export default function ParcelaView() {
   const { id } = useParams();
-  const parcela = parcelasMock.find((p) => p.id === Number(id)) ?? parcelasMock[0];
+  const [parcela, setParcela] = useState<Parcela | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!id) return;
+    fetchParcela(id)
+      .then(setParcela)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (!parcela) {
+    return (
+      <div className="py-20 text-center text-gray-500">
+        <p>No se encontró la parcela.</p>
+      </div>
+    );
+  }
+
+  const documentos = parcela.documentos ?? [];
+  const fotos = parcela.fotos ?? [];
 
   const estadoBadge =
-    parcela.estado === "Activa" ? <Badge variant="forest">Activa</Badge> : <Badge variant="gray">Inactiva</Badge>;
+    parcela.estado === "ACTIVA" ? <Badge variant="forest">Activa</Badge> : <Badge variant="gray">Inactiva</Badge>;
 
   const certificacionBadge =
-    parcela.certificacion === "Orgánica" ? (
-      <Badge variant="green">{parcela.certificacion}</Badge>
+    parcela.certificacion === "ORGANICA" ? (
+      <Badge variant="green">Orgánica</Badge>
+    ) : parcela.certificacion === "EN_TRANSICION" ? (
+      <Badge variant="yellow">En Transición</Badge>
     ) : (
-      <Badge variant="yellow">{parcela.certificacion}</Badge>
+      <Badge variant="gray">Convencional</Badge>
     );
+
+  const areaTotal = `${parcela.area || "0"} ${parcela.areaUnidad || "ha"}`;
+  const areaCertificada = parcela.areaCertificada ? `${parcela.areaCertificada} ${parcela.areaUnidad || "ha"}` : "—";
 
   const kpis = [
     {
       label: "Área Total",
-      value: parcela.areaTotal,
+      value: areaTotal,
       icon: Ruler,
       iconClass: "bg-forest-600/10 text-forest-600",
     },
     {
       label: "Área Certificada",
-      value: parcela.areaCertificada,
+      value: areaCertificada,
       icon: BadgeCheck,
       iconClass: "bg-emerald-100 text-emerald-700",
     },
     {
-      label: "Cultivos Actuales",
-      value: String(parcelaCultivosMock.length),
-      icon: Sprout,
+      label: "Documentos",
+      value: String(documentos.length),
+      icon: FileText,
       iconClass: "bg-sun-100 text-sun-700",
     },
     {
-      label: "Campañas Registradas",
-      value: String(parcelaCampaniasMock.length),
-      icon: CalendarCheck,
+      label: "Fotografías",
+      value: String(fotos.length),
+      icon: Camera,
       iconClass: "bg-forest-600/10 text-forest-600",
     },
     {
-      label: "Inspecciones",
-      value: String(parcelaInspeccionesMock.length),
-      icon: ClipboardCheck,
+      label: "Cultivo Principal",
+      value: parcela.cultivo || "—",
+      icon: Sprout,
       iconClass: "bg-sun-100 text-sun-700",
     },
   ];
 
+  const historial: HistorialItem[] = [
+    {
+      id: "registro",
+      tipo: "registro",
+      titulo: "Registro de la parcela",
+      descripcion: `Alta de ${parcela.nombre} (${parcela.codigo}) en el sistema de la cooperativa.`,
+      fecha: parcela.createdAt,
+    },
+    {
+      id: "actualizacion",
+      tipo: "documento",
+      titulo: "Última actualización",
+      descripcion: `La información de la parcela fue modificada por última vez.`,
+      fecha: parcela.updatedAt,
+    },
+  ];
+
   return (
-    <div>
+    <ParcelaFormProvider initial={parcela}>
+      <div>
       <Breadcrumb items={[{ label: "Parcelas", to: "/parcelas" }, { label: parcela.codigo }]} />
 
       <div className="mb-8 flex items-center gap-4">
@@ -122,18 +174,18 @@ export default function ParcelaView() {
             </div>
             <p className="mt-1 text-sm text-gray-500">
               Código: <span className="font-medium text-[#111827]">{parcela.codigo}</span>
-              {" · "}Productor: <span className="font-medium text-[#111827]">{parcela.productor}</span>
-              {" · "}Comunidad: <span className="font-medium text-[#111827]">{parcela.comunidad}</span>
+              {" · "}Productor: <span className="font-medium text-[#111827]">{parcela.productorNombre}</span>
+              {" · "}Comunidad: <span className="font-medium text-[#111827]">{parcela.comunidad || "—"}</span>
             </p>
           </div>
 
           <div className="flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-[#111827]">
             <Ruler className="h-5 w-5 text-forest-600" />
-            {parcela.areaTotal}
+            {areaTotal}
           </div>
           <div className="flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-[#111827]">
             <Sprout className="h-5 w-5 text-forest-600" />
-            {parcela.cultivoPrincipal}
+            {parcela.cultivo || "—"}
           </div>
         </div>
       </Card>
@@ -146,7 +198,7 @@ export default function ParcelaView() {
                 <p className="truncate text-xs font-medium uppercase tracking-wider text-gray-500">
                   {kpi.label}
                 </p>
-                <p className="mt-1.5 text-2xl font-bold text-[#111827]">{kpi.value}</p>
+                <p className="mt-1.5 truncate text-2xl font-bold text-[#111827]">{kpi.value}</p>
               </div>
               <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${kpi.iconClass}`}>
                 <kpi.icon className="h-5 w-5" />
@@ -161,8 +213,8 @@ export default function ParcelaView() {
         <InformacionAgroecologicaCard mode="view" values={parcela} />
         <UbicacionCard mode="view" values={parcela} />
         <PoligonoCard mode="view" values={parcela} />
-        <FotografiaCard mode="view" />
-        <DocumentoCard mode="view" />
+        <FotografiaCard mode="view" fotos={fotos} />
+        <DocumentoCard mode="view" documentos={documentos} />
       </div>
 
       <div className="mt-6">
@@ -179,7 +231,7 @@ export default function ParcelaView() {
 
           <ol className="relative space-y-6">
             <span className="absolute bottom-4 left-[19px] top-4 w-px bg-gray-200" aria-hidden="true" />
-            {parcelaHistorialMock.map((item) => {
+            {historial.map((item) => {
               const Icon = historialIcons[item.tipo];
               return (
                 <li key={item.id} className="relative flex gap-4">
@@ -199,6 +251,7 @@ export default function ParcelaView() {
           </ol>
         </Card>
       </div>
-    </div>
+      </div>
+    </ParcelaFormProvider>
   );
 }

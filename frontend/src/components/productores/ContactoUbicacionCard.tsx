@@ -28,7 +28,7 @@ const distritoOptions = [
 
 export function ContactoUbicacionCard({ mode, values }: ContactoUbicacionCardProps) {
   const editable = mode !== "view";
-  const { data, updateData } = useProductorForm();
+  const { data, updateData, errors, clearFieldError } = useProductorForm();
 
   const display = (field: keyof Productor) => {
     if (mode === "view") return values?.[field] ?? "";
@@ -64,42 +64,54 @@ export function ContactoUbicacionCard({ mode, values }: ContactoUbicacionCardPro
           />
         </Field>
 
-        <Field label="Comunidad / Anexo" mode={mode} value={values?.comunidad}>
+        <Field label="Comunidad / Anexo" mode={mode} value={values?.comunidad} required error={errors?.comunidad}>
           <Input
             type="text"
             placeholder="Ej. Collpaccasa"
             value={display("comunidad") as string}
-            onChange={(e) => updateData({ comunidad: e.target.value })}
+            onChange={(e) => {
+              clearFieldError("comunidad");
+              updateData({ comunidad: e.target.value });
+            }}
             disabled={!editable}
           />
         </Field>
 
-        <Field label="Departamento" mode={mode} value={values?.departamento}>
+        <Field label="Departamento" mode={mode} value={values?.departamento} required error={errors?.departamento}>
           <Select
             options={departamentoOptions}
             placeholder="Seleccione"
             value={display("departamento") as string}
-            onChange={(val) => updateData({ departamento: val })}
+            onChange={(val) => {
+              clearFieldError("departamento");
+              updateData({ departamento: val });
+            }}
             disabled={!editable}
           />
         </Field>
 
-        <Field label="Provincia" mode={mode} value={values?.provincia}>
+        <Field label="Provincia" mode={mode} value={values?.provincia} required error={errors?.provincia}>
           <Select
             options={provinciaOptions}
             placeholder="Seleccione"
             value={display("provincia") as string}
-            onChange={(val) => updateData({ provincia: val })}
+            onChange={(val) => {
+              clearFieldError("provincia");
+              updateData({ provincia: val });
+            }}
             disabled={!editable}
           />
         </Field>
 
-        <Field label="Distrito" mode={mode} value={values?.distrito}>
+        <Field label="Distrito" mode={mode} value={values?.distrito} required error={errors?.distrito}>
           <Select
             options={distritoOptions}
             placeholder="Seleccione"
             value={display("distrito") as string}
-            onChange={(val) => updateData({ distrito: val })}
+            onChange={(val) => {
+              clearFieldError("distrito");
+              updateData({ distrito: val });
+            }}
             disabled={!editable}
           />
         </Field>

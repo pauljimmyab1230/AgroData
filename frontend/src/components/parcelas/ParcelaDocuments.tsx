@@ -12,8 +12,8 @@ import {
   UploadCloud,
 } from "lucide-react";
 import { Badge, Button } from "../ui";
-import { parcelaDocumentosMock } from "../../pages/parcelas/parcelaMock";
 import type { FormMode } from "../shared/formControls";
+import type { ParcelaDocumento } from "../../services/parcelas";
 
 type DocType = {
   id: string;
@@ -30,17 +30,26 @@ const tiposDocumento: DocType[] = [
   { id: "Otros", label: "Otros Documentos", icon: FolderOpen, description: "Documentación adicional de la parcela" },
 ];
 
+const formatBytes = (bytes: number) => {
+  if (!bytes) return "—";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
 interface ParcelaDocumentsProps {
   mode: FormMode;
+  documentos?: ParcelaDocumento[];
+  onDelete?: (documentoId: string) => void;
 }
 
-export function ParcelaDocuments({ mode }: ParcelaDocumentsProps) {
+export function ParcelaDocuments({ mode, documentos = [], onDelete }: ParcelaDocumentsProps) {
   const readOnly = mode === "view";
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {tiposDocumento.map((tipo) => {
-        const documento = parcelaDocumentosMock.find((doc) => doc.tipo === tipo.id);
+        const documento = documentos.find((doc) => doc.tipo === tipo.id);
         const Icon = tipo.icon;
 
         return (
@@ -62,13 +71,13 @@ export function ParcelaDocuments({ mode }: ParcelaDocumentsProps) {
                     <FileText size={16} />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-[#111827]">{documento.nombre}</p>
+                    <p className="truncate text-sm font-medium text-[#111827]">{documento.nombreArchivo}</p>
                     <p className="mt-0.5 text-xs text-gray-500">
-                      {documento.tamano} · {documento.fecha}
+                      {formatBytes(documento.tamanoBytes)} · {documento.fecha}
                     </p>
                   </div>
                   <Badge
-                    variant={documento.estado === "Verificado" ? "green" : "yellow"}
+                    variant={documento.estado === "VERIFICADO" ? "green" : "yellow"}
                     className="shrink-0"
                   >
                     {documento.estado}
@@ -81,9 +90,10 @@ export function ParcelaDocuments({ mode }: ParcelaDocumentsProps) {
                   <Button variant="ghost" size="sm" iconLeft={<Download className="h-3.5 w-3.5" />}>
                     Descargar
                   </Button>
-                  {!readOnly && (
+                  {!readOnly && onDelete && (
                     <button
                       type="button"
+                      onClick={() => onDelete(documento.id)}
                       className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
                     >
                       <Trash2 className="h-3.5 w-3.5" />

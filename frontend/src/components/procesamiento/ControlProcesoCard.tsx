@@ -1,4 +1,4 @@
-import { Scale, TrendingDown, Clock, ArrowDownRight, ArrowUpRight, Timer } from "lucide-react";
+import { Scale, TrendingDown, ArrowDownRight, ArrowUpRight, Timer } from "lucide-react";
 import { Input } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import { formatKg, formatPct, type OrdenProcesamiento } from "../../pages/procesamiento/procesamientoMock";

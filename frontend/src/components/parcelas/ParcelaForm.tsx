@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { ArrowRight, ChevronLeft, Save } from "lucide-react";
 import { Button } from "../ui";
 import ParcelaTabs from "./ParcelaTabs";
@@ -9,22 +9,64 @@ import { UbicacionCard } from "./UbicacionCard";
 import { PoligonoCard } from "./PoligonoCard";
 import { FotografiaCard } from "./FotografiaCard";
 import { DocumentoCard } from "./DocumentoCard";
-import type { Parcela } from "../../pages/parcelas/parcelaMock";
+import { useParcelaForm } from "../../contexts/ParcelaFormContext";
+import { createParcela, updateParcela, deleteFoto, deleteDocumento } from "../../services/parcelas";
 import type { FormMode } from "../shared/formControls";
 
 const totalTabs = 5;
 
 interface ParcelaFormProps {
   mode: Extract<FormMode, "create" | "edit">;
-  values?: Partial<Parcela>;
 }
 
-export default function ParcelaForm({ mode, values }: ParcelaFormProps) {
+export default function ParcelaForm({ mode }: ParcelaFormProps) {
+  const { id } = useParams();
+  const { data, validate, fotos, setFotos, documentos, setDocumentos } = useParcelaForm();
   const [tab, setTab] = useState(1);
+  const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
 
-  const handleSave = () => {
-    navigate(mode === "create" ? "/parcelas" : `/parcelas/${values?.id ?? 1}`);
+  const handleSave = async () => {
+    if (!validate()) {
+      setTab(1);
+      return;
+    }
+    setSaving(true);
+    try {
+      if (mode === "create") {
+        const parcela = await createParcela(data);
+        navigate(`/parcelas/${parcela.id}`);
+      } else {
+        if (!id) throw new Error("ID de parcela no encontrado");
+        const parcela = await updateParcela(id, data);
+        navigate(`/parcelas/${parcela.id}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error al guardar. Verifique los datos.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteFoto = async (fotoId: string) => {
+    if (!id) return;
+    try {
+      await deleteFoto(id, fotoId);
+      setFotos(fotos.filter((f) => f.id !== fotoId));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteDocumento = async (documentoId: string) => {
+    if (!id) return;
+    try {
+      await deleteDocumento(id, documentoId);
+      setDocumentos(documentos.filter((d) => d.id !== documentoId));
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -34,14 +76,26 @@ export default function ParcelaForm({ mode, values }: ParcelaFormProps) {
       <div className="space-y-6">
         {tab === 1 && (
           <>
-            <DatosGeneralesCard mode={mode} values={values} />
-            <InformacionAgroecologicaCard mode={mode} values={values} />
+            <DatosGeneralesCard mode={mode} />
+            <InformacionAgroecologicaCard mode={mode} />
           </>
         )}
-        {tab === 2 && <UbicacionCard mode={mode} values={values} />}
-        {tab === 3 && <PoligonoCard mode={mode} values={values} />}
-        {tab === 4 && <FotografiaCard mode={mode} />}
-        {tab === 5 && <DocumentoCard mode={mode} />}
+        {tab === 2 && <UbicacionCard mode={mode} />}
+        {tab === 3 && <PoligonoCard mode={mode} />}
+        {tab === 4 && (
+          <FotografiaCard
+            mode={mode}
+            fotos={fotos}
+            onDelete={mode === "edit" ? handleDeleteFoto : undefined}
+          />
+        )}
+        {tab === 5 && (
+          <DocumentoCard
+            mode={mode}
+            documentos={documentos}
+            onDelete={mode === "edit" ? handleDeleteDocumento : undefined}
+          />
+        )}
       </div>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm">
@@ -60,8 +114,8 @@ export default function ParcelaForm({ mode, values }: ParcelaFormProps) {
         </p>
 
         {tab === totalTabs ? (
-          <Button onClick={handleSave} iconLeft={<Save className="h-4 w-4" />}>
-            Guardar Parcela
+          <Button onClick={handleSave} disabled={saving} iconLeft={<Save className="h-4 w-4" />}>
+            {saving ? "Guardando..." : "Guardar Parcela"}
           </Button>
         ) : (
           <Button

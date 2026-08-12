@@ -10,20 +10,21 @@ type FieldProps = {
   children?: ReactNode;
   className?: string;
   required?: boolean;
+  error?: string;
 };
 
-export function Field({ label, mode, value, children, className, required }: FieldProps) {
+export function Field({ label, mode, value, children, className, required, error }: FieldProps) {
   if (mode === "view") {
     return (
       <div className={className}>
-        <p className="text-sm font-medium text-gray-500">{label}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{label}</p>
         <p className="mt-1 text-sm font-medium text-[#111827]">{value || "—"}</p>
       </div>
     );
   }
 
   return (
-    <FormField label={label} required={required} className={className}>
+    <FormField label={label} required={required} error={error} className={className}>
       {children}
     </FormField>
   );
@@ -41,9 +42,9 @@ export function CardHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 pb-5">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-forest-600/10 text-forest-600">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-forest-50 text-forest-700">
           {icon}
         </div>
         <div>
@@ -58,7 +59,8 @@ export function CardHeader({
 
 export function CardShell({ children }: { children: ReactNode }) {
   return (
-    <Card padding="lg" hover={false} className="shadow-sm">
+    <Card padding="lg" hover={false} className="relative shadow-sm">
+      <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1 bg-forest-600" />
       {children}
     </Card>
   );

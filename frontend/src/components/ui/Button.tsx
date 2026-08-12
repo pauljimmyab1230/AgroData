@@ -22,12 +22,10 @@ type ButtonAsLink = ButtonBaseProps & Omit<LinkProps, keyof ButtonBaseProps> & {
 type ButtonProps = ButtonAsButton | ButtonAsLink;
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary:
-    "bg-gradient-to-r from-forest-600 to-forest-400 text-white shadow-md shadow-forest-600/25 hover:shadow-lg hover:shadow-forest-600/30 active:scale-[0.98]",
-  secondary:
-    "border-2 border-forest-600 text-forest-700 hover:bg-forest-600/5 active:scale-[0.98]",
+  primary: "bg-forest-600 text-white hover:bg-forest-700 active:bg-forest-800",
+  secondary: "border border-forest-600 text-forest-700 hover:bg-forest-50 active:bg-forest-100",
   ghost: "text-[#111827] hover:bg-gray-100",
-  danger: "bg-red-600 text-white shadow-md shadow-red-600/25 hover:bg-red-700 active:scale-[0.98]",
+  danger: "bg-red-600 text-white hover:bg-red-700 active:bg-red-800",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {

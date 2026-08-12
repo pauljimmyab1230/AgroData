@@ -25,8 +25,8 @@ export default function Card({
   return (
     <div
       onClick={onClick}
-      className={`overflow-hidden rounded-2xl border border-gray-200 bg-white transition-all duration-300 ${
-        hover ? "hover:-translate-y-1 hover:shadow-xl hover:shadow-gray-200/50" : ""
+      className={`overflow-hidden rounded-2xl border border-gray-200 bg-white transition-shadow ${
+        hover ? "hover:shadow-lg hover:shadow-gray-200/60" : ""
       } ${onClick ? "cursor-pointer" : ""} ${className}`}
     >
       <div className={paddingStyles[padding]}>{children}</div>

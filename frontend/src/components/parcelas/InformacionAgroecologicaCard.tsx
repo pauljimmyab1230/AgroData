@@ -1,6 +1,7 @@
 import { Leaf } from "lucide-react";
 import { Select, Textarea } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
+import { useParcelaForm } from "../../contexts/ParcelaFormContext";
 import {
   disponibilidadAguaOpciones,
   fuenteAguaOpciones,
@@ -9,8 +10,9 @@ import {
   texturaOpciones,
   tipoSueloOpciones,
   zonaAgroecologicaOpciones,
-  type Parcela,
-} from "../../pages/parcelas/parcelaMock";
+  toOptions,
+} from "../../constants/parcelaOpciones";
+import type { Parcela } from "../../services/parcelas";
 
 type InformacionAgroecologicaCardProps = {
   mode: FormMode;
@@ -19,7 +21,13 @@ type InformacionAgroecologicaCardProps = {
 
 export function InformacionAgroecologicaCard({ mode, values }: InformacionAgroecologicaCardProps) {
   const editable = mode !== "view";
-  const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: item }));
+  const { data, updateData } = useParcelaForm();
+
+  const str = (val: unknown): string => (typeof val === "string" ? val : "");
+  const display = (field: keyof Parcela) => {
+    if (mode === "view") return str(values?.[field]);
+    return str(data?.[field]);
+  };
 
   return (
     <CardShell>
@@ -34,7 +42,9 @@ export function InformacionAgroecologicaCard({ mode, values }: InformacionAgroec
           <Select
             options={toOptions(tipoSueloOpciones)}
             placeholder="Seleccione"
-            defaultValue={editable ? values?.tipoSuelo : undefined}
+            value={display("tipoSuelo")}
+            onChange={(val) => updateData({ tipoSuelo: val })}
+            disabled={!editable}
           />
         </Field>
 
@@ -42,7 +52,9 @@ export function InformacionAgroecologicaCard({ mode, values }: InformacionAgroec
           <Select
             options={toOptions(texturaOpciones)}
             placeholder="Seleccione"
-            defaultValue={editable ? values?.textura : undefined}
+            value={display("textura")}
+            onChange={(val) => updateData({ textura: val })}
+            disabled={!editable}
           />
         </Field>
 
@@ -50,7 +62,9 @@ export function InformacionAgroecologicaCard({ mode, values }: InformacionAgroec
           <Select
             options={toOptions(pendienteOpciones)}
             placeholder="Seleccione"
-            defaultValue={editable ? values?.pendiente : undefined}
+            value={display("pendiente")}
+            onChange={(val) => updateData({ pendiente: val })}
+            disabled={!editable}
           />
         </Field>
 
@@ -58,7 +72,9 @@ export function InformacionAgroecologicaCard({ mode, values }: InformacionAgroec
           <Select
             options={toOptions(fuenteAguaOpciones)}
             placeholder="Seleccione"
-            defaultValue={editable ? values?.fuenteAgua : undefined}
+            value={display("fuenteAgua")}
+            onChange={(val) => updateData({ fuenteAgua: val })}
+            disabled={!editable}
           />
         </Field>
 
@@ -66,7 +82,9 @@ export function InformacionAgroecologicaCard({ mode, values }: InformacionAgroec
           <Select
             options={toOptions(sistemaRiegoOpciones)}
             placeholder="Seleccione"
-            defaultValue={editable ? values?.sistemaRiego : undefined}
+            value={display("sistemaRiego")}
+            onChange={(val) => updateData({ sistemaRiego: val })}
+            disabled={!editable}
           />
         </Field>
 
@@ -74,7 +92,9 @@ export function InformacionAgroecologicaCard({ mode, values }: InformacionAgroec
           <Select
             options={toOptions(zonaAgroecologicaOpciones)}
             placeholder="Seleccione"
-            defaultValue={editable ? values?.zonaAgroecologica : undefined}
+            value={display("zonaAgroecologica")}
+            onChange={(val) => updateData({ zonaAgroecologica: val })}
+            disabled={!editable}
           />
         </Field>
 
@@ -82,7 +102,9 @@ export function InformacionAgroecologicaCard({ mode, values }: InformacionAgroec
           <Select
             options={toOptions(disponibilidadAguaOpciones)}
             placeholder="Seleccione"
-            defaultValue={editable ? values?.disponibilidadAgua : undefined}
+            value={display("disponibilidadAgua")}
+            onChange={(val) => updateData({ disponibilidadAgua: val })}
+            disabled={!editable}
           />
         </Field>
 
@@ -91,7 +113,9 @@ export function InformacionAgroecologicaCard({ mode, values }: InformacionAgroec
             <Textarea
               rows={3}
               placeholder="Ej. Suelo con buena capacidad de drenaje, apto para quinua orgánica."
-              defaultValue={values?.observaciones}
+              value={display("observaciones")}
+              onChange={(e) => updateData({ observaciones: e.target.value })}
+              disabled={!editable}
             />
           </Field>
         </div>

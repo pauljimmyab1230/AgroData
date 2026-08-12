@@ -1,23 +1,58 @@
-import { MapPin, Plus, Pencil, Trash2, Ruler, ShieldCheck, Sprout, Layers } from "lucide-react";
-import { Badge, Button, Card, DataTable } from "../ui";
-import { parcelasMock, type Parcela } from "../../pages/productores/productorMock";
+import { useState, useEffect } from "react";
+import { MapPin, Plus, Pencil, Trash2, Ruler, ShieldCheck, Sprout, Layers, Loader2 } from "lucide-react";
+import { Badge, Button, Card, ConfirmDialog, DataTable } from "../ui";
 import { CardHeader, CardShell, type FormMode } from "../shared/formControls";
+import { useProductorForm } from "../../contexts/ProductorFormContext";
+import {
+  fetchParcelas,
+  createParcela,
+  updateParcela,
+  deleteParcela,
+  type Parcela,
+} from "../../services/productores";
+import { ParcelaModal, type ParcelaFormData } from "./ParcelaModal";
 
 type ParcelaTableProps = {
   mode: FormMode;
+  productorId?: string;
 };
 
-export function ParcelaTable({ mode }: ParcelaTableProps) {
-  const readOnly = mode === "view";
-  const data = mode === "create" ? [] : parcelasMock;
+const certificacionLabel: Record<string, string> = {
+  ORGANICA: "Orgánica",
+  EN_TRANSICION: "En Transición",
+  CONVENCIONAL: "Convencional",
+};
 
-  const totalParcelas = data.length;
-  const areaTotal = data.reduce((sum, p) => sum + parseFloat(p.area), 0);
-  const areaCertificada = data
-    .filter((p) => p.certificacion === "Orgánica")
+const areaUnidadLabel: Record<string, string> = {
+  ha: "ha",
+  m2: "m²",
+};
+
+export function ParcelaTable({ mode, productorId }: ParcelaTableProps) {
+  const readOnly = mode === "view";
+  const { parcelas, setParcelas } = useProductorForm();
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<Parcela | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Parcela | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState<boolean>(mode !== "create" && !!productorId);
+
+  useEffect(() => {
+    if (mode === "create" || !productorId) return;
+    fetchParcelas(productorId)
+      .then(setParcelas)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [mode, productorId, setParcelas]);
+
+  const totalParcelas = parcelas.length;
+  const areaTotal = parcelas.reduce((sum, p) => sum + parseFloat(p.area), 0);
+  const areaCertificada = parcelas
+    .filter((p) => p.certificacion === "ORGANICA")
     .reduce((sum, p) => sum + parseFloat(p.area), 0);
   const cultivosActivos = new Set(
-    data.filter((p) => p.estado === "Activa").map((p) => p.cultivo),
+    parcelas.filter((p) => p.estado === "ACTIVA").map((p) => p.cultivo),
   ).size;
 
   const kpis = [
@@ -47,27 +82,77 @@ export function ParcelaTable({ mode }: ParcelaTableProps) {
     },
   ];
 
+  const handleSave = async (form: ParcelaFormData) => {
+    setSaving(true);
+    try {
+      if (editTarget) {
+        if (mode === "create") {
+          setParcelas(parcelas.map((p) => (p.id === editTarget.id ? { ...editTarget, ...form } : p)));
+        } else if (productorId) {
+          const updated = await updateParcela(productorId, editTarget.id, form);
+          setParcelas(parcelas.map((p) => (p.id === updated.id ? updated : p)));
+        }
+      } else {
+        if (mode === "create") {
+          setParcelas([...parcelas, { id: `temp-${Date.now()}`, ...form }]);
+        } else if (productorId) {
+          const created = await createParcela(productorId, form);
+          setParcelas([...parcelas, created]);
+        }
+      }
+      setModalOpen(false);
+      setEditTarget(null);
+    } catch (err) {
+      console.error(err);
+      alert("Error al guardar la parcela.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      if (mode === "create") {
+        setParcelas(parcelas.filter((p) => p.id !== deleteTarget.id));
+      } else if (productorId) {
+        await deleteParcela(productorId, deleteTarget.id);
+        setParcelas(parcelas.filter((p) => p.id !== deleteTarget.id));
+      }
+      setDeleteTarget(null);
+    } catch (err) {
+      console.error(err);
+      alert("Error al eliminar la parcela.");
+    }
+  };
+
   const columns = [
     { key: "codigo", label: "Código", className: "font-medium text-forest-700" },
     { key: "nombre", label: "Nombre Parcela" },
     { key: "cultivo", label: "Cultivo" },
-    { key: "area", label: "Área" },
+    {
+      key: "area",
+      label: "Área",
+      render: (parcela: Parcela) => `${parcela.area} ${areaUnidadLabel[parcela.areaUnidad] ?? parcela.areaUnidad}`,
+    },
     { key: "ubicacion", label: "Ubicación" },
     {
       key: "certificacion",
       label: "Certificación",
       render: (parcela: Parcela) =>
-        parcela.certificacion === "Orgánica" ? (
-          <Badge variant="green">{parcela.certificacion}</Badge>
+        parcela.certificacion === "ORGANICA" ? (
+          <Badge variant="green">{certificacionLabel[parcela.certificacion] ?? parcela.certificacion}</Badge>
+        ) : parcela.certificacion === "EN_TRANSICION" ? (
+          <Badge variant="yellow">{certificacionLabel[parcela.certificacion] ?? parcela.certificacion}</Badge>
         ) : (
-          <Badge variant="yellow">{parcela.certificacion}</Badge>
+          <Badge variant="gray">{certificacionLabel[parcela.certificacion] ?? parcela.certificacion}</Badge>
         ),
     },
     {
       key: "estado",
       label: "Estado",
       render: (parcela: Parcela) =>
-        parcela.estado === "Activa" ? (
+        parcela.estado === "ACTIVA" ? (
           <Badge variant="forest">Activa</Badge>
         ) : (
           <Badge variant="gray">Inactiva</Badge>
@@ -84,6 +169,10 @@ export function ParcelaTable({ mode }: ParcelaTableProps) {
                 <button
                   type="button"
                   aria-label={`Editar ${parcela.nombre}`}
+                  onClick={() => {
+                    setEditTarget(parcela);
+                    setModalOpen(true);
+                  }}
                   className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-forest-600/10 hover:text-forest-700"
                 >
                   <Pencil className="h-4 w-4" />
@@ -91,6 +180,7 @@ export function ParcelaTable({ mode }: ParcelaTableProps) {
                 <button
                   type="button"
                   aria-label={`Eliminar ${parcela.nombre}`}
+                  onClick={() => setDeleteTarget(parcela)}
                   className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -110,7 +200,15 @@ export function ParcelaTable({ mode }: ParcelaTableProps) {
         description="Parcelas asociadas al productor con datos de cultivo y certificación"
         actions={
           !readOnly ? (
-            <Button variant="secondary" size="sm" iconLeft={<Plus className="h-4 w-4" />}>
+            <Button
+              variant="secondary"
+              size="sm"
+              iconLeft={<Plus className="h-4 w-4" />}
+              onClick={() => {
+                setEditTarget(null);
+                setModalOpen(true);
+              }}
+            >
               Agregar Parcela
             </Button>
           ) : undefined
@@ -135,12 +233,39 @@ export function ParcelaTable({ mode }: ParcelaTableProps) {
         ))}
       </div>
 
-      <DataTable
-        columns={columns}
-        data={data}
-        keyField="id"
-        emptyTitle="Sin parcelas registradas"
-        emptyDescription="Agrega las parcelas del productor para el proceso de certificación."
+      {loading ? (
+        <div className="flex items-center justify-center py-10">
+          <Loader2 className="h-6 w-6 animate-spin text-forest-600" />
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={parcelas}
+          keyField="id"
+          emptyTitle="Sin parcelas registradas"
+          emptyDescription="Agrega las parcelas del productor para el proceso de certificación."
+        />
+      )}
+
+      <ParcelaModal
+        open={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          setEditTarget(null);
+        }}
+        onSave={handleSave}
+        parcela={editTarget}
+        saving={saving}
+      />
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        title="Eliminar Parcela"
+        message="¿Estás seguro de eliminar esta parcela? Esta acción no se puede deshacer."
+        confirmText="Eliminar"
+        variant="danger"
       />
     </CardShell>
   );

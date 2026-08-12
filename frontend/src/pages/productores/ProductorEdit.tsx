@@ -21,12 +21,21 @@ import { ProductorFormProvider, useProductorForm } from "../../contexts/Producto
 const totalPasos = 4;
 
 function ProductorEditForm({ id }: { id: string }) {
-  const { data } = useProductorForm();
+  const { data, validateStep } = useProductorForm();
   const navigate = useNavigate();
   const [pasoActual, setPasoActual] = useState(1);
   const [saving, setSaving] = useState(false);
 
+  const handleNext = () => {
+    if (!validateStep(pasoActual)) return;
+    setPasoActual((paso) => Math.min(totalPasos, paso + 1));
+  };
+
   const handleSave = async () => {
+    if (!validateStep(1)) {
+      setPasoActual(1);
+      return;
+    }
     setSaving(true);
     try {
       await updateProductor(id, data);
@@ -78,9 +87,9 @@ function ProductorEditForm({ id }: { id: string }) {
           </>
         )}
 
-        {pasoActual === 2 && <FamiliarTable mode="edit" />}
+        {pasoActual === 2 && <FamiliarTable mode="edit" productorId={id} />}
 
-        {pasoActual === 3 && <ParcelaTable mode="edit" />}
+        {pasoActual === 3 && <ParcelaTable mode="edit" productorId={id} />}
 
         {pasoActual === 4 && <DocumentoUploader mode="edit" />}
       </div>
@@ -110,7 +119,7 @@ function ProductorEditForm({ id }: { id: string }) {
           </Button>
         ) : (
           <Button
-            onClick={() => setPasoActual((paso) => Math.min(totalPasos, paso + 1))}
+            onClick={handleNext}
             iconRight={<ArrowRight className="h-4 w-4" />}
           >
             Siguiente

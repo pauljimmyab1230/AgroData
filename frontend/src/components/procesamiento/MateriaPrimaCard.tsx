@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Package, UserRound, MapPin, Wheat, Scale, Plus, X } from "lucide-react";
+import { Package, UserRound, MapPin, Plus, X } from "lucide-react";
 import { Badge, Button, DataTable, Select } from "../ui";
 import { CardHeader, CardShell, type FormMode } from "../shared/formControls";
 import {

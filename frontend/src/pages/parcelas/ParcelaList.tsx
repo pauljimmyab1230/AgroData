@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Pencil, Eye, Trash2, MapPin, Ruler, Users, BadgeCheck, X } from "lucide-react";
 import {
@@ -8,25 +8,23 @@ import {
   Card,
   ConfirmDialog,
   DataTable,
+  LoadingSpinner,
   SearchInput,
   SectionHeader,
   Select,
 } from "../../components/ui";
+import { fetchParcelas, deleteParcela, type Parcela } from "../../services/parcelas";
 import {
-  parcelasMock,
   comunidadesOpciones,
   cultivosOpciones,
   estadosOpciones,
-  productoresOpciones,
-  type Parcela,
-} from "./parcelaMock";
+  toOptions,
+} from "../../constants/parcelaOpciones";
 
 const pageSize = 5;
 
 const estadoBadge = (estado: string) =>
-  estado === "Activa" ? <Badge variant="forest">Activa</Badge> : <Badge variant="gray">Inactiva</Badge>;
-
-const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: item }));
+  estado === "ACTIVA" ? <Badge variant="forest">Activa</Badge> : <Badge variant="gray">Inactiva</Badge>;
 
 function FilterSelect({
   label,
@@ -49,15 +47,32 @@ function FilterSelect({
   );
 }
 
+const unique = (items: string[]) => Array.from(new Set(items.filter(Boolean)));
+
 export default function ParcelaList() {
   const navigate = useNavigate();
+  const [parcelas, setParcelas] = useState<Parcela[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filtroComunidad, setFiltroComunidad] = useState("");
   const [filtroCultivo, setFiltroCultivo] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
   const [filtroProductor, setFiltroProductor] = useState("");
   const [page, setPage] = useState(1);
-  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchParcelas()
+      .then((res) => setParcelas(res.data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const comunidadesDisponibles = unique(parcelas.map((p) => p.comunidad));
+  const cultivosDisponibles = unique(parcelas.map((p) => p.cultivo));
+  const productorOptions = Array.from(
+    new Map(parcelas.map((p) => [p.productorId, p.productorNombre])).entries(),
+  ).map(([value, label]) => ({ value, label }));
 
   const hasFilters =
     Boolean(search) ||
@@ -75,15 +90,15 @@ export default function ParcelaList() {
     setPage(1);
   };
 
-  const filtradas = parcelasMock.filter((parcela) => {
+  const filtradas = parcelas.filter((parcela) => {
     const texto =
-      `${parcela.codigo} ${parcela.nombre} ${parcela.productor} ${parcela.comunidad} ${parcela.cultivoPrincipal}`.toLowerCase();
+      `${parcela.codigo} ${parcela.nombre} ${parcela.productorNombre} ${parcela.comunidad} ${parcela.cultivo}`.toLowerCase();
     return (
       texto.includes(search.toLowerCase()) &&
       (!filtroComunidad || parcela.comunidad === filtroComunidad) &&
-      (!filtroCultivo || parcela.cultivoPrincipal === filtroCultivo) &&
+      (!filtroCultivo || parcela.cultivo === filtroCultivo) &&
       (!filtroEstado || parcela.estado === filtroEstado) &&
-      (!filtroProductor || parcela.productor === filtroProductor)
+      (!filtroProductor || parcela.productorId === filtroProductor)
     );
   });
 
@@ -91,23 +106,27 @@ export default function ParcelaList() {
   const currentPage = Math.min(page, totalPages);
   const visibles = filtradas.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
+  const areaTotal = parcelas
+    .reduce((acc, p) => acc + (Number.isNaN(Number(p.area)) ? 0 : Number(p.area)), 0)
+    .toFixed(2);
+
   const kpis = [
-    { label: "Total Parcelas", value: String(parcelasMock.length), icon: MapPin, iconClass: "bg-forest-600/10 text-forest-600" },
+    { label: "Total Parcelas", value: String(parcelas.length), icon: MapPin, iconClass: "bg-forest-600/10 text-forest-600" },
     {
       label: "Área Total",
-      value: `${parcelasMock.reduce((acc, p) => acc + parseFloat(p.areaTotal), 0).toFixed(2)} ha`,
+      value: `${areaTotal} ha`,
       icon: Ruler,
       iconClass: "bg-sun-100 text-sun-700",
     },
     {
       label: "Productores con Parcelas",
-      value: String(new Set(parcelasMock.map((p) => p.productor)).size),
+      value: String(new Set(parcelas.map((p) => p.productorId)).size),
       icon: Users,
       iconClass: "bg-forest-600/10 text-forest-600",
     },
     {
       label: "Parcelas Certificadas",
-      value: String(parcelasMock.filter((p) => p.certificacion === "Orgánica").length),
+      value: String(parcelas.filter((p) => p.certificacion === "ORGANICA").length),
       icon: BadgeCheck,
       iconClass: "bg-sun-100 text-sun-700",
     },
@@ -127,10 +146,14 @@ export default function ParcelaList() {
         </div>
       ),
     },
-    { key: "productor", label: "Productor" },
+    { key: "productorNombre", label: "Productor" },
     { key: "comunidad", label: "Comunidad" },
-    { key: "areaTotal", label: "Área" },
-    { key: "cultivoPrincipal", label: "Cultivo Principal" },
+    {
+      key: "area",
+      label: "Área",
+      render: (parcela: Parcela) => `${parcela.area || "0"} ${parcela.areaUnidad || "ha"}`,
+    },
+    { key: "cultivo", label: "Cultivo Principal" },
     { key: "estado", label: "Estado", render: (parcela: Parcela) => estadoBadge(parcela.estado) },
     {
       key: "acciones",
@@ -166,6 +189,14 @@ export default function ParcelaList() {
       ),
     },
   ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -214,7 +245,7 @@ export default function ParcelaList() {
         <FilterSelect
           label="Comunidad"
           placeholder="Todas"
-          options={toOptions(comunidadesOpciones)}
+          options={toOptions([...new Set([...comunidadesOpciones, ...comunidadesDisponibles])])}
           value={filtroComunidad}
           onChange={(val) => {
             setFiltroComunidad(val);
@@ -224,7 +255,7 @@ export default function ParcelaList() {
         <FilterSelect
           label="Cultivo"
           placeholder="Todos"
-          options={toOptions(cultivosOpciones)}
+          options={toOptions([...new Set([...cultivosOpciones, ...cultivosDisponibles])])}
           value={filtroCultivo}
           onChange={(val) => {
             setFiltroCultivo(val);
@@ -234,7 +265,7 @@ export default function ParcelaList() {
         <FilterSelect
           label="Estado"
           placeholder="Todos"
-          options={toOptions(estadosOpciones)}
+          options={estadosOpciones}
           value={filtroEstado}
           onChange={(val) => {
             setFiltroEstado(val);
@@ -244,7 +275,7 @@ export default function ParcelaList() {
         <FilterSelect
           label="Productor"
           placeholder="Todos"
-          options={toOptions(productoresOpciones)}
+          options={productorOptions}
           value={filtroProductor}
           onChange={(val) => {
             setFiltroProductor(val);
@@ -275,7 +306,16 @@ export default function ParcelaList() {
       <ConfirmDialog
         open={deleteId !== null}
         onClose={() => setDeleteId(null)}
-        onConfirm={() => setDeleteId(null)}
+        onConfirm={async () => {
+          if (!deleteId) return;
+          try {
+            await deleteParcela(deleteId);
+            setParcelas((prev) => prev.filter((p) => p.id !== deleteId));
+            setDeleteId(null);
+          } catch (err) {
+            console.error(err);
+          }
+        }}
         title="Eliminar Parcela"
         message="¿Estás seguro de eliminar esta parcela? Esta acción no se puede deshacer."
         confirmText="Eliminar"

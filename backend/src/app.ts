@@ -7,6 +7,7 @@ import { errorHandler } from './middleware/error.middleware';
 import authRoutes from './routes/auth.routes';
 import usuariosRoutes from './routes/usuarios.routes';
 import productoresRoutes from './routes/productores.routes';
+import parcelasRoutes from './routes/parcelas.routes';
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/productores', productoresRoutes);
+app.use('/api/parcelas', parcelasRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({

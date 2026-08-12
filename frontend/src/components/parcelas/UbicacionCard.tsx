@@ -1,12 +1,11 @@
-import { Crosshair, Globe, Locate, MapPin } from "lucide-react";
-import { Button, Input, Select } from "../ui";
+import { Crosshair, Globe, MapPin } from "lucide-react";
+import { Input, Select } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
+import { useParcelaForm } from "../../contexts/ParcelaFormContext";
 import ParcelaMap from "./ParcelaMap";
 import { ParcelaCoordinates } from "./ParcelaCoordinates";
-import {
-  comunidadesOpciones,
-  type Parcela,
-} from "../../pages/parcelas/parcelaMock";
+import { comunidadesOpciones, toOptions } from "../../constants/parcelaOpciones";
+import type { Parcela } from "../../services/parcelas";
 
 type UbicacionCardProps = {
   mode: FormMode;
@@ -32,7 +31,13 @@ const distritoOptions = [
 
 export function UbicacionCard({ mode, values }: UbicacionCardProps) {
   const editable = mode !== "view";
-  const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: item }));
+  const { data, updateData } = useParcelaForm();
+
+  const str = (val: unknown): string => (typeof val === "string" ? val : "");
+  const display = (field: keyof Parcela) => {
+    if (mode === "view") return str(values?.[field]);
+    return str(data?.[field]);
+  };
 
   return (
     <div className="space-y-6">
@@ -45,14 +50,22 @@ export function UbicacionCard({ mode, values }: UbicacionCardProps) {
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <Field label="Ubigeo" mode={mode} value={values?.ubigeo}>
-            <Input type="text" placeholder="Ej. 050903" defaultValue={values?.ubigeo} />
+            <Input
+              type="text"
+              placeholder="Ej. 050903"
+              value={display("ubigeo")}
+              onChange={(e) => updateData({ ubigeo: e.target.value })}
+              disabled={!editable}
+            />
           </Field>
 
           <Field label="Departamento" mode={mode} value={values?.departamento}>
             <Select
               options={departamentoOptions}
               placeholder="Seleccione"
-              defaultValue={editable ? values?.departamento : undefined}
+              value={display("departamento")}
+              onChange={(val) => updateData({ departamento: val })}
+              disabled={!editable}
             />
           </Field>
 
@@ -60,7 +73,9 @@ export function UbicacionCard({ mode, values }: UbicacionCardProps) {
             <Select
               options={provinciaOptions}
               placeholder="Seleccione"
-              defaultValue={editable ? values?.provincia : undefined}
+              value={display("provincia")}
+              onChange={(val) => updateData({ provincia: val })}
+              disabled={!editable}
             />
           </Field>
 
@@ -68,7 +83,9 @@ export function UbicacionCard({ mode, values }: UbicacionCardProps) {
             <Select
               options={distritoOptions}
               placeholder="Seleccione"
-              defaultValue={editable ? values?.distrito : undefined}
+              value={display("distrito")}
+              onChange={(val) => updateData({ distrito: val })}
+              disabled={!editable}
             />
           </Field>
 
@@ -76,12 +93,20 @@ export function UbicacionCard({ mode, values }: UbicacionCardProps) {
             <Select
               options={toOptions(comunidadesOpciones)}
               placeholder="Seleccione"
-              defaultValue={editable ? values?.comunidad : undefined}
+              value={display("comunidad")}
+              onChange={(val) => updateData({ comunidad: val })}
+              disabled={!editable}
             />
           </Field>
 
           <Field label="Centro Poblado" mode={mode} value={values?.centroPoblado}>
-            <Input type="text" placeholder="Ej. Collpaccasa" defaultValue={values?.centroPoblado} />
+            <Input
+              type="text"
+              placeholder="Ej. Collpaccasa"
+              value={display("centroPoblado")}
+              onChange={(e) => updateData({ centroPoblado: e.target.value })}
+              disabled={!editable}
+            />
           </Field>
         </div>
       </CardShell>
@@ -94,9 +119,10 @@ export function UbicacionCard({ mode, values }: UbicacionCardProps) {
         />
         <ParcelaCoordinates
           mode={mode}
-          latitud={values?.latitud}
-          longitud={values?.longitud}
-          precisionGps={values?.precisionGps}
+          latitud={display("latitud")}
+          longitud={display("longitud")}
+          precisionGps={display("precisionGps")}
+          onChange={(field, value) => updateData({ [field]: value })}
         />
       </CardShell>
 
@@ -108,16 +134,22 @@ export function UbicacionCard({ mode, values }: UbicacionCardProps) {
         />
 
         <ParcelaMap
-          lat={values?.latitud}
-          lng={values?.longitud}
-          label={values?.comunidad}
+          lat={display("latitud")}
+          lng={display("longitud")}
+          label={display("comunidad")}
           className="h-72"
+          onLocate={
+            editable
+              ? (lat, lng) => {
+                  updateData({
+                    latitud: lat.toFixed(6),
+                    longitud: lng.toFixed(6),
+                    precisionGps: "± 5 m",
+                  });
+                }
+              : undefined
+          }
         />
-        {mode !== "view" && (
-          <Button variant="secondary" className="mt-4" iconLeft={<Locate className="h-4 w-4" />}>
-            Obtener Ubicación
-          </Button>
-        )}
       </CardShell>
     </div>
   );

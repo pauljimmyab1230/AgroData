@@ -33,7 +33,7 @@ const idiomaSecundarioOptions = [
 
 export function SocioculturalCard({ mode, values }: SocioculturalCardProps) {
   const editable = mode !== "view";
-  const { data, updateData } = useProductorForm();
+  const { data, updateData, errors, clearFieldError } = useProductorForm();
 
   const display = (field: keyof Productor) => {
     if (mode === "view") return values?.[field] ?? "";
@@ -49,22 +49,28 @@ export function SocioculturalCard({ mode, values }: SocioculturalCardProps) {
       />
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <Field label="Nivel Educativo" mode={mode} value={values?.nivelEducativo}>
+        <Field label="Nivel Educativo" mode={mode} value={values?.nivelEducativo} required error={errors?.nivelEducativo}>
           <Select
             options={nivelEducativoOptions}
             placeholder="Seleccione"
             value={display("nivelEducativo") as string}
-            onChange={(val) => updateData({ nivelEducativo: val as Productor["nivelEducativo"] })}
+            onChange={(val) => {
+              clearFieldError("nivelEducativo");
+              updateData({ nivelEducativo: val as Productor["nivelEducativo"] });
+            }}
             disabled={!editable}
           />
         </Field>
 
-        <Field label="Idioma Principal" mode={mode} value={values?.idiomaPrincipal}>
+        <Field label="Idioma Principal" mode={mode} value={values?.idiomaPrincipal} required error={errors?.idiomaPrincipal}>
           <Select
             options={idiomaOptions}
             placeholder="Seleccione"
             value={display("idiomaPrincipal") as string}
-            onChange={(val) => updateData({ idiomaPrincipal: val as Productor["idiomaPrincipal"] })}
+            onChange={(val) => {
+              clearFieldError("idiomaPrincipal");
+              updateData({ idiomaPrincipal: val as Productor["idiomaPrincipal"] });
+            }}
             disabled={!editable}
           />
         </Field>

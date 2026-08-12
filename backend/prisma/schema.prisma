@@ -144,20 +144,78 @@ model familiares_productor {
 }
 
 model parcelas_productor {
-  id              String              @id @default(uuid()) @db.VarChar(36)
-  productor_id    String              @db.VarChar(36)
-  codigo          String              @db.VarChar(20)
-  nombre          String              @db.VarChar(200)
-  cultivo         String              @db.VarChar(100)
-  area            Decimal             @db.Decimal(10, 2)
-  area_unidad     String              @default("ha") @db.VarChar(10)
-  ubicacion       String              @db.VarChar(200)
-  certificacion   CertificacionParcela @default(CONVENCIONAL)
-  estado          EstadoParcela       @default(ACTIVA)
-  created_at      DateTime            @default(now()) @db.DateTime(3)
-  updated_at      DateTime            @updatedAt @db.DateTime(3)
+  id                  String               @id @default(uuid()) @db.VarChar(36)
+  productor_id        String               @db.VarChar(36)
+  codigo              String               @unique @db.VarChar(20)
+  nombre              String               @db.VarChar(200)
+  cultivo             String               @db.VarChar(100)
+  area                Decimal              @db.Decimal(10, 2)
+  area_certificada    Decimal?             @db.Decimal(10, 2)
+  area_unidad         String               @default("ha") @db.VarChar(10)
+  ubicacion           String?              @db.VarChar(200)
+  comunidad           String?              @db.VarChar(150)
+  sector              String?              @db.VarChar(150)
+  altitud             String?              @db.VarChar(50)
+  departamento        String?              @db.VarChar(100)
+  provincia           String?              @db.VarChar(100)
+  distrito            String?              @db.VarChar(100)
+  centro_poblado      String?              @db.VarChar(150)
+  ubigeo              String?              @db.VarChar(6)
+  latitud             String?              @db.VarChar(30)
+  longitud            String?              @db.VarChar(30)
+  precision_gps       String?              @db.VarChar(20)
+  tipo_suelo          String?              @db.VarChar(100)
+  textura             String?              @db.VarChar(50)
+  pendiente           String?              @db.VarChar(100)
+  fuente_agua         String?              @db.VarChar(100)
+  sistema_riego       String?              @db.VarChar(100)
+  zona_agroecologica  String?              @db.VarChar(100)
+  disponibilidad_agua String?              @db.VarChar(50)
+  observaciones       String?              @db.Text
+  area_calculada      String?              @db.VarChar(50)
+  perimetro           String?              @db.VarChar(50)
+  vertices            Int?
+  poligono            Json?
+  fecha_levantamiento DateTime?            @db.DateTime(3)
+  responsable         String?              @db.VarChar(150)
+  certificacion       CertificacionParcela @default(CONVENCIONAL)
+  estado              EstadoParcela        @default(ACTIVA)
+  created_at          DateTime             @default(now()) @db.DateTime(3)
+  updated_at          DateTime             @updatedAt @db.DateTime(3)
 
-  productor productores @relation(fields: [productor_id], references: [id], onDelete: Cascade)
+  productor  productores          @relation(fields: [productor_id], references: [id], onDelete: Cascade)
+  documentos parcela_documentos[]
+  fotos      parcela_fotos[]
+}
+
+model parcela_documentos {
+  id             String   @id @default(uuid()) @db.VarChar(36)
+  parcela_id     String   @db.VarChar(36)
+  tipo           String   @db.VarChar(100)
+  nombre_archivo String   @db.VarChar(255)
+  ruta_archivo   String   @db.VarChar(500)
+  tamano_bytes   Int
+  mime_type      String   @db.VarChar(100)
+  estado         String   @default("PENDIENTE") @db.VarChar(20)
+  created_at     DateTime @default(now()) @db.DateTime(3)
+  updated_at     DateTime @updatedAt @db.DateTime(3)
+
+  parcela parcelas_productor @relation(fields: [parcela_id], references: [id], onDelete: Cascade)
+}
+
+model parcela_fotos {
+  id            String    @id @default(uuid()) @db.VarChar(36)
+  parcela_id    String    @db.VarChar(36)
+  titulo        String    @db.VarChar(150)
+  descripcion   String?   @db.VarChar(500)
+  fecha         DateTime? @db.DateTime(3)
+  autor         String?   @db.VarChar(150)
+  observaciones String?   @db.Text
+  ruta_archivo  String?   @db.VarChar(500)
+  created_at    DateTime  @default(now()) @db.DateTime(3)
+  updated_at    DateTime  @updatedAt @db.DateTime(3)
+
+  parcela parcelas_productor @relation(fields: [parcela_id], references: [id], onDelete: Cascade)
 }
 
 model documentos_productor {

@@ -8,7 +8,7 @@ type ReporteProcesamientoCardProps = {
   values?: Partial<OrdenProcesamiento>;
 };
 
-export function ReporteProcesamientoCard({ mode, values }: ReporteProcesamientoCardProps) {
+export function ReporteProcesamientoCard({ values }: ReporteProcesamientoCardProps) {
   const orden = values as OrdenProcesamiento | undefined;
   const resultado = orden?.resultado;
 

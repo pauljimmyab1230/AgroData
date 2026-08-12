@@ -7,9 +7,12 @@ interface ParcelaCoordinatesProps {
   latitud?: string;
   longitud?: string;
   precisionGps?: string;
+  onChange?: (field: "latitud" | "longitud" | "precisionGps", value: string) => void;
 }
 
-export function ParcelaCoordinates({ mode, latitud, longitud, precisionGps }: ParcelaCoordinatesProps) {
+export function ParcelaCoordinates({ mode, latitud, longitud, precisionGps, onChange }: ParcelaCoordinatesProps) {
+  const editable = mode !== "view";
+
   return (
     <div>
       <div className="mb-4 flex items-center gap-2">
@@ -28,7 +31,9 @@ export function ParcelaCoordinates({ mode, latitud, longitud, precisionGps }: Pa
             <Input
               type="text"
               placeholder="Ej. -13.6532"
-              defaultValue={mode !== "view" ? latitud : undefined}
+              value={editable ? latitud ?? "" : undefined}
+              onChange={editable && onChange ? (e) => onChange("latitud", e.target.value) : undefined}
+              disabled={!editable}
               className="pr-14"
             />
             <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-400">
@@ -42,7 +47,9 @@ export function ParcelaCoordinates({ mode, latitud, longitud, precisionGps }: Pa
             <Input
               type="text"
               placeholder="Ej. -73.8741"
-              defaultValue={mode !== "view" ? longitud : undefined}
+              value={editable ? longitud ?? "" : undefined}
+              onChange={editable && onChange ? (e) => onChange("longitud", e.target.value) : undefined}
+              disabled={!editable}
               className="pr-14"
             />
             <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-400">
@@ -55,7 +62,9 @@ export function ParcelaCoordinates({ mode, latitud, longitud, precisionGps }: Pa
           <Input
             type="text"
             placeholder="Ej. ± 3 m"
-            defaultValue={mode !== "view" ? precisionGps : undefined}
+            value={editable ? precisionGps ?? "" : undefined}
+            onChange={editable && onChange ? (e) => onChange("precisionGps", e.target.value) : undefined}
+            disabled={!editable}
           />
         </Field>
       </div>

@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Camera, FileText, FileCheck, Image as ImageIcon, Plus, X } from "lucide-react";
+import { Camera, FileText, FileCheck, Image as ImageIcon, X } from "lucide-react";
 import { Button, EmptyState, ImageUpload } from "../ui";
 import { CardHeader, CardShell, type FormMode } from "../shared/formControls";
 import type { EvidenciaProcesamiento, OrdenProcesamiento } from "../../pages/procesamiento/procesamientoMock";

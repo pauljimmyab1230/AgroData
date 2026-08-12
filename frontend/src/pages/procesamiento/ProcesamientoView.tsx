@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { ArrowLeft, Pencil, Scale, TrendingDown, Package, Timer } from "lucide-react";
+import { ArrowLeft, Pencil, Scale, TrendingDown, Package } from "lucide-react";
 import { Breadcrumb, Button } from "../../components/ui";
 import ProcesamientoHeader from "../../components/procesamiento/ProcesamientoHeader";
 import ProcesamientoKPI from "../../components/procesamiento/ProcesamientoKPI";

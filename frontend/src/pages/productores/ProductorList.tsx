@@ -47,9 +47,27 @@ export default function ProductorList() {
   }, []);
 
   const kpis = [
-    { label: "Productores", value: String(productores.length), icon: Users, iconClass: "bg-forest-600/10 text-forest-600" },
-    { label: "Parcelas", value: String(productores.reduce((sum, p) => sum + (p._count?.parcelas ?? 0), 0)), icon: MapPin, iconClass: "bg-sun-100 text-sun-700" },
-    { label: "Área Total", value: "—", icon: Ruler, iconClass: "bg-forest-600/10 text-forest-600" },
+    {
+      label: "Productores",
+      value: String(productores.length),
+      hint: "socios registrados",
+      icon: Users,
+      iconClass: "bg-forest-100 text-forest-700",
+    },
+    {
+      label: "Parcelas",
+      value: String(productores.reduce((sum, p) => sum + (p._count?.parcelas ?? 0), 0)),
+      hint: "parcelas asociadas",
+      icon: MapPin,
+      iconClass: "bg-sun-100 text-sun-700",
+    },
+    {
+      label: "Área Total",
+      value: "—",
+      hint: "hectáreas en producción",
+      icon: Ruler,
+      iconClass: "bg-forest-100 text-forest-700",
+    },
   ];
 
   if (loading) {
@@ -174,13 +192,14 @@ export default function ProductorList() {
 
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         {kpis.map((kpi) => (
-          <Card key={kpi.label} padding="md">
+          <Card key={kpi.label} padding="md" hover={false} className="shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-gray-500">{kpi.label}</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">{kpi.label}</p>
                 <p className="mt-1.5 text-2xl font-bold text-[#111827]">{kpi.value}</p>
+                <p className="mt-1 text-xs text-gray-400">{kpi.hint}</p>
               </div>
-              <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${kpi.iconClass}`}>
+              <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${kpi.iconClass}`}>
                 <kpi.icon className="h-5 w-5" />
               </div>
             </div>

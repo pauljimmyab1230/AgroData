@@ -1,6 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import { Breadcrumb, Button, SectionHeader } from "../../components/ui";
 import ParcelaForm from "../../components/parcelas/ParcelaForm";
+import { ParcelaFormProvider } from "../../contexts/ParcelaFormContext";
 
 export default function ParcelaCreate() {
   return (
@@ -17,7 +18,9 @@ export default function ParcelaCreate() {
         />
       </div>
 
-      <ParcelaForm mode="create" />
+      <ParcelaFormProvider>
+        <ParcelaForm mode="create" />
+      </ParcelaFormProvider>
     </div>
   );
 }

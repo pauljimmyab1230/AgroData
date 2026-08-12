@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { NavLink } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -17,9 +18,10 @@ import {
   Route,
   ChevronLeft,
   ChevronRight,
-  LogOut,
+  Search,
+  X,
+  SearchX,
 } from "lucide-react";
-import { useAuth } from "../../contexts/AuthContext";
 
 type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean };
 type Section = { section: string };
@@ -51,126 +53,197 @@ const navItems: SidebarEntry[] = [
   { to: "/trazabilidad", icon: Route, label: "Trazabilidad" },
 ];
 
+const normalize = (s: string) =>
+  s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
 export default function AdminSidebar({ collapsed, mobileOpen, onToggle, onMobileClose }: AdminSidebarProps) {
-  const { user, logout } = useAuth();
-  const initials = user?.nombre?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "?";
+  const [query, setQuery] = useState("");
+
+  const filtered = useMemo(() => {
+    const q = normalize(query).trim();
+    if (!q) return navItems;
+
+    type Group = { section: string; items: NavItem[] };
+    const groups: Group[] = [];
+    let current: Group | null = null;
+    for (const entry of navItems) {
+      if ("section" in entry) {
+        current = { section: entry.section, items: [] };
+        groups.push(current);
+        continue;
+      }
+      current?.items.push(entry);
+    }
+
+    const result: SidebarEntry[] = [];
+    const hasMatch = (label: string) => normalize(label).includes(q);
+
+    for (const group of groups) {
+      const sectionMatch = hasMatch(group.section);
+      const itemMatches = group.items.filter((item) => hasMatch(item.label));
+      if (!sectionMatch && itemMatches.length === 0) continue;
+      result.push({ section: group.section });
+      result.push(...(sectionMatch ? group.items : itemMatches));
+    }
+    return result;
+  }, [query]);
+
+  const hasResults = filtered.some((entry) => "to" in entry);
+
+  const linkClass = ({ isActive }: { isActive: boolean }) =>
+    `group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+      collapsed ? "justify-center px-2.5" : ""
+    } ${
+      isActive
+        ? "bg-forest-700 text-white"
+        : "text-forest-100/80 hover:bg-white/5 hover:text-white"
+    }`;
+
+  const tooltip = (label: string) =>
+    collapsed ? (
+      <span className="pointer-events-none absolute left-full z-50 ml-3 whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-xl ring-1 ring-white/10 transition-opacity duration-150 group-hover:opacity-100">
+        {label}
+      </span>
+    ) : null;
+
   const sidebarContent = (
-    <div className="flex h-full flex-col bg-gradient-to-b from-white to-forest-50/60">
+    <div className="flex h-full flex-col bg-forest-900">
+      {/* ── Marca ─────────────────────────────────────────── */}
       <div
-        className={`flex h-16 items-center border-b border-gray-200/80 bg-white/80 backdrop-blur-sm ${
+        className={`flex h-16 shrink-0 items-center border-b border-white/10 ${
           collapsed ? "justify-center px-2" : "justify-between px-5"
         }`}
       >
-        {!collapsed ? (
-          <span className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-forest-600 to-forest-400 text-white shadow-md shadow-forest-600/30 ring-1 ring-forest-600/20">
-              <Sprout size={18} />
-            </span>
-            <span className="text-lg font-bold text-forest-800">AgroData</span>
+        {collapsed ? (
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-forest-600 text-white">
+            <Sprout size={20} />
           </span>
         ) : (
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-forest-600 to-forest-400 text-white shadow-md shadow-forest-600/30 ring-1 ring-forest-600/20">
-            <Sprout size={18} />
+          <span className="flex min-w-0 items-center gap-2.5">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-forest-600 text-white">
+              <Sprout size={20} />
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-lg font-bold leading-tight text-white">
+                AgroData
+              </span>
+              <span className="block truncate text-[11px] font-medium leading-tight text-forest-300/70">
+                Gestión cooperativa
+              </span>
+            </span>
           </span>
         )}
+
         <button
           type="button"
           onClick={onToggle}
-          className="hidden items-center justify-center rounded-lg p-2 text-gray-400 transition-colors hover:bg-forest-600/10 hover:text-forest-700 lg:flex"
+          className="hidden items-center justify-center rounded-lg p-2 text-forest-300/70 transition-colors hover:bg-white/5 hover:text-white lg:flex"
           aria-label={collapsed ? "Expandir sidebar" : "Colapsar sidebar"}
+          title={collapsed ? "Expandir" : "Colapsar"}
         >
           {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </button>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
-        <ul className="space-y-1">
-          {navItems.map((item) => {
-            if ("section" in item) {
-              return !collapsed ? (
-                <li key={item.section} className="px-3 pb-2 pt-5">
-                  <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-gray-400">
-                    <span className="h-1 w-1 rounded-full bg-forest-400" />
-                    {item.section}
-                  </span>
-                </li>
-              ) : null;
-            }
-            return (
-              <li key={item.to}>
-                <NavLink
-                  to={item.to}
-                  end={item.end}
-                  onClick={onMobileClose}
-                  title={collapsed ? item.label : undefined}
-                  className={({ isActive }) =>
-                    `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
-                      collapsed ? "justify-center" : ""
-                    } ${
-                      isActive
-                        ? "bg-gradient-to-r from-forest-600 to-forest-500 text-white shadow-md shadow-forest-600/25"
-                        : "text-gray-600 hover:bg-forest-600/10 hover:text-forest-700"
-                    }`
-                  }
-                >
-                  <item.icon
-                    className={`h-5 w-5 shrink-0 transition-colors ${
-                      collapsed
-                        ? ""
-                        : "text-gray-400 group-hover:text-forest-600"
-                    }`}
-                  />
-                  {!collapsed && <span>{item.label}</span>}
-                </NavLink>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+      {/* ── Búsqueda ──────────────────────────────────────── */}
+      {!collapsed && (
+        <div className="shrink-0 px-4 pt-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-forest-300/60" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar módulo..."
+              className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-9 pr-8 text-sm text-white outline-none transition-colors placeholder:text-forest-300/50 focus:border-forest-500/60 focus:bg-white/10"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-0.5 text-forest-300/60 transition-colors hover:text-white"
+                aria-label="Limpiar búsqueda"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
-      <div className={`border-t border-gray-200/80 bg-white/80 p-3 ${collapsed ? "px-2" : ""}`}>
-        {!collapsed ? (
-          <div className="flex items-center gap-3 rounded-xl border border-forest-100 bg-forest-50/70 p-2.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-forest-500 to-forest-700 text-sm font-semibold text-white ring-2 ring-white">
-              {initials}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-[#111827]">{user?.nombre || "Usuario"}</p>
-              <p className="truncate text-xs text-gray-500">{user?.rol || "Sin rol"}</p>
-            </div>
-            <button
-              type="button"
-              onClick={logout}
-              className="flex items-center justify-center rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
-              aria-label="Cerrar sesión"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
+      {/* ── Navegación ────────────────────────────────────── */}
+      <nav className="no-scrollbar flex-1 overflow-y-auto px-3 py-4">
+        {!hasResults ? (
+          <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
+            <SearchX className="h-8 w-8 text-forest-300/40" />
+            <p className="text-sm font-medium text-forest-100">Sin resultados</p>
+            <p className="text-xs text-forest-300/60">No se encontraron módulos con "{query}".</p>
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={logout}
-            className="flex w-full items-center justify-center rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
-            aria-label="Cerrar sesión"
-          >
-            <LogOut className="h-5 w-5" />
-          </button>
+          <ul className="space-y-1">
+            {filtered.map((entry) => {
+              if ("section" in entry) {
+                return !collapsed ? (
+                  <li key={entry.section} className="px-3 pb-2 pt-5">
+                    <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-forest-300/60">
+                      <span className="h-1 w-1 rounded-full bg-forest-400" />
+                      {entry.section}
+                    </span>
+                  </li>
+                ) : (
+                  <li key={entry.section} className="px-3 pb-1 pt-4">
+                    <span className="mx-auto block h-px w-5 bg-white/15" />
+                  </li>
+                );
+              }
+              return (
+                <li key={entry.to}>
+                  <NavLink
+                    to={entry.to}
+                    end={entry.end}
+                    onClick={() => {
+                      setQuery("");
+                      onMobileClose();
+                    }}
+                    className={({ isActive }) => linkClass({ isActive })}
+                  >
+                    {({ isActive }) => (
+                      <>
+                        <entry.icon
+                          className={`h-5 w-5 shrink-0 transition-colors ${
+                            isActive ? "text-white" : "text-forest-300/70 group-hover:text-white"
+                          }`}
+                        />
+                        {!collapsed && <span className="truncate">{entry.label}</span>}
+                        {tooltip(entry.label)}
+                      </>
+                    )}
+                  </NavLink>
+                </li>
+              );
+            })}
+          </ul>
         )}
-      </div>
+      </nav>
     </div>
   );
 
   return (
     <>
-      <aside className={`hidden transition-all duration-300 lg:block ${collapsed ? "w-[68px]" : "w-64"}`}>
-        <div className="fixed inset-y-0 left-0 z-30" style={{ width: collapsed ? 68 : 256 }}>
+      <aside className={`hidden transition-all duration-300 lg:block ${collapsed ? "w-[76px]" : "w-64"}`}>
+        <div
+          className="fixed inset-y-0 left-0 z-30 border-r border-white/10 shadow-xl shadow-black/10"
+          style={{ width: collapsed ? 76 : 256 }}
+        >
           {sidebarContent}
         </div>
       </aside>
 
       {mobileOpen && (
-        <div className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm lg:hidden" onClick={onMobileClose} />
+        <div
+          className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm lg:hidden"
+          onClick={onMobileClose}
+        />
       )}
       <aside
         className={`fixed inset-y-0 left-0 z-40 w-64 transform transition-transform duration-300 lg:hidden ${

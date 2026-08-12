@@ -147,3 +147,163 @@ export async function updateProductor(id: string, data: Partial<Productor>): Pro
 export async function deleteProductor(id: string): Promise<void> {
   await api.delete(`/productores/${id}`);
 }
+
+// ─── Familiares ─────────────────────────────────────────────
+
+export interface Familiar {
+  id: string;
+  nombres: string;
+  parentesco: string;
+  dni: string | null;
+  sexo: string;
+  fechaNacimiento: string;
+  ocupacion: string | null;
+  nivelEducativo: string | null;
+  telefono: string | null;
+  dependiente: boolean;
+  viveConProductor: boolean;
+}
+
+interface FamiliarDTO {
+  id: string;
+  nombres: string;
+  parentesco: string;
+  dni: string | null;
+  sexo: string;
+  fecha_nacimiento: string;
+  ocupacion: string | null;
+  nivel_educativo: string | null;
+  telefono: string | null;
+  dependiente: boolean;
+  vive_con_productor: boolean;
+}
+
+function familiarToFrontend(dto: FamiliarDTO): Familiar {
+  return {
+    id: dto.id,
+    nombres: dto.nombres,
+    parentesco: dto.parentesco,
+    dni: dto.dni,
+    sexo: dto.sexo,
+    fechaNacimiento: dto.fecha_nacimiento?.split("T")[0] ?? "",
+    ocupacion: dto.ocupacion,
+    nivelEducativo: dto.nivel_educativo,
+    telefono: dto.telefono,
+    dependiente: dto.dependiente,
+    viveConProductor: dto.vive_con_productor,
+  };
+}
+
+function familiarToBackend(data: Partial<Familiar>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (data.nombres !== undefined) out.nombres = data.nombres;
+  if (data.parentesco !== undefined) out.parentesco = data.parentesco;
+  if (data.dni !== undefined) out.dni = data.dni || null;
+  if (data.sexo !== undefined) out.sexo = data.sexo;
+  if (data.fechaNacimiento !== undefined) out.fecha_nacimiento = data.fechaNacimiento;
+  if (data.ocupacion !== undefined) out.ocupacion = data.ocupacion || null;
+  if (data.nivelEducativo !== undefined) out.nivel_educativo = data.nivelEducativo || null;
+  if (data.telefono !== undefined) out.telefono = data.telefono || null;
+  if (data.dependiente !== undefined) out.dependiente = data.dependiente;
+  if (data.viveConProductor !== undefined) out.vive_con_productor = data.viveConProductor;
+  return out;
+}
+
+export async function fetchFamiliares(productorId: string): Promise<Familiar[]> {
+  const res = await api.get(`/productores/${productorId}/familiares`);
+  return (res.data.data ?? []).map(familiarToFrontend);
+}
+
+export async function createFamiliar(productorId: string, data: Partial<Familiar>): Promise<Familiar> {
+  const res = await api.post(`/productores/${productorId}/familiares`, familiarToBackend(data));
+  return familiarToFrontend(res.data.data);
+}
+
+export async function updateFamiliar(
+  productorId: string,
+  familiarId: string,
+  data: Partial<Familiar>,
+): Promise<Familiar> {
+  const res = await api.put(`/productores/${productorId}/familiares/${familiarId}`, familiarToBackend(data));
+  return familiarToFrontend(res.data.data);
+}
+
+export async function deleteFamiliar(productorId: string, familiarId: string): Promise<void> {
+  await api.delete(`/productores/${productorId}/familiares/${familiarId}`);
+}
+
+// ─── Parcelas ───────────────────────────────────────────────
+
+export interface Parcela {
+  id: string;
+  codigo: string;
+  nombre: string;
+  cultivo: string;
+  area: string;
+  areaUnidad: string;
+  ubicacion: string;
+  certificacion: string;
+  estado: string;
+}
+
+interface ParcelaDTO {
+  id: string;
+  codigo: string;
+  nombre: string;
+  cultivo: string;
+  area: string;
+  area_unidad: string;
+  ubicacion: string;
+  certificacion: string;
+  estado: string;
+}
+
+function parcelaToFrontend(dto: ParcelaDTO): Parcela {
+  return {
+    id: dto.id,
+    codigo: dto.codigo,
+    nombre: dto.nombre,
+    cultivo: dto.cultivo,
+    area: dto.area,
+    areaUnidad: dto.area_unidad,
+    ubicacion: dto.ubicacion,
+    certificacion: dto.certificacion,
+    estado: dto.estado,
+  };
+}
+
+function parcelaToBackend(data: Partial<Parcela>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (data.codigo !== undefined) out.codigo = data.codigo;
+  if (data.nombre !== undefined) out.nombre = data.nombre;
+  if (data.cultivo !== undefined) out.cultivo = data.cultivo;
+  if (data.area !== undefined) out.area = data.area;
+  if (data.areaUnidad !== undefined) out.area_unidad = data.areaUnidad;
+  if (data.ubicacion !== undefined) out.ubicacion = data.ubicacion;
+  if (data.certificacion !== undefined) out.certificacion = data.certificacion;
+  if (data.estado !== undefined) out.estado = data.estado;
+  return out;
+}
+
+export async function fetchParcelas(productorId: string): Promise<Parcela[]> {
+  const res = await api.get(`/productores/${productorId}/parcelas`);
+  return (res.data.data ?? []).map(parcelaToFrontend);
+}
+
+export async function createParcela(productorId: string, data: Partial<Parcela>): Promise<Parcela> {
+  const res = await api.post(`/productores/${productorId}/parcelas`, parcelaToBackend(data));
+  return parcelaToFrontend(res.data.data);
+}
+
+export async function updateParcela(
+  productorId: string,
+  parcelaId: string,
+  data: Partial<Parcela>,
+): Promise<Parcela> {
+  const res = await api.put(`/productores/${productorId}/parcelas/${parcelaId}`, parcelaToBackend(data));
+  return parcelaToFrontend(res.data.data);
+}
+
+export async function deleteParcela(productorId: string, parcelaId: string): Promise<void> {
+  await api.delete(`/productores/${productorId}/parcelas/${parcelaId}`);
+}

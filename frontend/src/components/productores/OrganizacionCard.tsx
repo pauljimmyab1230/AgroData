@@ -29,7 +29,7 @@ const cargoOptions = [
 
 export function OrganizacionCard({ mode, values }: OrganizacionCardProps) {
   const editable = mode !== "view";
-  const { data, updateData } = useProductorForm();
+  const { data, updateData, errors, clearFieldError } = useProductorForm();
 
   const display = (field: keyof Productor) => {
     if (mode === "view") return values?.[field] ?? "";
@@ -55,32 +55,39 @@ export function OrganizacionCard({ mode, values }: OrganizacionCardProps) {
           />
         </Field>
 
-        <Field label="Fecha de Ingreso" mode={mode} value={values?.fechaIngreso}>
+        <Field label="Fecha de Ingreso" mode={mode} value={values?.fechaIngreso} required error={errors?.fechaIngreso}>
           <DatePicker
             selected={display("fechaIngreso") ? new Date(display("fechaIngreso") + "T00:00:00") : null}
-            onChange={(date) =>
-              updateData({ fechaIngreso: date ? date.toISOString().split("T")[0] : "" })
-            }
+            onChange={(date) => {
+              clearFieldError("fechaIngreso");
+              updateData({ fechaIngreso: date ? date.toISOString().split("T")[0] : "" });
+            }}
             disabled={!editable}
           />
         </Field>
 
-        <Field label="Organización / Base" mode={mode} value={values?.organizacion}>
+        <Field label="Organización / Base" mode={mode} value={values?.organizacion} required error={errors?.organizacion}>
           <Input
             type="text"
             placeholder="Ej. Asociación Virgen de Fátima"
             value={display("organizacion") as string}
-            onChange={(e) => updateData({ organizacion: e.target.value })}
+            onChange={(e) => {
+              clearFieldError("organizacion");
+              updateData({ organizacion: e.target.value });
+            }}
             disabled={!editable}
           />
         </Field>
 
-        <Field label="Cargo" mode={mode} value={values?.cargo}>
+        <Field label="Cargo" mode={mode} value={values?.cargo} required error={errors?.cargo}>
           <Select
             options={cargoOptions}
             placeholder="Seleccione"
             value={display("cargo") as string}
-            onChange={(val) => updateData({ cargo: val as Productor["cargo"] })}
+            onChange={(val) => {
+              clearFieldError("cargo");
+              updateData({ cargo: val as Productor["cargo"] });
+            }}
             disabled={!editable}
           />
         </Field>
