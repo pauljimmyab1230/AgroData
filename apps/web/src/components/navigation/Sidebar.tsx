@@ -24,6 +24,7 @@ import {
   SearchX,
   Settings,
   BookOpen,
+  GraduationCap,
 } from "lucide-react";
 
 type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean };
@@ -65,6 +66,7 @@ const navItems: SidebarEntry[] = [
       { to: "/cultivos", icon: Wheat, label: "Cultivos" },
       { to: "/actividades", icon: ClipboardList, label: "Actividades Agrícolas" },
       { to: "/inspecciones", icon: SearchCheck, label: "Inspecciones" },
+      { to: "/capacitaciones", icon: GraduationCap, label: "Capacitaciones" },
     ],
   },
 

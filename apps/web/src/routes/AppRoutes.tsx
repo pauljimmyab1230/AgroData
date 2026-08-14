@@ -49,6 +49,14 @@ import TrazabilidadList from "../pages/trazabilidad/TrazabilidadList";
 import TrazabilidadView from "../pages/trazabilidad/TrazabilidadView";
 import TrazabilidadCreate from "../pages/trazabilidad/TrazabilidadCreate";
 import TrazabilidadEdit from "../pages/trazabilidad/TrazabilidadEdit";
+import CapacitacionList from "../pages/capacitaciones/CapacitacionList";
+import CapacitacionCreate from "../pages/capacitaciones/CapacitacionCreate";
+import CapacitacionView from "../pages/capacitaciones/CapacitacionView";
+import CapacitacionEdit from "../pages/capacitaciones/CapacitacionEdit";
+import UsuarioList from "../pages/usuarios/UsuarioList";
+import UsuarioCreate from "../pages/usuarios/UsuarioCreate";
+import UsuarioView from "../pages/usuarios/UsuarioView";
+import UsuarioEdit from "../pages/usuarios/UsuarioEdit";
 import CatalogPage from "../pages/catalogos/CatalogPage";
 import ProductorCreate from "../pages/productores/ProductorCreate";
 import ProductorView from "../pages/productores/ProductorView";
@@ -108,6 +116,14 @@ export default function AppRoutes() {
                     <Route path="/trazabilidad/nueva" element={<TrazabilidadCreate />} />
                     <Route path="/trazabilidad/:id" element={<TrazabilidadView />} />
                     <Route path="/trazabilidad/:id/editar" element={<TrazabilidadEdit />} />
+                    <Route path="/capacitaciones" element={<CapacitacionList />} />
+                    <Route path="/capacitaciones/nueva" element={<CapacitacionCreate />} />
+                    <Route path="/capacitaciones/:id" element={<CapacitacionView />} />
+                    <Route path="/capacitaciones/:id/editar" element={<CapacitacionEdit />} />
+                    <Route path="/usuarios" element={<UsuarioList />} />
+                    <Route path="/usuarios/nuevo" element={<UsuarioCreate />} />
+                    <Route path="/usuarios/:id" element={<UsuarioView />} />
+                    <Route path="/usuarios/:id/editar" element={<UsuarioEdit />} />
                     <Route path="/catalogos/:catalogoId" element={<CatalogPage />} />
                     <Route path="/productores/nuevo" element={<ProductorCreate />} />
                     <Route path="/productores/:id" element={<ProductorView />} />

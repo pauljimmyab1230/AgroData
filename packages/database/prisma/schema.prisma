@@ -12,6 +12,15 @@ enum Rol {
   USER
 }
 
+enum RolSic {
+  RESPONSABLE_SIC
+  INSPECTOR
+  COMITE_DECISION
+  TECNICO_CAMPO
+  ACOPIADOR
+  CAPACITADOR
+}
+
 enum Sexo {
   MASCULINO
   FEMENINO
@@ -563,9 +572,12 @@ model usuarios {
   email      String   @unique @db.VarChar(150)
   password   String   @db.VarChar(255)
   rol        Rol      @default(USER)
+  rol_sic    RolSic?
   activo     Boolean  @default(true)
   created_at DateTime @default(now()) @db.DateTime(3)
   updated_at DateTime @updatedAt @db.DateTime(3)
+
+  capacitaciones_participadas sic_capacitacion_participantes[]
 }
 
 model productores {
@@ -607,6 +619,8 @@ model productores {
   actividades actividades[]
   inspecciones inspecciones[]
   acopios acopios[]
+
+  capacitaciones_participadas sic_capacitacion_participantes[]
 }
 
 model familiares_productor {
@@ -1109,4 +1123,53 @@ model documentos_productor {
   updated_at      DateTime           @updatedAt @db.DateTime(3)
 
   productor productores @relation(fields: [productor_id], references: [id], onDelete: Cascade)
+}
+
+// ─── Capacitaciones SIC ─────────────────────────────────────
+
+enum TipoCapacitacion {
+  PRODUCTORES
+  PERSONAL_SIC
+}
+
+model sic_capacitaciones {
+  id               String              @id @default(uuid()) @db.VarChar(36)
+  codigo           String              @unique @db.VarChar(20)
+  tipo             TipoCapacitacion
+  tema             String              @db.VarChar(200)
+  descripcion      String?             @db.Text
+  capacitador      String              @db.VarChar(150)
+  fecha            DateTime            @db.DateTime(3)
+  hora_inicio      String?             @db.VarChar(5)
+  hora_fin         String?             @db.VarChar(5)
+  duracion_horas   Decimal?            @db.Decimal(5, 2)
+  lugar            String              @db.VarChar(200)
+  departamento     String?             @db.VarChar(100)
+  provincia        String?             @db.VarChar(100)
+  distrito         String?             @db.VarChar(100)
+  material_entregado String?           @db.Text
+  observaciones    String?             @db.Text
+  activo           Boolean             @default(true)
+  created_by       String?             @db.VarChar(36)
+  updated_by       String?             @db.VarChar(36)
+  created_at       DateTime            @default(now()) @db.DateTime(3)
+  updated_at       DateTime            @updatedAt @db.DateTime(3)
+
+  participantes sic_capacitacion_participantes[]
+}
+
+model sic_capacitacion_participantes {
+  id               String   @id @default(uuid()) @db.VarChar(36)
+  capacitacion_id  String   @db.VarChar(36)
+  productor_id     String?  @db.VarChar(36)
+  usuario_id       String?  @db.VarChar(36)
+  asistio          Boolean  @default(false)
+  firma_url        String?  @db.VarChar(500)
+  observaciones    String?  @db.Text
+  created_at       DateTime @default(now()) @db.DateTime(3)
+  updated_at       DateTime @updatedAt @db.DateTime(3)
+
+  capacitacion sic_capacitaciones @relation(fields: [capacitacion_id], references: [id], onDelete: Cascade)
+  productor   productores?        @relation(fields: [productor_id], references: [id], onDelete: SetNull)
+  usuario     usuarios?           @relation(fields: [usuario_id], references: [id], onDelete: SetNull)
 }

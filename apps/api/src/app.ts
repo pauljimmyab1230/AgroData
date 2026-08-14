@@ -20,6 +20,7 @@ import procesamientoRoutes from './routes/procesamiento.routes';
 import lotesRoutes from './routes/lotes.routes';
 import inventarioRoutes from './routes/inventario.routes';
 import trazabilidadRoutes from './routes/trazabilidad.routes';
+import capacitacionesRoutes from './routes/capacitaciones.routes';
 
 const app = express();
 
@@ -65,6 +66,7 @@ app.use('/api/procesamientos', procesamientoRoutes);
 app.use('/api/lotes', lotesRoutes);
 app.use('/api/inventario', inventarioRoutes);
 app.use('/api/trazabilidad', trazabilidadRoutes);
+app.use('/api/capacitaciones', capacitacionesRoutes);
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 app.use((_req, res) => {
