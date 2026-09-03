@@ -18,7 +18,7 @@ interface CultivoHeaderProps {
 export default function CultivoHeader({ title, description, crumbs = [], backTo, actions }: CultivoHeaderProps) {
   return (
     <div>
-      <Breadcrumb items={crumbs} />
+      {crumbs.length > 0 && <Breadcrumb items={crumbs} />}
 
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">

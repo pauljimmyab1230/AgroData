@@ -10,9 +10,7 @@ import { OperacionesCard } from "../../components/procesamiento/OperacionesCard"
 import { ControlProcesoCard } from "../../components/procesamiento/ControlProcesoCard";
 import { ProductoBaseCard } from "../../components/procesamiento/ProductoBaseCard";
 import { ReporteProcesamientoCard } from "../../components/procesamiento/ReporteProcesamientoCard";
-import { EvidenciasCard } from "../../components/procesamiento/EvidenciasCard";
 import { ObservacionesCard } from "../../components/procesamiento/ObservacionesCard";
-import { HistorialCard } from "../../components/procesamiento/HistorialCard";
 import {
   type OrdenProcesamiento,
   fetchProcesamiento,
@@ -24,8 +22,14 @@ function formatPct(valor: number): string {
   return `${Intl.NumberFormat("es-PE", { maximumFractionDigits: 2 }).format(valor)}%`;
 }
 
-export default function ProcesamientoView() {
-  const { id } = useParams();
+interface ProcesamientoViewProps {
+  inModal?: boolean;
+  procesamientoId?: string;
+}
+
+export default function ProcesamientoView({ inModal, procesamientoId: propId }: ProcesamientoViewProps) {
+  const { id: paramId } = useParams();
+  const id = propId || paramId;
   const [orden, setOrden] = useState<OrdenProcesamiento | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -34,14 +38,14 @@ export default function ProcesamientoView() {
     setLoading(true);
     fetchProcesamiento(id)
       .then(setOrden)
-      .catch((err) => console.error("Error loading procesamiento:", err))
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [id]);
 
   if (loading || !orden) {
     return (
-      <div className="flex items-center justify-center py-20 text-gray-400">
-        Cargando orden de procesamiento...
+      <div className="flex items-center justify-center py-20">
+        <p className="text-sm text-gray-400">Cargando orden de procesamiento...</p>
       </div>
     );
   }
@@ -75,27 +79,31 @@ export default function ProcesamientoView() {
 
   return (
     <div>
-      <Breadcrumb items={[{ label: "Procesamiento", to: "/procesamiento" }, { label: orden.codigo }]} />
+      {!inModal && (
+        <>
+          <Breadcrumb items={[{ label: "Procesamiento", to: "/procesamiento" }, { label: orden.codigo }]} />
 
-      <div className="mb-8 flex items-center gap-4">
-        <Button variant="ghost" as="link" to="/procesamiento" iconLeft={<ArrowLeft className="h-4 w-4" />}>
-          Procesamiento
-        </Button>
-      </div>
+          <div className="mb-8 flex items-center gap-4">
+            <Button variant="ghost" as="link" to="/procesamiento" iconLeft={<ArrowLeft className="h-4 w-4" />}>
+              Procesamiento
+            </Button>
+          </div>
 
-      <ProcesamientoHeader
-        orden={orden}
-        actions={
-          <Button
-            variant="secondary"
-            as="link"
-            to={`/procesamiento/${orden.id}/editar`}
-            iconLeft={<Pencil className="h-4 w-4" />}
-          >
-            Editar
-          </Button>
-        }
-      />
+          <ProcesamientoHeader
+            orden={orden}
+            actions={
+              <Button
+                variant="secondary"
+                as="link"
+                to={`/procesamiento/${orden.id}/editar`}
+                iconLeft={<Pencil className="h-4 w-4" />}
+              >
+                Editar
+              </Button>
+            }
+          />
+        </>
+      )}
 
       <ProcesamientoKPI items={kpis} />
 
@@ -106,9 +114,7 @@ export default function ProcesamientoView() {
         <ControlProcesoCard mode="view" values={orden} />
         <ProductoBaseCard mode="view" values={orden} />
         <ReporteProcesamientoCard mode="view" values={orden} />
-        <EvidenciasCard mode="view" values={orden} />
         <ObservacionesCard mode="view" values={orden} />
-        <HistorialCard eventos={orden.historial} />
       </div>
     </div>
   );

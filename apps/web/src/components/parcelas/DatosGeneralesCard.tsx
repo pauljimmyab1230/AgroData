@@ -76,36 +76,6 @@ export function DatosGeneralesCard({ mode, values }: DatosGeneralesCardProps) {
           />
         </Field>
 
-        <Field label="Comunidad" mode={mode} value={values?.comunidad}>
-          <Select
-            options={toOptions(comunidadesOpciones)}
-            placeholder="Seleccione"
-            value={display("comunidad")}
-            onChange={(val) => updateData({ comunidad: val })}
-            disabled={!editable}
-          />
-        </Field>
-
-        <Field label="Sector" mode={mode} value={values?.sector}>
-          <Select
-            options={toOptions(sectoresOpciones)}
-            placeholder="Seleccione"
-            value={display("sector")}
-            onChange={(val) => updateData({ sector: val })}
-            disabled={!editable}
-          />
-        </Field>
-
-        <Field label="Altitud" mode={mode} value={values?.altitud}>
-          <Input
-            type="text"
-            placeholder="Ej. 3,450 m.s.n.m."
-            value={display("altitud")}
-            onChange={(e) => updateData({ altitud: e.target.value })}
-            disabled={!editable}
-          />
-        </Field>
-
         <Field label="Área Total (ha)" mode={mode} value={values?.area} required error={errors?.area}>
           <Input
             type="text"
@@ -125,6 +95,22 @@ export function DatosGeneralesCard({ mode, values }: DatosGeneralesCardProps) {
             placeholder="Ej. 2.40"
             value={display("areaCertificada")}
             onChange={(e) => updateData({ areaCertificada: e.target.value })}
+            disabled={!editable}
+          />
+        </Field>
+
+        <Field label="Acreditación del Predio" mode={mode} value={values?.acreditacion}>
+          <Select
+            options={[
+              { value: "TITULO_PROPIEDAD", label: "Título de Propiedad" },
+              { value: "CERTIFICADO_POSECION", label: "Certificado de Posesión" },
+              { value: "CONTRATO_ALQUILER", label: "Contrato de Alquiler" },
+              { value: "CONSTANCIA_OCUPACION", label: "Constancia de Ocupación" },
+              { value: "SIN_DOCUMENTO", label: "Sin Documento" },
+            ]}
+            placeholder="Seleccione"
+            value={display("acreditacion")}
+            onChange={(val) => updateData({ acreditacion: val })}
             disabled={!editable}
           />
         </Field>

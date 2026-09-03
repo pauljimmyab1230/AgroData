@@ -1,15 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { BadgeCheck, CalendarClock, ClipboardCheck, Plus, TriangleAlert, X } from "lucide-react";
-import { Breadcrumb, Button, ConfirmDialog, SearchInput, SectionHeader, Select } from "../../components/ui";
+import { Button, ConfirmDialog, LoadingSpinner, SearchInput, SectionHeader, Select } from "../../components/ui";
 import InspeccionKPI from "../../components/inspecciones/InspeccionKPI";
 import InspeccionTable from "../../components/inspecciones/InspeccionTable";
 import {
-  campaniasOpciones,
-  estadosOpciones,
   fetchInspecciones,
   deleteInspeccion,
   type Inspeccion,
 } from "../../services/inspecciones";
+import InspeccionModal from "../../components/inspecciones/InspeccionModal";
 
 const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: item }));
 
@@ -46,6 +45,9 @@ export default function InspeccionList() {
   const [filtroEstado, setFiltroEstado] = useState("");
   const [page, setPage] = useState(1);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [viewId, setViewId] = useState<string | null>(null);
 
   const [inspecciones, setInspecciones] = useState<Inspeccion[]>([]);
   const [total, setTotal] = useState(0);
@@ -65,8 +67,8 @@ export default function InspeccionList() {
       setInspecciones(result.data);
       setTotal(result.total);
       setTotalPages(result.totalPages);
-    } catch (error) {
-      console.error("Error loading inspecciones:", error);
+    } catch {
+      // handled silently
     } finally {
       setLoading(false);
     }
@@ -117,28 +119,33 @@ export default function InspeccionList() {
     setPage(1);
   };
 
+  const handleModalClose = () => {
+    setShowCreateModal(false);
+    setEditId(null);
+    setViewId(null);
+    loadData();
+  };
+
   const handleDelete = async () => {
     if (!deleteId) return;
     try {
       await deleteInspeccion(deleteId);
       setDeleteId(null);
       loadData();
-    } catch (error) {
-      console.error("Error deleting inspeccion:", error);
+    } catch {
+      // handled silently
     }
   };
 
   return (
     <div>
-      <Breadcrumb items={[{ label: "Inspecciones" }]} />
-
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <SectionHeader
           title="Inspecciones"
-          description="Registro de inspecciones realizadas a las parcelas y actividades agrícolas."
+          description="Registro de inspecciones de campo"
         />
         <div className="flex items-center gap-2">
-          <Button as="link" to="/inspecciones/nueva" iconLeft={<Plus className="h-4 w-4" />}>
+          <Button onClick={() => setShowCreateModal(true)} iconLeft={<Plus className="h-4 w-4" />}>
             Nueva Inspección
           </Button>
         </div>
@@ -159,19 +166,9 @@ export default function InspeccionList() {
         </div>
 
         <FilterSelect
-          label="Campaña"
-          placeholder="Todas"
-          options={toOptions(campaniasOpciones)}
-          value={filtroCampania}
-          onChange={(val) => {
-            setFiltroCampania(val);
-            setPage(1);
-          }}
-        />
-        <FilterSelect
           label="Estado"
           placeholder="Todos"
-          options={estadosOpciones.map((e) => ({ value: e, label: estadoLabels[e] ?? e }))}
+          options={Object.entries(estadoLabels).map(([value, label]) => ({ value, label }))}
           value={filtroEstado}
           onChange={(val) => {
             setFiltroEstado(val);
@@ -187,13 +184,17 @@ export default function InspeccionList() {
       </div>
 
       {loading ? (
-        <div className="py-12 text-center text-gray-500">Cargando inspecciones...</div>
+        <div className="flex items-center justify-center py-20">
+          <LoadingSpinner />
+        </div>
       ) : (
         <InspeccionTable
           data={inspecciones}
           currentPage={page}
           totalPages={totalPages}
           onPageChange={setPage}
+          onView={(inspeccion) => setViewId(inspeccion.id)}
+          onEdit={(inspeccion) => setEditId(inspeccion.id)}
           onDelete={(inspeccion) => setDeleteId(inspeccion.id)}
         />
       )}
@@ -206,6 +207,34 @@ export default function InspeccionList() {
         message="¿Estás seguro de eliminar esta inspección? Esta acción no se puede deshacer."
         confirmText="Eliminar"
         variant="danger"
+      />
+
+      <InspeccionModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSave={handleModalClose}
+        mode="create"
+      />
+
+      <InspeccionModal
+        open={editId !== null}
+        onClose={() => setEditId(null)}
+        onSave={handleModalClose}
+        mode="edit"
+        inspeccionId={editId || undefined}
+      />
+
+      <InspeccionModal
+        open={viewId !== null}
+        onClose={() => setViewId(null)}
+        onSave={handleModalClose}
+        onEdit={() => {
+          const id = viewId;
+          setViewId(null);
+          setEditId(id);
+        }}
+        mode="view"
+        inspeccionId={viewId || undefined}
       />
     </div>
   );

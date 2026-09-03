@@ -71,3 +71,19 @@ export const remove = async (req: AuthRequest, res: Response, next: NextFunction
     next(error);
   }
 };
+
+export const getGlobalStats = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const stats = await cultivosService.getGlobalStats({
+      search: req.query.search as string | undefined,
+      estado: req.query.estado as string | undefined,
+      campania_id: req.query.campania_id as string | undefined,
+    });
+    res.status(200).json({
+      success: true,
+      data: stats,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

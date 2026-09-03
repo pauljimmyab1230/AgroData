@@ -10,32 +10,31 @@ type ControlProcesoCardProps = {
 
 export function ControlProcesoCard({ mode, values }: ControlProcesoCardProps) {
   const editable = mode !== "view";
-  const resultado = values?.resultado;
 
   const comparacion = [
     {
       label: "Peso Entrada",
-      value: formatKg(resultado?.pesoEntrada),
+      value: formatKg(values?.pesoEntrada ?? 0),
       icon: Scale,
       iconClass: "bg-sun-100 text-sun-700",
     },
     {
       label: "Peso Salida",
-      value: formatKg(resultado?.pesoSalida),
+      value: formatKg(values?.pesoSalida ?? 0),
       icon: Scale,
-      iconClass: "bg-forest-600/10 text-forest-600",
+      iconClass: "bg-[#0A4174]/10 text-[#0A4174]",
     },
     {
       label: "Merma",
-      value: formatKg(resultado?.merma),
-      icon: (resultado?.merma ?? 0) > 0 ? ArrowDownRight : ArrowUpRight,
-      iconClass: (resultado?.merma ?? 0) > 0 ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600",
+      value: formatKg(values?.merma ?? 0),
+      icon: TrendingDown,
+      iconClass: "bg-red-50 text-red-600",
     },
     {
       label: "Rendimiento",
-      value: formatPct(resultado?.rendimiento),
-      icon: TrendingDown,
-      iconClass: "bg-purple-50 text-purple-600",
+      value: formatPct(values?.rendimiento ?? 0),
+      icon: values?.rendimiento && values.rendimiento > 0 ? ArrowUpRight : ArrowDownRight,
+      iconClass: values?.rendimiento && values.rendimiento > 0 ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600",
     },
   ];
 
@@ -43,84 +42,69 @@ export function ControlProcesoCard({ mode, values }: ControlProcesoCardProps) {
     <CardShell>
       <CardHeader
         icon={<Scale size={20} />}
-        title="Control del Proceso"
-        description="Control de pesos, merma, rendimiento y tiempos del procesamiento"
+        title="Control de Proceso"
+        description="Registro de pesos de entrada y salida, merma y rendimiento"
       />
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <Field
-          label="Peso de Entrada (kg)"
-          mode={mode}
-          value={resultado?.pesoEntrada !== undefined ? formatKg(resultado.pesoEntrada) : undefined}
-        >
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <Field label="Peso Entrada (kg)" mode={mode} value={values?.pesoEntrada ? formatKg(values.pesoEntrada) : undefined}>
           <Input
             type="number"
             step="0.1"
             min="0"
             placeholder="0.0"
-            defaultValue={editable ? resultado?.pesoEntrada : undefined}
+            value={values?.pesoEntrada ?? ""}
+            onChange={(e) => {}}
+            disabled
           />
         </Field>
 
-        <Field
-          label="Peso de Salida (kg)"
-          mode={mode}
-          value={resultado?.pesoSalida !== undefined ? formatKg(resultado.pesoSalida) : undefined}
-        >
+        <Field label="Peso Salida (kg)" mode={mode} value={values?.pesoSalida ? formatKg(values.pesoSalida) : undefined}>
           <Input
             type="number"
             step="0.1"
             min="0"
             placeholder="0.0"
-            defaultValue={editable ? resultado?.pesoSalida : undefined}
+            value={values?.pesoSalida ?? ""}
+            onChange={(e) => {}}
+            disabled={!editable}
           />
         </Field>
 
-        <Field
-          label="Merma (kg)"
-          mode={mode}
-          value={resultado?.merma !== undefined ? formatKg(resultado.merma) : undefined}
-        >
+        <Field label="Merma (kg)" mode={mode} value={values?.merma ? formatKg(values.merma) : undefined}>
           <Input
             type="number"
             step="0.1"
             min="0"
             placeholder="0.0"
-            defaultValue={editable ? resultado?.merma : undefined}
+            value={values?.merma ?? ""}
+            onChange={(e) => {}}
+            disabled
           />
         </Field>
 
-        <Field
-          label="Hora de Inicio"
-          mode={mode}
-          value="08:00"
-        >
-          <Input type="time" defaultValue="08:00" />
+        <Field label="Rendimiento (%)" mode={mode} value={values?.rendimiento ? formatPct(values.rendimiento) : undefined}>
+          <Input
+            type="number"
+            step="0.1"
+            min="0"
+            max="100"
+            placeholder="0.0"
+            value={values?.rendimiento ?? ""}
+            onChange={(e) => {}}
+            disabled
+          />
         </Field>
-
-        <Field
-          label="Hora de Finalización"
-          mode={mode}
-          value="16:30"
-        >
-          <Input type="time" defaultValue="16:30" />
-        </Field>
-
-        <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50/50 p-4">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-            <Timer className="h-4 w-4" />
-          </div>
-          <div>
-            <p className="text-xs font-medium text-gray-500">Duración Total</p>
-            <p className="text-sm font-semibold text-[#111827]">8h 30min</p>
-          </div>
-        </div>
       </div>
 
-      <div className="mt-6 rounded-xl border border-gray-200 bg-gray-50/50 p-5">
-        <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-500">
-          Resumen del Control
-        </p>
+      <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50/50 p-5">
+        <div className="mb-4 flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#0A4174]/10 text-[#0A4174]">
+            <Scale size={14} />
+          </span>
+          <h4 className="text-sm font-semibold text-[#111827]">Comparación de Pesos</h4>
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {comparacion.map((item) => (
             <div key={item.label} className="rounded-xl border border-gray-200 bg-white p-4">
@@ -130,7 +114,7 @@ export function ControlProcesoCard({ mode, values }: ControlProcesoCardProps) {
                 </span>
                 <p className="text-xs font-medium uppercase tracking-wider text-gray-500">{item.label}</p>
               </div>
-              <p className="text-xl font-bold text-forest-700">{item.value}</p>
+              <p className="text-xl font-bold text-[#111827]">{item.value}</p>
             </div>
           ))}
         </div>

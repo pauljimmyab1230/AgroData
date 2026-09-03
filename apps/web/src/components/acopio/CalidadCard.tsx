@@ -27,7 +27,7 @@ export function CalidadCard({ mode, values }: CalidadCardProps) {
           <Select
             options={toOptions(estadosProductoOpciones)}
             placeholder="Seleccione el estado"
-            defaultValue={editable ? values?.estadoProducto : undefined}
+            value={editable ? values?.estadoProducto : undefined}
           />
         </Field>
 
@@ -42,7 +42,7 @@ export function CalidadCard({ mode, values }: CalidadCardProps) {
             min="0"
             max="100"
             placeholder="0.0"
-            defaultValue={editable ? values?.humedad : undefined}
+            value={editable ? values?.humedad : undefined}
           />
         </Field>
 
@@ -57,7 +57,7 @@ export function CalidadCard({ mode, values }: CalidadCardProps) {
             min="0"
             max="100"
             placeholder="0.0"
-            defaultValue={editable ? values?.impurezas : undefined}
+            value={editable ? values?.impurezas : undefined}
           />
         </Field>
 
@@ -66,7 +66,7 @@ export function CalidadCard({ mode, values }: CalidadCardProps) {
             <Textarea
               rows={4}
               placeholder="Escribe aquí las observaciones del control de calidad..."
-              defaultValue={editable ? values?.observacionesCalidad : undefined}
+              value={editable ? values?.observacionesCalidad : undefined}
             />
           </Field>
         </div>

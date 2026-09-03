@@ -5,8 +5,15 @@ import { CampaniaHeader } from "../../components/campanias/CampaniaHeader";
 import { CampaniaForm } from "../../components/campanias/CampaniaForm";
 import { fetchCampania, type Campania } from "../../services/campanias";
 
-export default function CampaniaEdit() {
-  const { id } = useParams();
+interface CampaniaEditProps {
+  inModal?: boolean;
+  campaniaId?: string;
+  onSave?: () => void;
+}
+
+export default function CampaniaEdit({ inModal, campaniaId: propId, onSave }: CampaniaEditProps) {
+  const { id: paramId } = useParams();
+  const id = propId || paramId;
   const [campania, setCampania] = useState<Campania | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -14,7 +21,7 @@ export default function CampaniaEdit() {
     if (!id) return;
     fetchCampania(id)
       .then(setCampania)
-      .catch(console.error)
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -36,21 +43,25 @@ export default function CampaniaEdit() {
 
   return (
     <div>
-      <Breadcrumb
-        items={[
-          { label: "Campañas", to: "/campanias" },
-          { label: campania.codigo, to: `/campanias/${campania.id}` },
-          { label: "Editar Campaña" },
-        ]}
-      />
+      {!inModal && (
+        <>
+          <Breadcrumb
+            items={[
+              { label: "Campañas", to: "/campanias" },
+              { label: campania.codigo, to: `/campanias/${campania.id}` },
+              { label: "Editar Campaña" },
+            ]}
+          />
 
-      <CampaniaHeader
-        title="Editar Campaña"
-        description={`Actualizando la información de ${campania.nombre} (${campania.codigo})`}
-        backTo={`/campanias/${campania.id}`}
-      />
+          <CampaniaHeader
+            title="Editar Campaña"
+            description={`Actualizando la información de ${campania.nombre} (${campania.codigo})`}
+            backTo={`/campanias/${campania.id}`}
+          />
+        </>
+      )}
 
-      <CampaniaForm mode="edit" values={campania} />
+      <CampaniaForm mode="edit" values={campania} inModal={inModal} onSave={onSave} />
     </div>
   );
 }

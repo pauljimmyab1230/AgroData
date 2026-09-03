@@ -1,13 +1,17 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { Plus, X } from "lucide-react";
-import { Breadcrumb, Button, ConfirmDialog, LoadingSpinner, SearchInput, Select } from "../../components/ui";
+import { Button, ConfirmDialog, LoadingSpinner, SearchInput, Select } from "../../components/ui";
 import { CampaniaHeader } from "../../components/campanias/CampaniaHeader";
 import { CampaniaKPI } from "../../components/campanias/CampaniaKPI";
 import { CampaniaTable } from "../../components/campanias/CampaniaTable";
-import { fetchCampanias, deleteCampania, type Campania } from "../../services/campanias";
+import { fetchCampanias, deleteCampania, fetchCampaniaGlobalStats, type Campania, type CampaniaGlobalStats } from "../../services/campanias";
+import CampaniaModal from "../../components/campanias/CampaniaModal";
 
-const aniosAgricolas = ["2025-2026", "2024-2025", "2023-2024", "2022-2023", "2021-2022"];
+const currentYear = new Date().getFullYear();
+const aniosAgricolas = Array.from({ length: 5 }, (_, i) => {
+  const y = currentYear - i;
+  return `${y}-${y + 1}`;
+});
 const estadosOpciones = ["PLANIFICADA", "ACTIVA", "FINALIZADA", "CANCELADA"];
 
 const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: item }));
@@ -34,8 +38,8 @@ function FilterSelect({
 }
 
 export default function CampaniaList() {
-  const navigate = useNavigate();
   const [campanias, setCampanias] = useState<Campania[]>([]);
+  const [globalStats, setGlobalStats] = useState<CampaniaGlobalStats>({ total: 0, estados: {} });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filtroAnio, setFiltroAnio] = useState("");
@@ -44,22 +48,28 @@ export default function CampaniaList() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [viewId, setViewId] = useState<string | null>(null);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const result = await fetchCampanias({
+      const filters = {
         search: search || undefined,
         estado: filtroEstado || undefined,
         anioAgricola: filtroAnio || undefined,
-        page,
-        limit: 10,
-      });
+      };
+      const [result, stats] = await Promise.all([
+        fetchCampanias({ ...filters, page, limit: 10 }),
+        fetchCampaniaGlobalStats(filters),
+      ]);
       setCampanias(result.data);
+      setGlobalStats(stats);
       setTotalPages(result.totalPages);
       setTotal(result.total);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // handled silently
     } finally {
       setLoading(false);
     }
@@ -67,7 +77,7 @@ export default function CampaniaList() {
 
   useEffect(() => {
     loadData();
-  }, [page, filtroAnio, filtroEstado]);
+  }, [page, filtroAnio, filtroEstado, search]);
 
   const hasFilters = Boolean(search) || Boolean(filtroAnio) || Boolean(filtroEstado);
 
@@ -78,11 +88,14 @@ export default function CampaniaList() {
     setPage(1);
   };
 
-  const campaniaAEliminar = campanias.find((c) => c.id === deleteId);
+  const handleModalClose = () => {
+    setShowCreateModal(false);
+    setEditId(null);
+    setViewId(null);
+    loadData();
+  };
 
-  const handleView = (id: string) => navigate(`/campanias/${id}`);
-  const handleEdit = (id: string) => navigate(`/campanias/${id}/editar`);
-  const handleDelete = (id: string) => setDeleteId(id);
+  const campaniaAEliminar = campanias.find((c) => c.id === deleteId);
 
   if (loading && campanias.length === 0) {
     return (
@@ -94,26 +107,24 @@ export default function CampaniaList() {
 
   return (
     <div>
-      <Breadcrumb items={[{ label: "Campañas" }]} />
-
       <CampaniaHeader
         title="Campañas"
-        description="Planificación y seguimiento de las campañas agrícolas de la cooperativa."
+        description="Planificación y seguimiento de las campañas agrícolas"
         actions={
-          <Button as="link" to="/campanias/nueva" iconLeft={<Plus className="h-4 w-4" />}>
+          <Button onClick={() => setShowCreateModal(true)} iconLeft={<Plus className="h-4 w-4" />}>
             Nueva Campaña
           </Button>
         }
       />
 
-      <CampaniaKPI campanias={campanias} total={total} />
+      <CampaniaKPI stats={globalStats} />
 
       <div className="mb-6 flex flex-wrap items-end gap-3">
         <div className="max-w-md min-w-[200px] flex-1">
           <SearchInput
             placeholder="Buscar por código, nombre o año agrícola..."
             value={search}
-            onChange={(val) => setSearch(val)}
+            onChange={(val) => { setSearch(val); setPage(1); }}
           />
         </div>
 
@@ -127,6 +138,7 @@ export default function CampaniaList() {
             setPage(1);
           }}
         />
+
         <FilterSelect
           label="Estado"
           placeholder="Todos"
@@ -147,9 +159,9 @@ export default function CampaniaList() {
 
       <CampaniaTable
         data={campanias}
-        onView={handleView}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
+        onView={(id) => setViewId(id)}
+        onEdit={(id) => setEditId(id)}
+        onDelete={(id) => setDeleteId(id)}
         currentPage={page}
         totalPages={totalPages}
         onPageChange={setPage}
@@ -162,20 +174,42 @@ export default function CampaniaList() {
           if (!deleteId) return;
           try {
             await deleteCampania(deleteId);
-            setCampanias((prev) => prev.filter((c) => c.id !== deleteId));
             setDeleteId(null);
-          } catch (err) {
-            console.error(err);
+            loadData();
+          } catch {
+            // handled silently
           }
         }}
         title="Eliminar Campaña"
         message={
           campaniaAEliminar
-            ? `¿Estás seguro de eliminar la campaña ${campaniaAEliminar.codigo} - ${campaniaAEliminar.nombre}? Esta acción no se puede deshacer.`
-            : "¿Estás seguro de eliminar esta campaña? Esta acción no se puede deshacer."
+            ? `¿Estás seguro de eliminar la campaña ${campaniaAEliminar.codigo} - ${campaniaAEliminar.nombre}? La campaña dejará de estar activa.`
+            : "¿Estás seguro de eliminar esta campaña? La campaña dejará de estar activa."
         }
         confirmText="Eliminar"
         variant="danger"
+      />
+
+      <CampaniaModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSave={handleModalClose}
+        mode="create"
+      />
+
+      <CampaniaModal
+        open={editId !== null}
+        onClose={() => setEditId(null)}
+        onSave={handleModalClose}
+        mode="edit"
+        campaniaId={editId || undefined}
+      />
+
+      <CampaniaModal
+        open={viewId !== null}
+        onClose={() => setViewId(null)}
+        mode="view"
+        campaniaId={viewId || undefined}
       />
     </div>
   );

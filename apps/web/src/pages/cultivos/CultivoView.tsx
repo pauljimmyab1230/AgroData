@@ -9,16 +9,18 @@ import { DatosGeneralesCard } from "../../components/cultivos/DatosGeneralesCard
 import { InformacionCultivoCard } from "../../components/cultivos/InformacionCultivoCard";
 import { InformacionTecnicaCard } from "../../components/cultivos/InformacionTecnicaCard";
 import { EstimacionProduccionCard } from "../../components/cultivos/EstimacionProduccionCard";
-import { EstadoFenologicoCard } from "../../components/cultivos/EstadoFenologicoCard";
-import { CronogramaCard } from "../../components/cultivos/CronogramaCard";
-import { FotografiasCard } from "../../components/cultivos/FotografiasCard";
 import { ObservacionesCard } from "../../components/cultivos/ObservacionesCard";
-import { CultivoDocuments } from "../../components/cultivos/CultivoDocuments";
 import CultivoHistorial from "../../components/cultivos/CultivoHistorial";
 import { fetchCultivo, type Cultivo } from "../../services/cultivos";
 
-export default function CultivoView() {
-  const { id } = useParams();
+interface CultivoViewProps {
+  inModal?: boolean;
+  cultivoId?: string;
+}
+
+export default function CultivoView({ inModal, cultivoId: propId }: CultivoViewProps) {
+  const { id: paramId } = useParams();
+  const id = propId || paramId;
   const [cultivo, setCultivo] = useState<Cultivo | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -26,7 +28,7 @@ export default function CultivoView() {
     if (!id) return;
     fetchCultivo(id)
       .then(setCultivo)
-      .catch(console.error)
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -57,22 +59,24 @@ export default function CultivoView() {
 
   return (
     <div>
-      <CultivoHeader
-        title="Perfil del Cultivo"
-        description="Información completa y seguimiento del cultivo registrado"
-        crumbs={[{ label: "Cultivos", to: "/cultivos" }, { label: cultivo.codigo }]}
-        backTo="/cultivos"
-        actions={
-          <Button
-            variant="secondary"
-            as="link"
-            to={`/cultivos/${cultivo.id}/editar`}
-            iconLeft={<Pencil className="h-4 w-4" />}
-          >
-            Editar
-          </Button>
-        }
-      />
+      {!inModal && (
+        <CultivoHeader
+          title="Perfil del Cultivo"
+          description="Información completa y seguimiento del cultivo registrado"
+          crumbs={[{ label: "Cultivos", to: "/cultivos" }, { label: cultivo.codigo }]}
+          backTo="/cultivos"
+          actions={
+            <Button
+              variant="secondary"
+              as="link"
+              to={`/cultivos/${cultivo.id}/editar`}
+              iconLeft={<Pencil className="h-4 w-4" />}
+            >
+              Editar
+            </Button>
+          }
+        />
+      )}
 
       <Card padding="lg" hover={false} className="mb-6 shadow-sm">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
@@ -115,11 +119,7 @@ export default function CultivoView() {
         <InformacionCultivoCard mode="view" values={cultivo} />
         <InformacionTecnicaCard mode="view" values={cultivo} />
         <EstimacionProduccionCard mode="view" values={cultivo} />
-        <EstadoFenologicoCard mode="view" values={cultivo} />
-        <CronogramaCard mode="view" values={cultivo} />
-        <FotografiasCard mode="view" />
         <ObservacionesCard mode="view" value={cultivo.observaciones} />
-        <CultivoDocuments mode="view" />
         <CultivoHistorial />
       </div>
     </div>

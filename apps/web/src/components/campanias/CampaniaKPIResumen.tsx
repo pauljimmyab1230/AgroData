@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   ClipboardList,
   MapPin,
@@ -8,19 +9,10 @@ import {
   Wheat,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { Card } from "../ui";
+import { Card, LoadingSpinner } from "../ui";
+import { fetchCampaniaStats, type CampaniaStats } from "../../services/campanias";
 
 type KPI = { label: string; value: string; hint: string };
-
-const kpisDefault: KPI[] = [
-  { label: "Productores Inscritos", value: "—", hint: "socios participantes" },
-  { label: "Parcelas Registradas", value: "—", hint: "parcelas en campaña" },
-  { label: "Cultivos Registrados", value: "—", hint: "cultivos asociados" },
-  { label: "Área Sembrada", value: "—", hint: "hectáreas totales" },
-  { label: "Actividades Agrícolas", value: "—", hint: "actividades registradas" },
-  { label: "Inspecciones Realizadas", value: "—", hint: "inspecciones completadas" },
-  { label: "Acopios Registrados", value: "—", hint: "acopios realizados" },
-];
 
 const iconos: Record<string, LucideIcon> = {
   "Productores Inscritos": Users,
@@ -34,10 +26,43 @@ const iconos: Record<string, LucideIcon> = {
 
 const iconosClase = ["bg-forest-600/10 text-forest-600", "bg-sun-100 text-sun-700"];
 
-export function CampaniaKPIResumen() {
+interface CampaniaKPIResumenProps {
+  campaniaId: string;
+}
+
+export function CampaniaKPIResumen({ campaniaId }: CampaniaKPIResumenProps) {
+  const [stats, setStats] = useState<CampaniaStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!campaniaId) return;
+    fetchCampaniaStats(campaniaId)
+      .then(setStats)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [campaniaId]);
+
+  if (loading) {
+    return (
+      <div className="mb-6 flex justify-center py-8">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  const kpis: KPI[] = [
+    { label: "Productores Inscritos", value: String(stats?.productores ?? 0), hint: "socios participantes" },
+    { label: "Parcelas Registradas", value: String(stats?.parcelas ?? 0), hint: "parcelas en campaña" },
+    { label: "Cultivos Registrados", value: String(stats?.cultivos ?? 0), hint: "cultivos asociados" },
+    { label: "Área Sembrada", value: `${stats?.areaSembrada ?? 0} ha`, hint: "hectáreas totales" },
+    { label: "Actividades Agrícolas", value: String(stats?.actividades ?? 0), hint: "actividades registradas" },
+    { label: "Inspecciones Realizadas", value: String(stats?.inspecciones ?? 0), hint: "inspecciones completadas" },
+    { label: "Acopios Registrados", value: String(stats?.acopios ?? 0), hint: "acopios realizados" },
+  ];
+
   return (
     <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {kpisDefault.map((kpi, i) => {
+      {kpis.map((kpi, i) => {
         const Icon = iconos[kpi.label] ?? Users;
         return (
           <Card key={kpi.label}>

@@ -11,10 +11,11 @@ import {
   type Familiar,
 } from "../../services/productores";
 import { FamiliarModal } from "./FamiliarModal";
+import { toast } from "../../utils/toast";
 
 type FamiliarTableProps = {
   mode: FormMode;
-  productorId?: string;
+  productorId?: number;
 };
 
 type FamiliarFormData = {
@@ -60,7 +61,7 @@ export function FamiliarTable({ mode, productorId }: FamiliarTableProps) {
         }
       } else {
         if (mode === "create") {
-          setFamiliares([...familiares, { id: `temp-${Date.now()}`, ...form }]);
+          setFamiliares([...familiares, { id: -Date.now(), ...form }]);
         } else if (productorId) {
           const created = await createFamiliar(productorId, form);
           setFamiliares([...familiares, created]);
@@ -70,7 +71,7 @@ export function FamiliarTable({ mode, productorId }: FamiliarTableProps) {
       setEditTarget(null);
     } catch (err) {
       console.error(err);
-      alert("Error al guardar el familiar.");
+      toast.error("Error al guardar el familiar.");
     } finally {
       setSaving(false);
     }
@@ -88,7 +89,7 @@ export function FamiliarTable({ mode, productorId }: FamiliarTableProps) {
       setDeleteTarget(null);
     } catch (err) {
       console.error(err);
-      alert("Error al eliminar el familiar.");
+      toast.error("Error al eliminar el familiar.");
     }
   };
 

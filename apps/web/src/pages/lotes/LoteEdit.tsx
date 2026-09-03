@@ -21,23 +21,46 @@ import {
   type LoteFormData,
 } from "../../services/lotes";
 
+import { fetchCampanias } from "../../services/campanias";
+import { fetchCultivos } from "../../services/cultivos";
+
 const toOptions = (items: readonly string[]) => items.map((item) => ({ value: item, label: item }));
-
-const campaniaOpciones = [
-  { value: "", label: "Seleccionar campaña" },
-];
-
-const cultivoOpciones = [
-  { value: "", label: "Seleccionar cultivo" },
-];
 
 export default function LoteEdit() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [campaniaOpciones, setCampaniaOpciones] = useState<{ value: string; label: string }[]>([
+    { value: "", label: "Seleccionar campaña" },
+  ]);
+  const [cultivoOpciones, setCultivoOpciones] = useState<{ value: string; label: string }[]>([
+    { value: "", label: "Seleccionar cultivo" },
+  ]);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<LoteFormData | null>(null);
   const [errors, setErrors] = useState<Partial<Record<keyof LoteFormData, string>>>({});
+
+  useEffect(() => {
+    Promise.all([
+      fetchCampanias({ limit: 100 }).catch(() => ({ data: [] })),
+      fetchCultivos({ limit: 100 }).catch(() => ({ data: [] })),
+    ]).then(([campaniasRes, cultivosRes]) => {
+      setCampaniaOpciones([
+        { value: "", label: "Seleccionar campaña" },
+        ...campaniasRes.data.map((c: { id: string; nombre: string }) => ({
+          value: c.id,
+          label: c.nombre,
+        })),
+      ]);
+      setCultivoOpciones([
+        { value: "", label: "Seleccionar cultivo" },
+        ...cultivosRes.data.map((c: { id: string; cultivo: string }) => ({
+          value: c.id,
+          label: c.cultivo,
+        })),
+      ]);
+    });
+  }, []);
 
   useEffect(() => {
     if (!id) return;

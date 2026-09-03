@@ -7,7 +7,8 @@ import { DatosGeneralesCard } from "./DatosGeneralesCard";
 import { CampaniaStatusCard } from "./CampaniaStatusCard";
 import { ConfiguracionCard } from "./ConfiguracionCard";
 import { ObservacionesCard } from "./ObservacionesCard";
-import { createCampania, updateCampania, type Campania } from "../../services/campanias";
+import { createCampania, updateCampania, type Campania, type CampaniaFormData } from "../../services/campanias";
+import { toast } from "../../utils/toast";
 
 const pasos: StepperStep[] = [
   { id: 1, label: "Información General", icon: Info },
@@ -17,28 +18,6 @@ const pasos: StepperStep[] = [
 ];
 
 const totalPasos = pasos.length;
-
-interface CampaniaFormData {
-  codigo: string;
-  nombre: string;
-  anioAgricola: string;
-  fechaInicio: string;
-  fechaFin: string;
-  descripcion: string;
-  estado: string;
-  responsable: string;
-  tecnicoCoordinador: string;
-  objetivo: string;
-  permitirCultivos: boolean;
-  permitirActividades: boolean;
-  permitirCosechas: boolean;
-  permitirInspecciones: boolean;
-  permitirAcopio: boolean;
-  permitirProcesamiento: boolean;
-  visible: boolean;
-  activa: boolean;
-  observaciones: string;
-}
 
 const emptyForm: CampaniaFormData = {
   codigo: "",
@@ -89,33 +68,70 @@ function campaniaToForm(c: Campania): CampaniaFormData {
 type CampaniaFormProps = {
   mode: Extract<FormMode, "create" | "edit">;
   values?: Campania;
+  inModal?: boolean;
+  onSave?: () => void;
 };
 
-export function CampaniaForm({ mode, values }: CampaniaFormProps) {
+export function CampaniaForm({ mode, values, inModal, onSave }: CampaniaFormProps) {
   const [paso, setPaso] = useState(1);
   const [formData, setFormData] = useState<CampaniaFormData>(() =>
     values ? campaniaToForm(values) : { ...emptyForm },
   );
   const [saving, setSaving] = useState(false);
+  const [_errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
 
-  const update = (patch: Partial<CampaniaFormData>) =>
+  const update = (patch: Partial<CampaniaFormData>) => {
     setFormData((prev) => ({ ...prev, ...patch }));
+    const keys = Object.keys(patch);
+    setErrors((prev) => {
+      const hasAny = keys.some((k) => k in prev);
+      if (!hasAny) return prev;
+      const next = { ...prev };
+      for (const key of keys) delete next[key];
+      return next;
+    });
+  };
+
+  const validate = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.nombre.trim()) newErrors.nombre = "El nombre es obligatorio";
+    if (!formData.anioAgricola) newErrors.anioAgricola = "El año agrícola es obligatorio";
+    if (!formData.fechaInicio) newErrors.fechaInicio = "La fecha de inicio es obligatoria";
+    if (!formData.fechaFin) newErrors.fechaFin = "La fecha de fin es obligatoria";
+    if (!formData.responsable.trim()) newErrors.responsable = "El responsable es obligatorio";
+    if (!formData.tecnicoCoordinador) newErrors.tecnicoCoordinador = "El técnico coordinador es obligatorio";
+    if (!formData.objetivo.trim()) newErrors.objetivo = "El objetivo es obligatorio";
+    if (formData.fechaInicio && formData.fechaFin && formData.fechaInicio > formData.fechaFin) {
+      newErrors.fechaFin = "La fecha de fin debe ser posterior a la de inicio";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSave = async () => {
+    if (!validate()) return;
     setSaving(true);
     try {
       if (mode === "create") {
-        const result = await createCampania(formData);
-        navigate(`/campanias/${result.id}`);
+        await createCampania(formData);
+        if (!inModal) {
+          navigate("/campanias");
+        } else {
+          onSave?.();
+        }
       } else {
         await updateCampania(values!.id, formData);
-        navigate(`/campanias/${values!.id}`);
+        if (!inModal) {
+          navigate(`/campanias/${values!.id}`);
+        } else {
+          onSave?.();
+        }
       }
     } catch (err: unknown) {
       console.error(err);
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Error al guardar. Verifique los datos.";
-      alert(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }

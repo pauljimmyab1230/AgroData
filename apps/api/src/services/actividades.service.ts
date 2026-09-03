@@ -1,4 +1,4 @@
-import prisma from '../config/database';
+import prisma, { type PrismaTransaction } from '../config/database';
 import { createError } from '../middleware/error.middleware';
 
 const generateCodigo = async (): Promise<string> => {
@@ -39,7 +39,6 @@ const selectIncludes = {
   insumos: true,
   mano_obra: true,
   maquinaria: true,
-  fotos: true,
 };
 
 // ─── CRUD ──────────────────────────────────────────────────
@@ -81,7 +80,7 @@ export const getAll = async (filters: {
         productor: { select: { id: true, nombres: true, apellido_paterno: true, apellido_materno: true } },
         parcela: { select: { id: true, nombre: true, codigo: true } },
         cultivo: { select: { id: true, cultivo: true, codigo: true } },
-        _count: { select: { insumos: true, mano_obra: true, maquinaria: true, fotos: true } },
+        _count: { select: { insumos: true, mano_obra: true, maquinaria: true } },
       },
       orderBy: { created_at: 'desc' },
       skip: (page - 1) * limit,
@@ -128,8 +127,8 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
     data: {
       codigo,
       campania_id: data.campania_id as string,
-      productor_id: data.productor_id as string,
-      parcela_id: data.parcela_id as string,
+      productor_id: Number(data.productor_id),
+      parcela_id: Number(data.parcela_id),
       cultivo_id: (data.cultivo_id as string) || null,
       fecha: new Date(data.fecha as string),
       tipo_actividad: data.tipo_actividad as any,
@@ -189,7 +188,7 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
   const hasManoObraUpdate = data.mano_obra !== undefined;
   const hasMaquinariaUpdate = data.maquinaria !== undefined;
 
-  return prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx: PrismaTransaction) => {
     const updated = await tx.actividades.update({
       where: { id },
       data: updateData,

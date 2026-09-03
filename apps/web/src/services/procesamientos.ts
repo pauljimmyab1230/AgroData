@@ -11,21 +11,6 @@ export interface OperacionProcesamiento {
   observaciones: string;
 }
 
-export interface EvidenciaProcesamiento {
-  id?: string;
-  nombre: string;
-  tipo: string;
-  ruta_archivo: string;
-}
-
-export interface HistorialProcesamiento {
-  id?: string;
-  accion: string;
-  usuario: string;
-  fecha: string;
-  observaciones: string;
-}
-
 export interface OrdenProcesamiento {
   id: string;
   codigo: string;
@@ -48,8 +33,6 @@ export interface OrdenProcesamiento {
   humedadFinal: number;
   lotes: string[];
   operaciones: OperacionProcesamiento[];
-  evidencias: EvidenciaProcesamiento[];
-  historial: HistorialProcesamiento[];
   createdAt: string;
   updatedAt: string;
 }
@@ -76,8 +59,6 @@ interface OrdenProcesamientoDTO {
   humedad_final: number | null;
   lotes: string[];
   operaciones: Array<{ id: string; nombre: string; tipo: string; estado: string; fecha_inicio: string | null; fecha_fin: string | null; responsable: string; observaciones: string | null }>;
-  evidencias: Array<{ id: string; nombre: string; tipo: string; ruta_archivo: string | null }>;
-  historial: Array<{ id: string; accion: string; usuario: string; fecha: string; observaciones: string | null }>;
   created_at: string;
   updated_at: string;
 }
@@ -103,7 +84,11 @@ function toFrontend(dto: OrdenProcesamientoDTO): OrdenProcesamiento {
     calidadProducto: dto.calidad_producto ?? "",
     pesoFinal: Number(dto.peso_final) || 0,
     humedadFinal: Number(dto.humedad_final) || 0,
-    lotes: dto.lotes ?? [],
+    lotes: (dto.lotes ?? []).map((l: unknown) => {
+      if (typeof l === "string") return l;
+      const lot = l as { lote_productor?: string; id?: string };
+      return lot.lote_productor || lot.id || "";
+    }),
     operaciones: (dto.operaciones ?? []).map(o => ({
       id: o.id,
       nombre: o.nombre,
@@ -113,19 +98,6 @@ function toFrontend(dto: OrdenProcesamientoDTO): OrdenProcesamiento {
       fechaFin: o.fecha_fin ?? "",
       responsable: o.responsable,
       observaciones: o.observaciones ?? "",
-    })),
-    evidencias: (dto.evidencias ?? []).map(e => ({
-      id: e.id,
-      nombre: e.nombre,
-      tipo: e.tipo,
-      ruta_archivo: e.ruta_archivo ?? "",
-    })),
-    historial: (dto.historial ?? []).map(h => ({
-      id: h.id,
-      accion: h.accion,
-      usuario: h.usuario,
-      fecha: h.fecha,
-      observaciones: h.observaciones ?? "",
     })),
     createdAt: dto.created_at,
     updatedAt: dto.updated_at,
@@ -153,7 +125,6 @@ function toBackend(data: Partial<OrdenProcesamiento>): Record<string, unknown> {
   if (data.humedadFinal !== undefined) out.humedad_final = data.humedadFinal;
   if (data.lotes !== undefined) out.lotes = data.lotes;
   if (data.operaciones !== undefined) out.operaciones = data.operaciones;
-  if (data.evidencias !== undefined) out.evidencias = data.evidencias;
   return out;
 }
 
@@ -179,7 +150,6 @@ export interface OrdenProcesamientoFormData {
   humedadFinal: number;
   lotes: string[];
   operaciones: OperacionProcesamiento[];
-  evidencias: EvidenciaProcesamiento[];
 }
 
 export const emptyOrdenProcesamientoForm: OrdenProcesamientoFormData = {
@@ -202,7 +172,6 @@ export const emptyOrdenProcesamientoForm: OrdenProcesamientoFormData = {
   humedadFinal: 0,
   lotes: [],
   operaciones: [],
-  evidencias: [],
 };
 
 export const procesamientoEstados = ["REGISTRADA", "EN_PROCESO", "COMPLETADA", "PAUSADA", "CANCELADA"] as const;
@@ -284,7 +253,6 @@ export function formatPct(pct: number): string {
 export const calidadesOpciones = ["PRIMERA", "SEGUNDA", "TERCERA", "DESCARTE"] as const;
 export const lineasOpciones = ["GRANOS", "TUBERCULOS", "LEGUMBRES", "SEmillAS"] as const;
 
-export type EventoHistorial = HistorialProcesamiento;
 export type TipoEventoHistorial = string;
 export type Operacion = OperacionProcesamiento;
 

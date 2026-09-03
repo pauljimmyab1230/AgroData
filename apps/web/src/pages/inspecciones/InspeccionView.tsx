@@ -16,8 +16,15 @@ import { ResultadoCard } from "../../components/inspecciones/ResultadoCard";
 import { HistorialCard } from "../../components/inspecciones/HistorialCard";
 import { fetchInspeccion, formatFecha, type Inspeccion } from "../../services/inspecciones";
 
-export default function InspeccionView() {
-  const { id } = useParams();
+interface InspeccionViewProps {
+  inModal?: boolean;
+  inspeccionId?: string;
+  onEdit?: () => void;
+}
+
+export default function InspeccionView({ inModal, inspeccionId: propId, onEdit }: InspeccionViewProps) {
+  const { id: paramId } = useParams();
+  const id = propId || paramId;
   const [inspeccion, setInspeccion] = useState<Inspeccion | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -26,7 +33,7 @@ export default function InspeccionView() {
     setLoading(true);
     fetchInspeccion(id)
       .then(setInspeccion)
-      .catch(console.error)
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -79,27 +86,32 @@ export default function InspeccionView() {
 
   return (
     <div>
-      <Breadcrumb items={[{ label: "Inspecciones", to: "/inspecciones" }, { label: inspeccion.codigo }]} />
+      {!inModal && (
+        <>
+          <Breadcrumb items={[{ label: "Inspecciones", to: "/inspecciones" }, { label: inspeccion.codigo }]} />
 
-      <div className="mb-8 flex items-center gap-4">
-        <Button variant="ghost" as="link" to="/inspecciones" iconLeft={<ArrowLeft className="h-4 w-4" />}>
-          Inspecciones
-        </Button>
-      </div>
+          <div className="mb-8 flex items-center gap-4">
+            <Button variant="ghost" as="link" to="/inspecciones" iconLeft={<ArrowLeft className="h-4 w-4" />}>
+              Inspecciones
+            </Button>
+          </div>
 
-      <InspeccionHeader
-        inspeccion={inspeccion}
-        actions={
-          <Button
-            variant="secondary"
-            as="link"
-            to={`/inspecciones/${inspeccion.id}/editar`}
-            iconLeft={<Pencil className="h-4 w-4" />}
-          >
-            Editar
-          </Button>
-        }
-      />
+          <InspeccionHeader
+            inspeccion={inspeccion}
+            actions={
+              onEdit ? (
+                <Button
+                  variant="secondary"
+                  onClick={onEdit}
+                  iconLeft={<Pencil className="h-4 w-4" />}
+                >
+                  Editar
+                </Button>
+              ) : undefined
+            }
+          />
+        </>
+      )}
 
       <InspeccionKPI items={kpis} />
 

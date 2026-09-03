@@ -3,8 +3,11 @@ import { DatePicker, Input, Select, Textarea } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import type { CampaniaFormData } from "../../services/campanias";
 
-const aniosAgricolas = ["2025-2026", "2024-2025", "2023-2024", "2022-2023", "2021-2022"];
-const tecnicosOpciones = ["Ing. Luis Paredes", "Ing. Carmen Quispe", "Téc. Jorge Salas", "Téc. Miguel Torres"];
+const currentYear = new Date().getFullYear();
+const aniosAgricolas = Array.from({ length: 5 }, (_, i) => {
+  const y = currentYear - i;
+  return `${y}-${y + 1}`;
+});
 
 const formatFecha = (fecha: string) => {
   if (!fecha) return "—";
@@ -82,11 +85,11 @@ export function DatosGeneralesCard({ mode, value, onChange }: DatosGeneralesCard
 
         <div className="sm:col-span-2">
           <Field label="Técnico Coordinador" mode={mode} value={value.tecnicoCoordinador} required>
-            <Select
-              options={toOptions(tecnicosOpciones)}
-              placeholder="Seleccione"
+            <Input
+              type="text"
               value={value.tecnicoCoordinador}
-              onChange={(v) => onChange?.({ tecnicoCoordinador: v })}
+              onChange={(e) => onChange?.({ tecnicoCoordinador: e.target.value })}
+              placeholder="Nombre del técnico coordinador"
             />
           </Field>
         </div>
@@ -109,17 +112,6 @@ export function DatosGeneralesCard({ mode, value, onChange }: DatosGeneralesCard
               value={value.objetivo}
               onChange={(e) => onChange?.({ objetivo: e.target.value })}
               placeholder="Describe el objetivo principal de la campaña..."
-            />
-          </Field>
-        </div>
-
-        <div className="sm:col-span-2 lg:col-span-3">
-          <Field label="Observaciones Generales" mode={mode} value={value.observaciones}>
-            <Textarea
-              rows={3}
-              value={value.observaciones}
-              onChange={(e) => onChange?.({ observaciones: e.target.value })}
-              placeholder="Notas y consideraciones generales de la campaña..."
             />
           </Field>
         </div>

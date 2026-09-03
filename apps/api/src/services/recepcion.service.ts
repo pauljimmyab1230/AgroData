@@ -80,7 +80,6 @@ export const getById = async (id: string) => {
       campania: { select: { id: true, codigo: true, nombre: true } },
       acopio: { select: { id: true, codigo: true } },
       evidencias: true,
-      historial: { orderBy: { created_at: 'desc' } },
     },
   });
 
@@ -104,6 +103,11 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
 
   const evidenciasData = (data.evidencias as Array<Record<string, unknown>>) || [];
 
+  if (data.responsable_id) {
+    const usuario = await prisma.usuarios.findFirst({ where: { id: data.responsable_id as string, activo: true } });
+    if (!usuario) throw createError('Usuario responsable no encontrado', 404);
+  }
+
   return prisma.recepciones.create({
     data: {
       codigo,
@@ -112,6 +116,7 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
       lote_productor: data.lote_productor as string,
       fecha: new Date(data.fecha as string),
       responsable: data.responsable as string,
+      responsable_id: (data.responsable_id as string) || null,
       planta: data.planta as string,
       sacos: (data.sacos as number) || 0,
       peso_campo: data.peso_campo != null ? Number(data.peso_campo) : null,
@@ -163,6 +168,8 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
   for (const field of stringFields) {
     if (data[field] !== undefined) updateData[field] = (data[field] as string) || null;
   }
+
+  if (data.responsable_id !== undefined) updateData.responsable_id = (data.responsable_id as string) || null;
 
   if (data.fecha !== undefined) updateData.fecha = new Date(data.fecha as string);
   if (data.campania_id !== undefined) updateData.campania_id = data.campania_id;

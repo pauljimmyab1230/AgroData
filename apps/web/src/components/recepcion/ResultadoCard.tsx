@@ -6,9 +6,8 @@ import type { Recepcion } from "../../services/recepciones";
 type ResultadoCardProps = {
   mode: FormMode;
   values?: Partial<Recepcion>;
+  onChange?: <K extends keyof Recepcion>(field: K, value: Recepcion[K]) => void;
 };
-
-const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: item }));
 
 const resultadosOpciones = ["ACEPTADO", "ACEPTADO_CON_OBSERVACIONES", "RECHAZADO"];
 const resultadoLabels: Record<string, string> = {
@@ -17,7 +16,7 @@ const resultadoLabels: Record<string, string> = {
   RECHAZADO: "Rechazado",
 };
 
-export function ResultadoCard({ mode, values }: ResultadoCardProps) {
+export function ResultadoCard({ mode, values, onChange }: ResultadoCardProps) {
   const editable = mode !== "view";
 
   return (
@@ -33,14 +32,16 @@ export function ResultadoCard({ mode, values }: ResultadoCardProps) {
           <Select
             options={resultadosOpciones.map((r) => ({ value: r, label: resultadoLabels[r] ?? r }))}
             placeholder="Seleccione el resultado"
-            defaultValue={editable ? values?.resultado : undefined}
+            value={values?.resultado ?? ""}
+            onChange={(val) => onChange?.("resultado", val)}
           />
         </Field>
 
         <Field label="Motivo" mode={mode} value={values?.motivo} className="sm:col-span-2 lg:col-span-2">
           <Input
             placeholder="Motivo del resultado (requerido en caso de observaciones o rechazo)"
-            defaultValue={editable ? values?.motivo : undefined}
+            value={values?.motivo ?? ""}
+            onChange={(e) => onChange?.("motivo", e.target.value)}
           />
         </Field>
       </div>

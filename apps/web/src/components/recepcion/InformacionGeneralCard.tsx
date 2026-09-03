@@ -4,10 +4,12 @@ import { DatePicker, Input, Select } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import type { Recepcion } from "../../services/recepciones";
 import { fetchCampanias } from "../../services/campanias";
+import { useUsuariosBasic } from "../../services/usuarios";
 
 type InformacionGeneralCardProps = {
   mode: FormMode;
   values?: Partial<Recepcion>;
+  onChange?: <K extends keyof Recepcion>(field: K, value: Recepcion[K]) => void;
 };
 
 const parseDate = (s?: string) => (s ? new Date(s + "T00:00:00") : null);
@@ -17,17 +19,12 @@ const plantasOpciones = [
   "Planta Secundaria - Talavera",
   "Planta de Procesamiento - San Jerónimo",
 ];
-const responsablesOpciones = [
-  "Ing. Julio Paredes",
-  "Ing. Carmen Flores",
-  "Téc. Rolando Huaraca",
-  "Ing. Silvia Medina",
-];
 
-export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardProps) {
+export function InformacionGeneralCard({ mode, values, onChange }: InformacionGeneralCardProps) {
   const editable = mode !== "view";
   const [fecha, setFecha] = useState<Date | null>(parseDate(values?.fecha));
   const [campanias, setCampanias] = useState<{ value: string; label: string }[]>([]);
+  const { usuarios: responsables } = useUsuariosBasic();
 
   useEffect(() => {
     let cancelled = false;
@@ -63,7 +60,10 @@ export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardP
         <Field label="Fecha" mode={mode} value={values?.fecha}>
           <DatePicker
             selected={fecha}
-            onChange={(date) => setFecha(date)}
+            onChange={(date) => {
+              setFecha(date);
+              onChange?.("fecha", date ? date.toISOString().split("T")[0] : "");
+            }}
             disabled={!editable}
           />
         </Field>
@@ -72,15 +72,17 @@ export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardP
           <Select
             options={campanias}
             placeholder="Seleccione la campaña"
-            defaultValue={editable ? values?.campaniaId : undefined}
+            value={values?.campaniaId ?? ""}
+            onChange={(val) => onChange?.("campaniaId", val)}
           />
         </Field>
 
         <Field label="Responsable de Recepción" mode={mode} value={values?.responsable}>
           <Select
-            options={responsablesOpciones.map((r) => ({ value: r, label: r }))}
+            options={responsables.map((u) => ({ value: u.nombre, label: u.nombre }))}
             placeholder="Seleccione el responsable"
-            defaultValue={editable ? values?.responsable : undefined}
+            value={values?.responsable ?? ""}
+            onChange={(val) => onChange?.("responsable", val)}
           />
         </Field>
 
@@ -88,7 +90,8 @@ export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardP
           <Select
             options={plantasOpciones.map((p) => ({ value: p, label: p }))}
             placeholder="Seleccione la planta"
-            defaultValue={editable ? values?.planta : undefined}
+            value={values?.planta ?? ""}
+            onChange={(val) => onChange?.("planta", val)}
           />
         </Field>
       </div>

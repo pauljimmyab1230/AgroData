@@ -5,11 +5,10 @@ import { CardHeader, CardShell, Field, type FormMode } from "../shared/formContr
 type ObservacionesCardProps = {
   mode: FormMode;
   value?: string;
+  onChange?: (value: string) => void;
 };
 
-export function ObservacionesCard({ mode, value }: ObservacionesCardProps) {
-  const editable = mode !== "view";
-
+export function ObservacionesCard({ mode, value, onChange }: ObservacionesCardProps) {
   return (
     <CardShell>
       <CardHeader
@@ -22,8 +21,9 @@ export function ObservacionesCard({ mode, value }: ObservacionesCardProps) {
         <Textarea
           rows={5}
           placeholder="Escribe aquí las observaciones del cultivo..."
-          defaultValue={value}
-          disabled={!editable}
+          value={value ?? ""}
+          onChange={(e) => onChange?.(e.target.value)}
+          disabled={mode === "view"}
           className="min-h-32"
         />
       </Field>

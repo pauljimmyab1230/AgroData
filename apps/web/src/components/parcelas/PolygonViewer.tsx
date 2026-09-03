@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import * as L from "leaflet";
-import { MapContainer, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import { MapPin } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw.css";
 import { BaseLayersControl } from "../map/BaseLayers";
+import { ZoomControl } from "../map/ZoomControl";
 import type { LatLngTuple } from "leaflet";
 
 type Coord = [number, number];
@@ -34,6 +35,16 @@ function ringToCoords(ring: L.LatLng[]): Coord[] {
   return ring.map((p) => [p.lat, p.lng] as Coord);
 }
 
+function MapUpdater({ center }: { center?: LatLngTuple }) {
+  const map = useMap();
+  useEffect(() => {
+    if (center) {
+      map.setView(center, map.getZoom());
+    }
+  }, [center, map]);
+  return null;
+}
+
 function DrawLayer({
   readOnly,
   poligono,
@@ -56,7 +67,7 @@ function DrawLayer({
     map.addLayer(group);
 
     if (initialPoligono && initialPoligono.length >= 3) {
-      L.polygon(initialPoligono, { color: "#15803d", weight: 3 }).addTo(group);
+      L.polygon(initialPoligono, { color: "#0A4174", weight: 3 }).addTo(group);
     }
 
     if (readOnly) {
@@ -66,11 +77,17 @@ function DrawLayer({
     }
 
     const control = new L.Control.Draw({
+      position: "bottomleft",
       draw: {
         polygon: {
           allowIntersection: true,
           showArea: true,
-          shapeOptions: { color: "#15803d", weight: 3 },
+          shapeOptions: { color: "#0A4174", weight: 3 },
+          tooltip: {
+            start: "Haz clic para agregar el primer punto",
+            cont: "Haz clic para agregar más puntos",
+            finish: "Haz clic en el primer punto para finalizar",
+          },
         },
         polyline: false,
         rectangle: false,
@@ -78,7 +95,18 @@ function DrawLayer({
         marker: false,
         circlemarker: false,
       },
-      edit: { featureGroup: group },
+      edit: {
+        featureGroup: group,
+        tooltip: {
+          text: "Haz clic en un vértice para editarlo",
+          subtext: "Haz clic en guardar para finalizar",
+        },
+      },
+      text: {
+        finish: "Finalizar",
+        cancel: "Cancelar",
+        undo: "Deshacer",
+      },
     });
     map.addControl(control);
 
@@ -119,6 +147,23 @@ function DrawLayer({
   return null;
 }
 
+const tileLayers: Record<string, { url: string; attribution: string; maxZoom?: number }> = {
+  satellite: {
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics',
+    maxZoom: 19,
+  },
+  relief: {
+    url: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="https://opentopomap.org">OpenTopoMap</a>',
+    maxZoom: 17,
+  },
+  streets: {
+    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  },
+};
+
 export default function PolygonViewer({
   poligono,
   area,
@@ -130,17 +175,28 @@ export default function PolygonViewer({
 }: PolygonViewerProps) {
   const hasPoly = !!poligono && poligono.length >= 3;
   const mapCenter: LatLngTuple = center ?? (hasPoly ? (poligono![0] as LatLngTuple) : DEFAULT_CENTER);
+  const [activeLayer, setActiveLayer] = useState<"satellite" | "relief" | "streets">("satellite");
+  const currentTile = tileLayers[activeLayer];
 
   return (
     <div className={`relative overflow-hidden rounded-xl border border-gray-200 bg-slate-50 ${className}`}>
-      <MapContainer center={mapCenter} zoom={17} className="z-0 h-full w-full" scrollWheelZoom={false}>
-        <BaseLayersControl position="topright" />
+      <MapContainer center={mapCenter} zoom={17} zoomControl={false} className="z-0 h-full w-full" scrollWheelZoom={false}>
+        <TileLayer
+          key={activeLayer}
+          url={currentTile.url}
+          attribution={currentTile.attribution}
+          maxZoom={currentTile.maxZoom}
+        />
+        <MapUpdater center={center} />
         <DrawLayer readOnly={readOnly} poligono={poligono} onChanged={onChanged} />
+        <ZoomControl position="topleft" />
       </MapContainer>
+
+      <BaseLayersControl activeLayer={activeLayer} onLayerChange={setActiveLayer} position="topright" />
 
       <div className="absolute bottom-3 right-3 z-[1000] flex items-center gap-3 rounded-xl bg-white/95 px-3.5 py-2.5 shadow-sm ring-1 ring-gray-200">
         <span className="flex items-center gap-1.5 text-xs font-medium text-gray-600">
-          <MapPin className="h-3.5 w-3.5 text-forest-600" />
+          <MapPin className="h-3.5 w-3.5 text-[#0A4174]" />
           Área dibujada
         </span>
         <span className="text-sm font-bold text-[#111827]">{area || "—"}</span>

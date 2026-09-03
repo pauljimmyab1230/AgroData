@@ -16,6 +16,7 @@ interface DatePickerProps {
   showMonthDropdown?: boolean;
   showYearDropdown?: boolean;
   dropdownMode?: "scroll" | "select";
+  yearDropdownItemNumber?: number;
 }
 
 const DatePicker = forwardRef<ReactDatePicker, DatePickerProps>(
@@ -32,7 +33,8 @@ const DatePicker = forwardRef<ReactDatePicker, DatePickerProps>(
       maxDate,
       showMonthDropdown = true,
       showYearDropdown = true,
-      dropdownMode = "select",
+      dropdownMode = "scroll",
+      yearDropdownItemNumber = 100,
     },
     ref
   ) => {
@@ -72,9 +74,11 @@ const DatePicker = forwardRef<ReactDatePicker, DatePickerProps>(
         maxDate={maxDate}
         showMonthDropdown={showMonthDropdown}
         showYearDropdown={showYearDropdown}
-        dropdownMode={dropdownMode}
+        yearDropdownItemNumber={yearDropdownItemNumber}
+        dropdownMode="scroll"
         calendarClassName="agrodata-calendar"
         popperClassName="agrodata-datepicker-popper"
+        portalId="root"
       />
     );
   }

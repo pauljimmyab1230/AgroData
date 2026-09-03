@@ -41,7 +41,7 @@ export function DatosPersonalesCard({ mode, values }: DatosPersonalesCardProps) 
       />
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <Field label="ID Productor" mode={mode} value={values?.codigo}>
+        <Field label="Código" mode={mode} value={values?.codigo}>
           <Input placeholder="Se genera automáticamente" disabled value={display("codigo")} />
         </Field>
 
@@ -118,6 +118,7 @@ export function DatosPersonalesCard({ mode, values }: DatosPersonalesCardProps) 
               clearFieldError("fechaNacimiento");
               updateData({ fechaNacimiento: date ? date.toISOString().split("T")[0] : "" });
             }}
+            maxDate={new Date()}
             disabled={!editable}
           />
         </Field>

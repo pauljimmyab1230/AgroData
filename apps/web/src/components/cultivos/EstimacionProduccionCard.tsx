@@ -3,7 +3,7 @@ import { Package } from "lucide-react";
 import { DatePicker, Input, Select } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import {
-  destinosProduccionOpciones,
+  destinosProduccionValues,
   type Cultivo,
 } from "../../services/cultivos";
 
@@ -12,13 +12,10 @@ const parseDate = (s?: string) => (s ? new Date(s + "T00:00:00") : null);
 type EstimacionProduccionCardProps = {
   mode: FormMode;
   values?: Partial<Cultivo>;
+  onChange?: (patch: Partial<Cultivo>) => void;
 };
 
-const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: item }));
-
-export function EstimacionProduccionCard({ mode, values }: EstimacionProduccionCardProps) {
-  const editable = mode !== "view";
-
+export function EstimacionProduccionCard({ mode, values, onChange }: EstimacionProduccionCardProps) {
   const [fechaCosecha, setFechaCosecha] = useState<Date | null>(parseDate(values?.fechaCosecha));
 
   return (
@@ -31,22 +28,43 @@ export function EstimacionProduccionCard({ mode, values }: EstimacionProduccionC
 
       <div className="grid gap-6 sm:grid-cols-2">
         <Field label="Rendimiento Esperado (kg/ha)" mode={mode} value={values?.rendimientoEsperado?.toString()}>
-          <Input type="number" min="0" step="0.01" placeholder="Ej. 1800" defaultValue={values?.rendimientoEsperado ?? undefined} />
+          <Input
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="Ej. 1800"
+            value={values?.rendimientoEsperado ?? undefined}
+            onChange={(e) => onChange?.({ rendimientoEsperado: Number(e.target.value) || 0 })}
+          />
         </Field>
 
         <Field label="Producción Estimada (kg)" mode={mode} value={values?.produccionEstimada?.toString()}>
-          <Input type="number" min="0" step="0.01" placeholder="Ej. 4320" defaultValue={values?.produccionEstimada ?? undefined} />
+          <Input
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="Ej. 4320"
+            value={values?.produccionEstimada ?? undefined}
+            onChange={(e) => onChange?.({ produccionEstimada: Number(e.target.value) || 0 })}
+          />
         </Field>
 
         <Field label="Fecha Estimada de Cosecha" mode={mode} value={values?.fechaCosecha}>
-          <DatePicker selected={fechaCosecha} onChange={(d) => setFechaCosecha(d)} />
+          <DatePicker
+            selected={fechaCosecha}
+            onChange={(d) => {
+              setFechaCosecha(d);
+              onChange?.({ fechaCosecha: d?.toISOString().split("T")[0] ?? "" });
+            }}
+          />
         </Field>
 
         <Field label="Destino de Producción" mode={mode} value={values?.destinoProduccion}>
           <Select
-            options={toOptions(destinosProduccionOpciones)}
+            options={destinosProduccionValues.map((v) => ({ value: v, label: v }))}
             placeholder="Seleccione el destino"
-            defaultValue={editable ? values?.destinoProduccion : undefined}
+            value={values?.destinoProduccion}
+            onChange={(val) => onChange?.({ destinoProduccion: val })}
           />
         </Field>
       </div>

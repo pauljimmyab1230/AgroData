@@ -1,13 +1,21 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { Breadcrumb, Button, LoadingSpinner, SectionHeader } from "../../components/ui";
+import { Breadcrumb, Button, LoadingSpinner } from "../../components/ui";
 import ParcelaForm from "../../components/parcelas/ParcelaForm";
-import { ParcelaFormProvider } from "../../contexts/ParcelaFormContext";
 import { fetchParcela, type Parcela } from "../../services/parcelas";
+import { ParcelaFormProvider } from "../../contexts/ParcelaFormContext";
 
-export default function ParcelaEdit() {
-  const { id } = useParams();
+interface ParcelaEditProps {
+  inModal?: boolean;
+  parcelaId?: string;
+  onSave?: () => void;
+}
+
+export default function ParcelaEdit({ inModal, parcelaId: propId, onSave }: ParcelaEditProps) {
+  const { id: paramId } = useParams();
+  const id = propId || paramId;
+  const navigate = useNavigate();
   const [parcela, setParcela] = useState<Parcela | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -15,7 +23,7 @@ export default function ParcelaEdit() {
     if (!id) return;
     fetchParcela(id)
       .then(setParcela)
-      .catch(console.error)
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -36,33 +44,38 @@ export default function ParcelaEdit() {
   }
 
   return (
-    <div>
-      <Breadcrumb
-        items={[
-          { label: "Parcelas", to: "/parcelas" },
-          { label: parcela.codigo, to: `/parcelas/${parcela.id}` },
-          { label: "Editar Parcela" },
-        ]}
-      />
+    <ParcelaFormProvider initial={parcela}>
+      <div>
+        {!inModal && (
+          <>
+            <Breadcrumb
+              items={[
+                { label: "Parcelas", to: "/parcelas" },
+                { label: parcela.codigo, to: `/parcelas/${parcela.id}` },
+                { label: "Editar" },
+              ]}
+            />
 
-      <div className="mb-8 flex items-center gap-4">
-        <Button
-          variant="ghost"
-          as="link"
-          to={`/parcelas/${parcela.id}`}
-          iconLeft={<ArrowLeft className="h-4 w-4" />}
-        >
-          Volver
-        </Button>
-        <SectionHeader
-          title="Editar Parcela"
-          description={`Actualizando la información de ${parcela.nombre} (${parcela.codigo})`}
-        />
+            <div className="mb-8 flex items-center gap-4">
+              <Button
+                variant="ghost"
+                onClick={() => navigate(`/parcelas/${parcela.id}`)}
+                iconLeft={<ArrowLeft className="h-4 w-4" />}
+              >
+                Volver
+              </Button>
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold text-[#111827]">Editar Parcela</h1>
+                <p className="text-sm text-gray-500">
+                  Actualizando información de {parcela.nombre} ({parcela.codigo})
+                </p>
+              </div>
+            </div>
+          </>
+        )}
+
+        <ParcelaForm mode="edit" parcelaId={id} inModal={inModal} onSave={onSave} />
       </div>
-
-      <ParcelaFormProvider initial={parcela}>
-        <ParcelaForm mode="edit" />
-      </ParcelaFormProvider>
-    </div>
+    </ParcelaFormProvider>
   );
 }

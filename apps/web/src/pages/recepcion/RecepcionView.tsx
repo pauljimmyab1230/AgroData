@@ -12,7 +12,6 @@ import { ClasificacionCard } from "../../components/recepcion/ClasificacionCard"
 import { ResultadoCard } from "../../components/recepcion/ResultadoCard";
 import { EvidenciasCard } from "../../components/recepcion/EvidenciasCard";
 import { ObservacionesCard } from "../../components/recepcion/ObservacionesCard";
-import { HistorialCard } from "../../components/recepcion/HistorialCard";
 import { ResultadoRecepcionBadge } from "../../components/recepcion/badges";
 import {
   type Recepcion,
@@ -25,8 +24,14 @@ function formatPct(valor: number | undefined): string {
   return `${Intl.NumberFormat("es-PE", { maximumFractionDigits: 2 }).format(valor)}%`;
 }
 
-export default function RecepcionView() {
-  const { id } = useParams();
+interface RecepcionViewProps {
+  inModal?: boolean;
+  recepcionId?: string;
+}
+
+export default function RecepcionView({ inModal, recepcionId: propId }: RecepcionViewProps) {
+  const { id: paramId } = useParams();
+  const id = propId || paramId;
   const [recepcion, setRecepcion] = useState<Recepcion | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -37,9 +42,7 @@ export default function RecepcionView() {
       .then((r) => {
         if (!cancelled) setRecepcion(r);
       })
-      .catch((err) => {
-        console.error("Error fetching recepcion:", err);
-      })
+      .catch(() => {})
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
@@ -60,9 +63,11 @@ export default function RecepcionView() {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-20">
         <p className="text-sm text-gray-500">No se encontró la recepción.</p>
-        <Button as="link" to="/recepcion" iconLeft={<ArrowLeft className="h-4 w-4" />}>
-          Volver
-        </Button>
+        {!inModal && (
+          <Button as="link" to="/recepcion" iconLeft={<ArrowLeft className="h-4 w-4" />}>
+            Volver
+          </Button>
+        )}
       </div>
     );
   }
@@ -97,27 +102,31 @@ export default function RecepcionView() {
 
   return (
     <div>
-      <Breadcrumb items={[{ label: "Recepción", to: "/recepcion" }, { label: recepcion.codigo }]} />
+      {!inModal && (
+        <>
+          <Breadcrumb items={[{ label: "Recepción", to: "/recepcion" }, { label: recepcion.codigo }]} />
 
-      <div className="mb-8 flex items-center gap-4">
-        <Button variant="ghost" as="link" to="/recepcion" iconLeft={<ArrowLeft className="h-4 w-4" />}>
-          Recepción
-        </Button>
-      </div>
+          <div className="mb-8 flex items-center gap-4">
+            <Button variant="ghost" as="link" to="/recepcion" iconLeft={<ArrowLeft className="h-4 w-4" />}>
+              Recepción
+            </Button>
+          </div>
 
-      <RecepcionHeader
-        recepcion={recepcion}
-        actions={
-          <Button
-            variant="secondary"
-            as="link"
-            to={`/recepcion/${recepcion.id}/editar`}
-            iconLeft={<Pencil className="h-4 w-4" />}
-          >
-            Editar
-          </Button>
-        }
-      />
+          <RecepcionHeader
+            recepcion={recepcion}
+            actions={
+              <Button
+                variant="secondary"
+                as="link"
+                to={`/recepcion/${recepcion.id}/editar`}
+                iconLeft={<Pencil className="h-4 w-4" />}
+              >
+                Editar
+              </Button>
+            }
+          />
+        </>
+      )}
 
       <RecepcionKPI items={kpis} />
 
@@ -130,7 +139,6 @@ export default function RecepcionView() {
         <ResultadoCard mode="view" values={recepcion} />
         <EvidenciasCard mode="view" values={recepcion} />
         <ObservacionesCard mode="view" values={recepcion} />
-        <HistorialCard eventos={recepcion.historial} />
       </div>
     </div>
   );

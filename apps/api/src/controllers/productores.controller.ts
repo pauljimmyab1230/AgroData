@@ -37,7 +37,7 @@ export const getAll = async (req: AuthRequest, res: Response, next: NextFunction
 
 export const getById = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const productor = await productoresService.getById(req.params.id);
+    const productor = await productoresService.getById(Number(req.params.id));
     res.status(200).json({
       success: true,
       data: productor,
@@ -62,7 +62,7 @@ export const create = async (req: AuthRequest, res: Response, next: NextFunction
 
 export const update = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const productor = await productoresService.update(req.params.id, req.body, req.user?.id);
+    const productor = await productoresService.update(Number(req.params.id), req.body, req.user?.id);
     res.status(200).json({
       success: true,
       message: 'Productor actualizado exitosamente',
@@ -75,7 +75,7 @@ export const update = async (req: AuthRequest, res: Response, next: NextFunction
 
 export const remove = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const result = await productoresService.remove(req.params.id);
+    const result = await productoresService.remove(Number(req.params.id));
     res.status(200).json({
       success: true,
       ...result,
@@ -89,7 +89,7 @@ export const remove = async (req: AuthRequest, res: Response, next: NextFunction
 
 export const getFamiliares = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const familiares = await productoresService.getFamiliares(req.params.id);
+    const familiares = await productoresService.getFamiliares(Number(req.params.id));
     res.status(200).json({
       success: true,
       data: familiares,
@@ -102,7 +102,7 @@ export const getFamiliares = async (req: AuthRequest, res: Response, next: NextF
 
 export const createFamiliar = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const familiar = await productoresService.createFamiliar(req.params.id, req.body);
+    const familiar = await productoresService.createFamiliar(Number(req.params.id), req.body);
     res.status(201).json({
       success: true,
       message: 'Familiar registrado exitosamente',
@@ -115,7 +115,7 @@ export const createFamiliar = async (req: AuthRequest, res: Response, next: Next
 
 export const updateFamiliar = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const familiar = await productoresService.updateFamiliar(req.params.id, req.familiarId!, req.body);
+    const familiar = await productoresService.updateFamiliar(Number(req.params.id), Number(req.params.familiarId), req.body);
     res.status(200).json({
       success: true,
       message: 'Familiar actualizado exitosamente',
@@ -128,60 +128,7 @@ export const updateFamiliar = async (req: AuthRequest, res: Response, next: Next
 
 export const removeFamiliar = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const result = await productoresService.removeFamiliar(req.params.id, req.familiarId!);
-    res.status(200).json({
-      success: true,
-      ...result,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// ─── Parcelas ───────────────────────────────────────────────
-
-export const getParcelas = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const parcelas = await productoresService.getParcelas(req.params.id);
-    res.status(200).json({
-      success: true,
-      data: parcelas,
-      total: parcelas.length,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const createParcela = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const parcela = await productoresService.createParcela(req.params.id, req.body);
-    res.status(201).json({
-      success: true,
-      message: 'Parcela registrada exitosamente',
-      data: parcela,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const updateParcela = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const parcela = await productoresService.updateParcela(req.params.id, req.parcelaId!, req.body);
-    res.status(200).json({
-      success: true,
-      message: 'Parcela actualizada exitosamente',
-      data: parcela,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const removeParcela = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const result = await productoresService.removeParcela(req.params.id, req.parcelaId!);
+    const result = await productoresService.removeFamiliar(Number(req.params.id), Number(req.params.familiarId));
     res.status(200).json({
       success: true,
       ...result,
@@ -195,7 +142,7 @@ export const removeParcela = async (req: AuthRequest, res: Response, next: NextF
 
 export const getDocumentos = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const documentos = await productoresService.getDocumentos(req.params.id);
+    const documentos = await productoresService.getDocumentos(Number(req.params.id));
     res.status(200).json({
       success: true,
       data: documentos,
@@ -208,7 +155,7 @@ export const getDocumentos = async (req: AuthRequest, res: Response, next: NextF
 
 export const createDocumento = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const documento = await productoresService.createDocumento(req.params.id, req.body);
+    const documento = await productoresService.createDocumento(Number(req.params.id), req.body);
     res.status(201).json({
       success: true,
       message: 'Documento registrado exitosamente',
@@ -222,8 +169,8 @@ export const createDocumento = async (req: AuthRequest, res: Response, next: Nex
 export const updateDocumentoEstado = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const documento = await productoresService.updateDocumentoEstado(
-      req.params.id,
-      req.params.documentoId,
+      Number(req.params.id),
+      Number(req.params.documentoId),
       req.body.estado,
     );
     res.status(200).json({
@@ -238,7 +185,7 @@ export const updateDocumentoEstado = async (req: AuthRequest, res: Response, nex
 
 export const removeDocumento = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const result = await productoresService.removeDocumento(req.params.id, req.params.documentoId);
+    const result = await productoresService.removeDocumento(Number(req.params.id), Number(req.params.documentoId));
     res.status(200).json({
       success: true,
       ...result,

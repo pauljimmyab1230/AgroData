@@ -13,7 +13,6 @@ const toOptions = (items: string[]) => items.map((item) => ({ value: item, label
 
 export function ProductoBaseCard({ mode, values }: ProductoBaseCardProps) {
   const editable = mode !== "view";
-  const resultado = values?.resultado;
 
   return (
     <CardShell>
@@ -24,69 +23,49 @@ export function ProductoBaseCard({ mode, values }: ProductoBaseCardProps) {
       />
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <Field label="Producto Base" mode={mode} value={resultado?.productoBase}>
+        <Field label="Producto Base" mode={mode} value={values?.productoBase}>
           <Input
             placeholder="Ej: Grano limpio de quinua"
-            defaultValue={editable ? resultado?.productoBase : undefined}
+            value={values?.productoBase ?? ""}
+            onChange={(e) => {}}
+            disabled={!editable}
           />
         </Field>
 
-        <Field label="Calidad" mode={mode} value={resultado?.calidad}>
-          {editable ? (
-            <Select
-              options={toOptions(calidadesOpciones)}
-              placeholder="Seleccione la calidad"
-              defaultValue={editable ? resultado?.calidad : undefined}
-            />
-          ) : (
-            <CalidadBadge calidad={resultado?.calidad} />
-          )}
+        <Field label="Calidad" mode={mode} value={values?.calidadProducto ? <CalidadBadge calidad={values.calidadProducto} /> : undefined}>
+          <Select
+            options={toOptions(calidadesOpciones)}
+            placeholder="Seleccione"
+            value={values?.calidadProducto ?? ""}
+            onChange={(e) => {}}
+            disabled={!editable}
+          />
         </Field>
 
-        <Field
-          label="Peso Final (kg)"
-          mode={mode}
-          value={resultado?.pesoFinal !== undefined ? formatKg(resultado.pesoFinal) : undefined}
-        >
+        <Field label="Peso Final (kg)" mode={mode} value={values?.pesoFinal ? formatKg(values.pesoFinal) : undefined}>
           <Input
             type="number"
             step="0.1"
             min="0"
             placeholder="0.0"
-            defaultValue={editable ? resultado?.pesoFinal : undefined}
+            value={values?.pesoFinal ?? ""}
+            onChange={(e) => {}}
+            disabled={!editable}
           />
         </Field>
 
-        <Field
-          label="Humedad Final (%)"
-          mode={mode}
-          value={resultado?.humedadFinal !== undefined ? `${resultado.humedadFinal}%` : undefined}
-        >
+        <Field label="Humedad Final (%)" mode={mode} value={values?.humedadFinal != null ? `${values.humedadFinal}%` : undefined}>
           <Input
             type="number"
             step="0.1"
             min="0"
             max="100"
             placeholder="0.0"
-            defaultValue={editable ? resultado?.humedadFinal : undefined}
+            value={values?.humedadFinal ?? ""}
+            onChange={(e) => {}}
+            disabled={!editable}
           />
         </Field>
-
-        <div className="sm:col-span-2 lg:col-span-3">
-          <Field label="Observaciones del Producto" mode={mode} value="Grano limpio de quinua de primera calidad, apto para transformación.">
-            {editable ? (
-              <Textarea
-                rows={3}
-                placeholder="Observaciones sobre el producto base obtenido..."
-                defaultValue="Grano limpio de quinua de primera calidad, apto para transformación."
-              />
-            ) : (
-              <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-4">
-                <p className="text-sm text-[#111827]">Grano limpio de quinua de primera calidad, apto para transformación.</p>
-              </div>
-            )}
-          </Field>
-        </div>
       </div>
     </CardShell>
   );

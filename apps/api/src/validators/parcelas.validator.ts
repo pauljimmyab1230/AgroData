@@ -23,6 +23,7 @@ export const createParcelaSchema = Joi.object({
   distrito: opcional(),
   centro_poblado: opcional(),
   ubigeo: Joi.string().max(6).allow('', null),
+  ubigeo_id: Joi.number().integer().positive().allow(null),
   latitud: Joi.string().max(30).allow('', null),
   longitud: Joi.string().max(30).allow('', null),
   precision_gps: Joi.string().max(20).allow('', null),
@@ -40,6 +41,7 @@ export const createParcelaSchema = Joi.object({
   poligono: Joi.array().items(Joi.array().items(Joi.number()).min(2)).min(3).allow(null),
   fecha_levantamiento: Joi.date().iso().allow(null),
   responsable: Joi.string().max(150).allow('', null),
+  acreditacion: Joi.string().max(100).allow('', null),
   certificacion: Joi.string().valid(...certificacionEnum).default('CONVENCIONAL'),
   estado: Joi.string().valid(...estadoParcelaEnum).default('ACTIVA'),
 });
@@ -61,6 +63,7 @@ export const updateParcelaSchema = Joi.object({
   distrito: opcional(),
   centro_poblado: opcional(),
   ubigeo: Joi.string().max(6).allow('', null),
+  ubigeo_id: Joi.number().integer().positive().allow(null),
   latitud: Joi.string().max(30).allow('', null),
   longitud: Joi.string().max(30).allow('', null),
   precision_gps: Joi.string().max(20).allow('', null),
@@ -78,6 +81,7 @@ export const updateParcelaSchema = Joi.object({
   poligono: Joi.array().items(Joi.array().items(Joi.number()).min(2)).min(3).allow(null),
   fecha_levantamiento: Joi.date().iso().allow(null),
   responsable: Joi.string().max(150).allow('', null),
+  acreditacion: Joi.string().max(100).allow('', null),
   certificacion: Joi.string().valid(...certificacionEnum),
   estado: Joi.string().valid(...estadoParcelaEnum),
 }).min(1);
@@ -123,7 +127,7 @@ export const getAllParcelasSchema = Joi.object({
   comunidad: Joi.string().max(150).allow('', null),
   cultivo: Joi.string().max(100).allow('', null),
   estado: Joi.string().valid(...estadoParcelaEnum),
-  productor_id: Joi.string().uuid(),
+  productor_id: Joi.string(),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
 });

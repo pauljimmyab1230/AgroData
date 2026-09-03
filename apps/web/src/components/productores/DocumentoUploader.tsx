@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   Fingerprint,
-  BadgeCheck,
   FileText,
   UploadCloud,
   Eye,
@@ -10,14 +9,12 @@ import {
   Trash2,
   Camera,
   PenLine,
-  ScrollText,
-  Paperclip,
-  FolderOpen,
   User,
 } from "lucide-react";
 import { Badge, Button, Modal } from "../ui";
 import { CardHeader, CardShell, type FormMode } from "../shared/formControls";
 import { fetchDocumentos, createDocumento, deleteDocumento, uploadArchivo, type Documento } from "../../services/productores";
+import { toast } from "../../utils/toast";
 
 type DocTipo = {
   id: string;
@@ -36,41 +33,20 @@ type Categoria = {
 const categorias: Categoria[] = [
   {
     id: "PERSONAL",
-    titulo: "Documentos Personales",
-    descripcion: "Identidad, fotografía y firma del productor",
+    titulo: "Documentos del Productor",
+    descripcion: "DNI, firma y fotografía del productor",
     icon: User,
     tipos: [
       { id: "DNI", label: "DNI", icon: Fingerprint },
-      { id: "Fotografía", label: "Fotografía", icon: Camera },
       { id: "Firma", label: "Firma", icon: PenLine },
-    ],
-  },
-  {
-    id: "INSTITUCIONAL",
-    titulo: "Documentos Institucionales",
-    descripcion: "Solicitudes, contratos y actas de la cooperativa",
-    icon: ScrollText,
-    tipos: [
-      { id: "Solicitud de ingreso", label: "Solicitud de ingreso", icon: FileText },
-      { id: "Contrato", label: "Contrato", icon: FileText },
-      { id: "Acta", label: "Acta", icon: ScrollText },
-    ],
-  },
-  {
-    id: "OTROS",
-    titulo: "Otros Documentos",
-    descripcion: "Certificados y anexos complementarios",
-    icon: FolderOpen,
-    tipos: [
-      { id: "Certificados", label: "Certificados", icon: BadgeCheck },
-      { id: "Anexos", label: "Anexos", icon: Paperclip },
+      { id: "Fotografía", label: "Fotografía", icon: Camera },
     ],
   },
 ];
 
 type DocumentoUploaderProps = {
   mode: FormMode;
-  productorId?: string;
+  productorId?: number;
 };
 
 const formatSize = (bytes: number) =>
@@ -103,7 +79,9 @@ export function DocumentoUploader({ mode, productorId }: DocumentoUploaderProps)
     const target = uploadTargetRef.current;
     if (file && target && productorId) {
       try {
-        const uploaded = await uploadArchivo('documentos', file);
+        const tipo = target.tipo.toLowerCase();
+        const folder = tipo === 'firma' ? 'firmas' : tipo === 'fotografía' || tipo === 'fotografia' ? 'fotos' : 'documentos';
+        const uploaded = await uploadArchivo(folder, file);
         const doc = await createDocumento(productorId, {
           tipo: target.tipo,
           categoria: target.categoria,
@@ -118,7 +96,7 @@ export function DocumentoUploader({ mode, productorId }: DocumentoUploaderProps)
         ]);
       } catch (err) {
         console.error("Error al subir documento:", err);
-        alert("Error al subir el documento");
+        toast.error("Error al subir el documento");
       }
     }
     if (inputRef.current) inputRef.current.value = "";

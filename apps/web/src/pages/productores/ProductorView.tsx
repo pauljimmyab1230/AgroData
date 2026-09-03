@@ -8,7 +8,7 @@ import {
   Layers,
   FileText,
 } from "lucide-react";
-import { Badge, Breadcrumb, Button, Card, LoadingSpinner } from "../../components/ui";
+import { Badge, Button, Card, LoadingSpinner } from "../../components/ui";
 import { ProductorStepper } from "../../components/productores/ProductorStepper";
 import { DatosPersonalesCard } from "../../components/productores/DatosPersonalesCard";
 import { ContactoUbicacionCard } from "../../components/productores/ContactoUbicacionCard";
@@ -19,6 +19,7 @@ import { ParcelaTable } from "../../components/productores/ParcelaTable";
 import { DocumentoUploader } from "../../components/productores/DocumentoUploader";
 import { fetchProductor, fetchParcelas, fetchDocumentos, type Productor, type Parcela, type Documento } from "../../services/productores";
 import { ProductorFormProvider } from "../../contexts/ProductorFormContext";
+import { toast } from "../../utils/toast";
 
 const formatFecha = (fecha: string) => {
   const [y, m, d] = fecha.split("-").map(Number);
@@ -35,16 +36,17 @@ export default function ProductorView() {
 
   useEffect(() => {
     if (!id) return;
-    fetchProductor(id)
+    const numId = Number(id);
+    fetchProductor(numId)
       .then(setProductor)
-      .catch(console.error)
+      .catch(() => toast.error("Error al cargar el productor"))
       .finally(() => setLoading(false));
-    fetchParcelas(id)
+    fetchParcelas(numId)
       .then(setParcelas)
-      .catch(console.error);
-    fetchDocumentos(id)
+      .catch(() => toast.error("Error al cargar las parcelas"));
+    fetchDocumentos(numId)
       .then(setDocumentos)
-      .catch(console.error);
+      .catch(() => toast.error("Error al cargar los documentos"));
   }, [id]);
 
   if (loading) {
@@ -73,7 +75,7 @@ export default function ProductorView() {
     );
 
   const totalParcelas = parcelas.length;
-  const areaTotal = parcelas.reduce((sum, p) => sum + parseFloat(p.area), 0).toFixed(2);
+  const areaTotal = parcelas.reduce((sum, p) => sum + Number(p.area), 0).toFixed(2);
   const cultivosActivos = new Set(
     parcelas.filter((p) => p.estado === "ACTIVA").map((p) => p.cultivo),
   ).size;
@@ -108,22 +110,9 @@ export default function ProductorView() {
 
   return (
     <div>
-      <Breadcrumb
-        items={[{ label: "Productores", to: "/productores" }, { label: productor.codigo }]}
-      />
-
       <div className="mb-8 flex items-center gap-4">
         <Button variant="ghost" as="link" to="/productores" iconLeft={<ArrowLeft className="h-4 w-4" />}>
           Productores
-        </Button>
-        <div className="flex-1" />
-        <Button
-          variant="secondary"
-          as="link"
-          to={`/productores/${productor.id}/editar`}
-          iconLeft={<Pencil className="h-4 w-4" />}
-        >
-          Editar
         </Button>
       </div>
 

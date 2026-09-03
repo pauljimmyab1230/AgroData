@@ -7,21 +7,23 @@ import { DatosGeneralesCard } from "./DatosGeneralesCard";
 import { InformacionAgroecologicaCard } from "./InformacionAgroecologicaCard";
 import { UbicacionCard } from "./UbicacionCard";
 import { PoligonoCard } from "./PoligonoCard";
-import { FotografiaCard } from "./FotografiaCard";
-import { DocumentoCard } from "./DocumentoCard";
 import { useParcelaForm } from "../../contexts/ParcelaFormContext";
-import { createParcela, updateParcela, deleteFoto, deleteDocumento } from "../../services/parcelas";
+import { createParcela, updateParcela } from "../../services/parcelas";
 import type { FormMode } from "../shared/formControls";
 
-const totalTabs = 5;
+const totalTabs = 3;
 
 interface ParcelaFormProps {
   mode: Extract<FormMode, "create" | "edit">;
+  parcelaId?: string;
+  inModal?: boolean;
+  onSave?: () => void;
 }
 
-export default function ParcelaForm({ mode }: ParcelaFormProps) {
-  const { id } = useParams();
-  const { data, validate, fotos, setFotos, documentos, setDocumentos } = useParcelaForm();
+export default function ParcelaForm({ mode, parcelaId, inModal, onSave }: ParcelaFormProps) {
+  const { id: urlId } = useParams();
+  const id = parcelaId || urlId;
+  const { data, validate } = useParcelaForm();
   const [tab, setTab] = useState(1);
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
@@ -34,38 +36,49 @@ export default function ParcelaForm({ mode }: ParcelaFormProps) {
     setSaving(true);
     try {
       if (mode === "create") {
-        const parcela = await createParcela(data);
-        navigate(`/parcelas/${parcela.id}`);
+        await createParcela(data);
+        if (!inModal) {
+          navigate("/parcelas");
+        } else {
+          onSave?.();
+        }
       } else {
         if (!id) throw new Error("ID de parcela no encontrado");
-        const parcela = await updateParcela(id, data);
-        navigate(`/parcelas/${parcela.id}`);
+        await updateParcela(id, data);
+        if (!inModal) {
+          navigate(`/parcelas/${id}`);
+        } else {
+          onSave?.();
+        }
       }
-    } catch (err) {
-      console.error(err);
-      alert("Error al guardar. Verifique los datos.");
+    } catch (err: unknown) {
+      console.error("Error al guardar parcela:", err);
+
+      let message = "Error al guardar. Verifique los datos.";
+
+      if (err && typeof err === "object" && "response" in err) {
+        const axiosErr = err as { response?: { status?: number; data?: { message?: string; errors?: string[] } } };
+        const status = axiosErr.response?.status;
+        const respData = axiosErr.response?.data;
+
+        if (status === 400 && respData?.errors?.length) {
+          message = `Error de validación:\n• ${respData.errors.join("\n• ")}`;
+        } else if (status === 400 && respData?.message) {
+          message = respData.message;
+        } else if (status === 404) {
+          message = "La parcela no fue encontrada.";
+        } else if (status === 409) {
+          message = respData?.message || "Conflicto: el código ya está en uso.";
+        } else if (status && status >= 500) {
+          message = "Error del servidor. Intente nuevamente.";
+        } else if (respData?.message) {
+          message = respData.message;
+        }
+      }
+
+      alert(message);
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleDeleteFoto = async (fotoId: string) => {
-    if (!id) return;
-    try {
-      await deleteFoto(id, fotoId);
-      setFotos(fotos.filter((f) => f.id !== fotoId));
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleDeleteDocumento = async (documentoId: string) => {
-    if (!id) return;
-    try {
-      await deleteDocumento(id, documentoId);
-      setDocumentos(documentos.filter((d) => d.id !== documentoId));
-    } catch (err) {
-      console.error(err);
     }
   };
 
@@ -82,20 +95,6 @@ export default function ParcelaForm({ mode }: ParcelaFormProps) {
         )}
         {tab === 2 && <UbicacionCard mode={mode} />}
         {tab === 3 && <PoligonoCard mode={mode} />}
-        {tab === 4 && (
-          <FotografiaCard
-            mode={mode}
-            fotos={fotos}
-            onDelete={mode === "edit" ? handleDeleteFoto : undefined}
-          />
-        )}
-        {tab === 5 && (
-          <DocumentoCard
-            mode={mode}
-            documentos={documentos}
-            onDelete={mode === "edit" ? handleDeleteDocumento : undefined}
-          />
-        )}
       </div>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm">

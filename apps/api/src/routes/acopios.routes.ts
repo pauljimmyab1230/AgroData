@@ -7,6 +7,7 @@ import {
   updateAcopioSchema,
   getAllAcopiosSchema,
 } from '../validators/acopios.validator';
+import { idParamSchema } from '../validators/common.validator';
 
 const router = Router();
 
@@ -14,9 +15,9 @@ router.use(authMiddleware);
 
 router.get('/stats', acopiosController.getStats);
 router.get('/', validate(getAllAcopiosSchema), acopiosController.getAll);
-router.get('/:id', acopiosController.getById);
+router.get('/:id', validate(idParamSchema, 'params'), acopiosController.getById);
 router.post('/', validate(createAcopioSchema), acopiosController.create);
-router.put('/:id', validate(updateAcopioSchema), acopiosController.update);
-router.delete('/:id', acopiosController.remove);
+router.put('/:id', validate(idParamSchema, 'params'), validate(updateAcopioSchema), acopiosController.update);
+router.delete('/:id', validate(idParamSchema, 'params'), acopiosController.remove);
 
 export default router;

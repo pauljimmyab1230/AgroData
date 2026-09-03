@@ -6,9 +6,8 @@ import type { Recepcion } from "../../services/recepciones";
 type ClasificacionCardProps = {
   mode: FormMode;
   values?: Partial<Recepcion>;
+  onChange?: <K extends keyof Recepcion>(field: K, value: Recepcion[K]) => void;
 };
-
-const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: item }));
 
 const categoriasOpciones = ["PRIMERA", "SEGUNDA", "INDUSTRIAL", "DESCARTE"];
 const destinosOpciones = ["PROCESAMIENTO", "ALMACEN_TEMPORAL", "RECHAZADO"];
@@ -26,7 +25,7 @@ const destinoLabels: Record<string, string> = {
   RECHAZADO: "Rechazado",
 };
 
-export function ClasificacionCard({ mode, values }: ClasificacionCardProps) {
+export function ClasificacionCard({ mode, values, onChange }: ClasificacionCardProps) {
   const editable = mode !== "view";
 
   return (
@@ -42,7 +41,8 @@ export function ClasificacionCard({ mode, values }: ClasificacionCardProps) {
           <Select
             options={categoriasOpciones.map((c) => ({ value: c, label: categoriaLabels[c] ?? c }))}
             placeholder="Seleccione la categoría"
-            defaultValue={editable ? values?.categoria : undefined}
+            value={values?.categoria ?? ""}
+            onChange={(val) => onChange?.("categoria", val)}
           />
         </Field>
 
@@ -50,7 +50,8 @@ export function ClasificacionCard({ mode, values }: ClasificacionCardProps) {
           <Select
             options={destinosOpciones.map((d) => ({ value: d, label: destinoLabels[d] ?? d }))}
             placeholder="Seleccione el destino"
-            defaultValue={editable ? values?.destino : undefined}
+            value={values?.destino ?? ""}
+            onChange={(val) => onChange?.("destino", val)}
           />
         </Field>
       </div>

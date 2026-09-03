@@ -33,16 +33,6 @@ export interface ActividadMaquinaria {
   observaciones?: string;
 }
 
-export interface ActividadFoto {
-  id?: string;
-  titulo: string;
-  descripcion?: string;
-  rutaArchivo?: string;
-  preview?: string;
-  fecha?: string;
-  responsable?: string;
-}
-
 export interface Actividad {
   id: string;
   codigo: string;
@@ -79,7 +69,6 @@ export interface Actividad {
   insumos: ActividadInsumo[];
   manoObra: ActividadManoObra[];
   maquinaria: ActividadMaquinaria[];
-  fotos: ActividadFoto[];
   createdAt: string;
   updatedAt: string;
 }
@@ -114,10 +103,9 @@ interface ActividadDTO {
   objetivo: string | null;
   resultado: string | null;
   proxima_actividad: string | null;
-  insumos: any[];
-  mano_obra: any[];
-  maquinaria: any[];
-  fotos: any[];
+  insumos: Array<{ nombre: string; cantidad: number; unidad: string; costo: number | null }>;
+  mano_obra: Array<{ nombre: string; horas: number; tarifa: number | null }>;
+  maquinaria: Array<{ nombre: string; horas: number; costo: number | null }>;
   created_at: string;
   updated_at: string;
 }
@@ -168,10 +156,6 @@ function toFrontend(dto: ActividadDTO): Actividad {
     maquinaria: (dto.maquinaria ?? []).map((m) => ({
       id: m.id, equipo: m.equipo, operador: m.operador,
       horasUso: m.horas_uso, combustible: m.combustible, observaciones: m.observaciones,
-    })),
-    fotos: (dto.fotos ?? []).map((f) => ({
-      id: f.id, titulo: f.titulo, descripcion: f.descripcion,
-      rutaArchivo: f.ruta_archivo, fecha: f.fecha?.split("T")[0], responsable: f.responsable,
     })),
     createdAt: dto.created_at,
     updatedAt: dto.updated_at,
@@ -268,9 +252,13 @@ export async function deleteActividad(id: string): Promise<void> {
 export type ActividadFormData = {
   codigo: string;
   fecha: string;
+  campaniaId: string;
   campania: string;
+  productorId: string;
   productor: string;
+  parcelaId: string;
   parcela: string;
+  cultivoId: string;
   cultivo: string;
   responsableTecnico: string;
   tipoActividad: string;
@@ -284,7 +272,6 @@ export type ActividadFormData = {
   insumos: ActividadInsumo[];
   manoObra: ActividadManoObra[];
   maquinaria: ActividadMaquinaria[];
-  fotos: ActividadFoto[];
   latitud: string;
   longitud: string;
   altitud: string;
@@ -300,9 +287,13 @@ export function actividadToFormData(a: Actividad): ActividadFormData {
   return {
     codigo: a.codigo,
     fecha: a.fecha,
+    campaniaId: a.campaniaId,
     campania: a.campaniaNombre,
+    productorId: a.productorId,
     productor: a.productorNombre,
+    parcelaId: a.parcelaId,
     parcela: a.parcelaNombre,
+    cultivoId: a.cultivoId ?? "",
     cultivo: a.cultivoNombre,
     responsableTecnico: a.responsableTecnico,
     tipoActividad: a.tipoActividad,
@@ -316,7 +307,6 @@ export function actividadToFormData(a: Actividad): ActividadFormData {
     insumos: a.insumos,
     manoObra: a.manoObra,
     maquinaria: a.maquinaria,
-    fotos: a.fotos,
     latitud: a.latitud,
     longitud: a.longitud,
     altitud: a.altitud,
@@ -332,9 +322,13 @@ export function actividadToFormData(a: Actividad): ActividadFormData {
 export const emptyActividad: ActividadFormData = {
   codigo: "",
   fecha: "",
+  campaniaId: "",
   campania: "",
+  productorId: "",
   productor: "",
+  parcelaId: "",
   parcela: "",
+  cultivoId: "",
   cultivo: "",
   responsableTecnico: "",
   tipoActividad: "",
@@ -348,7 +342,6 @@ export const emptyActividad: ActividadFormData = {
   insumos: [],
   manoObra: [],
   maquinaria: [],
-  fotos: [],
   latitud: "",
   longitud: "",
   altitud: "",
@@ -359,6 +352,59 @@ export const emptyActividad: ActividadFormData = {
   resultado: "",
   proximaActividad: "",
 };
+
+export function formDataToActividad(data: ActividadFormData): Partial<Actividad> {
+  return {
+    campaniaId: data.campaniaId,
+    productorId: data.productorId,
+    parcelaId: data.parcelaId,
+    cultivoId: data.cultivoId || null,
+    fecha: data.fecha,
+    tipoActividad: data.tipoActividad,
+    descripcion: data.descripcion,
+    responsableTecnico: data.responsableTecnico,
+    horaInicio: data.horaInicio,
+    horaFin: data.horaFin,
+    duracionEstimada: data.duracionEstimada,
+    prioridad: data.prioridad as "ALTA" | "MEDIA" | "BAJA",
+    estado: data.estado as "PROGRAMADA" | "EN_PROCESO" | "COMPLETADA",
+    jornales: Number(data.jornales) || 0,
+    latitud: data.latitud,
+    longitud: data.longitud,
+    altitud: data.altitud,
+    precisionGps: data.precisionGps,
+    observacionesTecnicas: data.observacionesTecnicas,
+    recomendaciones: data.recomendaciones,
+    objetivo: data.objetivo,
+    resultado: data.resultado,
+    proximaActividad: data.proximaActividad,
+    insumos: data.insumos.map((i) => ({
+      producto: i.producto,
+      categoria: i.categoria,
+      fabricante: i.fabricante,
+      cantidad: i.cantidad,
+      unidad: i.unidad,
+      lote: i.lote,
+      costo_unitario: i.costoUnitario,
+      costo_total: i.costoTotal,
+      observaciones: i.observaciones,
+    })),
+    manoObra: data.manoObra.map((m) => ({
+      trabajador: m.trabajador,
+      funcion: m.funcion,
+      jornales: m.jornales,
+      horas: m.horas,
+      observaciones: m.observaciones,
+    })),
+    maquinaria: data.maquinaria.map((m) => ({
+      equipo: m.equipo,
+      operador: m.operador,
+      horas_uso: m.horasUso,
+      combustible: m.combustible,
+      observaciones: m.observaciones,
+    })),
+  };
+}
 
 export function formatearFecha(fecha?: string): string {
   if (!fecha) return "—";

@@ -3,16 +3,33 @@ import { createError } from '../middleware/error.middleware';
 
 const generateCodigo = async (): Promise<string> => {
   const year = new Date().getFullYear();
-  const last = await prisma.campanias.findFirst({
-    where: { codigo: { startsWith: `CAM-${year}-` } },
-    orderBy: { created_at: 'desc' },
-    select: { codigo: true },
-  });
+  let attempts = 0;
+  
+  while (attempts < 10) {
+    const last = await prisma.campanias.findFirst({
+      where: { codigo: { startsWith: `CAM-${year}-` } },
+      orderBy: { created_at: 'desc' },
+      select: { codigo: true },
+    });
 
-  if (!last) return `CAM-${year}-01`;
+    let nextCode: string;
+    if (!last) {
+      nextCode = `CAM-${year}-01`;
+    } else {
+      const num = parseInt(last.codigo.split('-').pop() || '0', 10) + 1;
+      nextCode = `CAM-${year}-${String(num).padStart(2, '0')}`;
+    }
 
-  const num = parseInt(last.codigo.split('-').pop() || '0', 10) + 1;
-  return `CAM-${year}-${String(num).padStart(2, '0')}`;
+    const exists = await prisma.campanias.findUnique({
+      where: { codigo: nextCode },
+      select: { id: true },
+    });
+    
+    if (!exists) return nextCode;
+    attempts++;
+  }
+  
+  throw createError('No se pudo generar un código único', 500);
 };
 
 const ensureUniqueCodigo = async (codigo: string): Promise<string> => {
@@ -169,4 +186,84 @@ export const remove = async (id: string) => {
   });
 
   return { message: 'Campaña eliminada exitosamente' };
+};
+
+// ─── Stats ─────────────────────────────────────────────────
+
+export const getStats = async (id: string) => {
+  const campania = await prisma.campanias.findFirst({ where: { id, activo: true } });
+  if (!campania) throw createError('Campaña no encontrada', 404);
+
+  const [cultivos, actividades, inspecciones, acopios] = await Promise.all([
+    prisma.cultivos.findMany({
+      where: { campania_id: id, activo: true },
+      select: { id: true, area_sembrada: true, productor_id: true, parcela_id: true, cultivo: true },
+    }),
+    prisma.actividades.count({ where: { campania_id: id, activo: true } }),
+    prisma.inspecciones.count({ where: { campania_id: id, activo: true } }),
+    prisma.acopios.count({ where: { campania_id: id, activo: true } }),
+  ]);
+
+  const productoresIds = new Set(cultivos.map((c) => c.productor_id));
+  const parcelasIds = new Set(cultivos.map((c) => c.parcela_id));
+  const areaSembrada = cultivos.reduce((acc, c) => acc + (Number(c.area_sembrada) || 0), 0);
+
+  const cultivosPorTipo: Record<string, number> = {};
+  for (const c of cultivos) {
+    cultivosPorTipo[c.cultivo] = (cultivosPorTipo[c.cultivo] || 0) + 1;
+  }
+
+  return {
+    productores: productoresIds.size,
+    parcelas: parcelasIds.size,
+    cultivos: cultivos.length,
+    areaSembrada: Math.round(areaSembrada * 100) / 100,
+    actividades,
+    inspecciones,
+    acopios,
+    cultivosPorTipo,
+  };
+};
+
+// ─── Global Stats ──────────────────────────────────────────
+
+export const getGlobalStats = async (filters?: {
+  search?: string;
+  estado?: string;
+  anio_agricola?: string;
+}) => {
+  const where: Record<string, unknown> = { activo: true };
+
+  if (filters?.estado) where.estado = filters.estado;
+  if (filters?.anio_agricola) where.anio_agricola = filters.anio_agricola;
+
+  if (filters?.search) {
+    where.OR = [
+      { codigo: { contains: filters.search } },
+      { nombre: { contains: filters.search } },
+      { anio_agricola: { contains: filters.search } },
+      { responsable: { contains: filters.search } },
+    ];
+  }
+
+  const [total, porEstado] = await Promise.all([
+    prisma.campanias.count({ where }),
+    prisma.campanias.groupBy({
+      by: ['estado'],
+      where,
+      _count: { id: true },
+    }),
+  ]);
+
+  const estados: Record<string, number> = {
+    PLANIFICADA: 0,
+    ACTIVA: 0,
+    FINALIZADA: 0,
+    CANCELADA: 0,
+  };
+  for (const item of porEstado) {
+    estados[item.estado] = item._count.id;
+  }
+
+  return { total, estados };
 };

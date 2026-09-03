@@ -1,15 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ClipboardList } from "lucide-react";
 import { DatePicker, Input, Select } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import type { AcopioView } from "../../services/acopios";
+import { useUsuariosBasic } from "../../services/usuarios";
 import {
-  acopiadoresOpciones,
-  campaniasOpciones,
   comunidadesOpciones,
   rutasOpciones,
   vehiculosOpciones,
 } from "../../pages/acopio/acopioMock";
+import api from "../../services/api";
 
 const parseDate = (s?: string) => (s ? new Date(s + "T00:00:00") : null);
 
@@ -20,10 +20,32 @@ type InformacionGeneralCardProps = {
 
 const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: item }));
 
+interface SelectOption {
+  value: string;
+  label: string;
+}
+
 export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardProps) {
   const editable = mode !== "view";
+  const { usuarios: acopiadores } = useUsuariosBasic("ACOPIADOR");
+  const [campanias, setCampanias] = useState<SelectOption[]>([]);
 
   const [fecha, setFecha] = useState<Date | null>(parseDate(values?.fecha));
+  const acopiadoresOptions = acopiadores.map((u) => ({ value: u.nombre, label: u.nombre }));
+
+  useEffect(() => {
+    if (!editable) return;
+    api.get("/campanias", { params: { limit: 200 } })
+      .then((res) => {
+        setCampanias(
+          (res.data.data ?? []).map((c: { id: string | number; nombre: string; codigo: string }) => ({
+            value: String(c.id),
+            label: `${c.codigo} - ${c.nombre}`,
+          }))
+        );
+      })
+      .catch(() => {});
+  }, [editable]);
 
   return (
     <CardShell>
@@ -35,7 +57,7 @@ export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardP
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <Field label="Código de Acopio" mode={mode} value={values?.codigo}>
-          <Input placeholder="Se genera automáticamente" disabled defaultValue={editable ? values?.codigo : undefined} />
+          <Input placeholder="Se genera automáticamente" disabled value={editable ? values?.codigo : undefined} />
         </Field>
 
         <Field label="Fecha" mode={mode} value={values?.fecha}>
@@ -44,17 +66,17 @@ export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardP
 
         <Field label="Campaña" mode={mode} value={values?.campania}>
           <Select
-            options={toOptions(campaniasOpciones)}
+            options={campanias}
             placeholder="Seleccione la campaña"
-            defaultValue={editable ? values?.campania : undefined}
+            value={values?.campaniaId}
           />
         </Field>
 
         <Field label="Acopiador" mode={mode} value={values?.acopiador}>
           <Select
-            options={toOptions(acopiadoresOpciones)}
+            options={acopiadoresOptions}
             placeholder="Seleccione el acopiador"
-            defaultValue={editable ? values?.acopiador : undefined}
+            value={editable ? values?.acopiador : undefined}
           />
         </Field>
 
@@ -62,7 +84,7 @@ export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardP
           <Select
             options={toOptions(comunidadesOpciones)}
             placeholder="Seleccione la comunidad"
-            defaultValue={editable ? values?.comunidad : undefined}
+            value={editable ? values?.comunidad : undefined}
           />
         </Field>
 
@@ -70,7 +92,7 @@ export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardP
           <Select
             options={toOptions(vehiculosOpciones)}
             placeholder="Seleccione el vehículo"
-            defaultValue={editable ? values?.vehiculo : undefined}
+            value={editable ? values?.vehiculo : undefined}
           />
         </Field>
 
@@ -78,7 +100,7 @@ export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardP
           <Select
             options={toOptions(rutasOpciones)}
             placeholder="Seleccione la ruta"
-            defaultValue={editable ? values?.ruta : undefined}
+            value={editable ? values?.ruta : undefined}
           />
         </Field>
       </div>

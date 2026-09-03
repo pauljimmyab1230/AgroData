@@ -27,6 +27,7 @@ export const createCapacitacionSchema = Joi.object({
   departamento: Joi.string().max(100).allow('', null),
   provincia: Joi.string().max(100).allow('', null),
   distrito: Joi.string().max(100).allow('', null),
+  ubigeo_id: Joi.number().integer().positive().allow(null),
   material_entregado: Joi.string().allow('', null),
   observaciones: Joi.string().allow('', null),
   participantes: Joi.array().items(Joi.object({
@@ -51,6 +52,7 @@ export const updateCapacitacionSchema = Joi.object({
   departamento: Joi.string().max(100).allow('', null),
   provincia: Joi.string().max(100).allow('', null),
   distrito: Joi.string().max(100).allow('', null),
+  ubigeo_id: Joi.number().integer().positive().allow(null),
   material_entregado: Joi.string().allow('', null),
   observaciones: Joi.string().allow('', null),
 }).min(1);

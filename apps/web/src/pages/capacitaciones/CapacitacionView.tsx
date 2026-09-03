@@ -35,8 +35,8 @@ export default function CapacitacionView() {
       try {
         const data = await fetchCapacitacion(id!);
         setCapacitacion(data);
-      } catch (err) {
-        console.error(err);
+      } catch {
+        // handled silently
       } finally {
         setLoading(false);
       }
@@ -49,8 +49,8 @@ export default function CapacitacionView() {
     try {
       await deleteCapacitacion(id);
       navigate("/capacitaciones");
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // handled silently
     }
   };
 

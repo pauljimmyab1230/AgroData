@@ -9,8 +9,6 @@ export interface AuthRequest extends Request {
     email: string;
     rol: string;
   };
-  familiarId?: string;
-  parcelaId?: string;
 }
 
 export const authMiddleware = (req: AuthRequest, _res: Response, next: NextFunction) => {

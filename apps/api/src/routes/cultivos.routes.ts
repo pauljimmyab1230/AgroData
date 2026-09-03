@@ -7,15 +7,17 @@ import {
   updateCultivoSchema,
   getAllCultivosSchema,
 } from '../validators/cultivos.validator';
+import { idParamSchema } from '../validators/common.validator';
 
 const router = Router();
 
 router.use(authMiddleware);
 
 router.get('/', validate(getAllCultivosSchema), cultivosController.getAll);
-router.get('/:id', cultivosController.getById);
+router.get('/stats', cultivosController.getGlobalStats);
+router.get('/:id', validate(idParamSchema, 'params'), cultivosController.getById);
 router.post('/', validate(createCultivoSchema), cultivosController.create);
-router.put('/:id', validate(updateCultivoSchema), cultivosController.update);
-router.delete('/:id', cultivosController.remove);
+router.put('/:id', validate(idParamSchema, 'params'), validate(updateCultivoSchema), cultivosController.update);
+router.delete('/:id', validate(idParamSchema, 'params'), cultivosController.remove);
 
 export default router;

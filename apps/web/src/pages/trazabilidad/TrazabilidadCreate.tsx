@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, Save } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Breadcrumb, Button, Card, FormField, Input, Select, Textarea, SectionHeader } from "../../components/ui";
@@ -8,6 +8,7 @@ import {
   trazabilidadEstados,
   type TrazabilidadFormData,
 } from "../../services/trazabilidades";
+import api from "../../services/api";
 
 const toOptions = (items: readonly string[]) =>
   items.map((item) => ({
@@ -27,6 +28,31 @@ export default function TrazabilidadCreate() {
   const [form, setForm] = useState<TrazabilidadFormData>({ ...emptyTrazabilidadForm });
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const [productoresOpts, setProductoresOpts] = useState<{ value: string; label: string }[]>([]);
+  const [parcelasOpts, setParcelasOpts] = useState<{ value: string; label: string }[]>([]);
+  const [cultivosOpts, setCultivosOpts] = useState<{ value: string; label: string }[]>([]);
+
+  useEffect(() => {
+    api.get("/productores", { params: { limit: 200 } }).then((r) => {
+      setProductoresOpts(r.data.data?.map((p: { id: number; nombres: string; apellido_paterno: string; apellido_materno: string }) => ({
+        value: String(p.id),
+        label: `${p.nombres} ${p.apellido_paterno} ${p.apellido_materno}`.trim(),
+      })) ?? []);
+    }).catch(() => {});
+    api.get("/parcelas", { params: { limit: 200 } }).then((r) => {
+      setParcelasOpts(r.data.data?.map((p: { id: number; nombre: string; codigo: string }) => ({
+        value: String(p.id),
+        label: `${p.codigo} - ${p.nombre}`,
+      })) ?? []);
+    }).catch(() => {});
+    api.get("/cultivos", { params: { limit: 200 } }).then((r) => {
+      setCultivosOpts(r.data.data?.map((c: { id: string; cultivo: string; codigo: string }) => ({
+        value: c.id,
+        label: `${c.codigo} - ${c.cultivo}`,
+      })) ?? []);
+    }).catch(() => {});
+  }, []);
 
   const set = (key: keyof TrazabilidadFormData, value: string | number) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -84,7 +110,11 @@ export default function TrazabilidadCreate() {
               <Input value={form.producto} onChange={(e) => set("producto", e.target.value)} placeholder="Cafe Arabica" />
             </FormField>
             <FormField label="Cultivo" required error={errors.cultivo}>
-              <Input value={form.cultivo} onChange={(e) => set("cultivo", e.target.value)} placeholder="Cafe" />
+              <Select options={cultivosOpts} placeholder="Seleccione cultivo" value={form.cultivoId ?? ""} onChange={(val) => {
+                const opt = cultivosOpts.find(o => o.value === val);
+                set("cultivo", opt?.label?.split(" - ").slice(1).join(" - ") ?? "");
+                set("cultivoId", val);
+              }} />
             </FormField>
             <FormField label="Origen" required error={errors.origen}>
               <Input value={form.origen} onChange={(e) => set("origen", e.target.value)} placeholder="San Martin" />
@@ -99,10 +129,18 @@ export default function TrazabilidadCreate() {
           <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500">Datos de Produccion</h3>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <FormField label="Productor" required error={errors.productor}>
-              <Input value={form.productor} onChange={(e) => set("productor", e.target.value)} placeholder="Juan Perez" />
+              <Select options={productoresOpts} placeholder="Seleccione productor" value={String(form.productorId ?? "")} onChange={(val) => {
+                const opt = productoresOpts.find(o => o.value === val);
+                set("productor", opt?.label ?? "");
+                set("productorId", parseInt(val) || 0);
+              }} />
             </FormField>
             <FormField label="Parcela">
-              <Input value={form.parcela} onChange={(e) => set("parcela", e.target.value)} placeholder="Parcela A" />
+              <Select options={parcelasOpts} placeholder="Seleccione parcela" value={String(form.parcelaId ?? "")} onChange={(val) => {
+                const opt = parcelasOpts.find(o => o.value === val);
+                set("parcela", opt?.label ?? "");
+                set("parcelaId", parseInt(val) || 0);
+              }} />
             </FormField>
             <FormField label="Comunidad">
               <Input value={form.comunidad} onChange={(e) => set("comunidad", e.target.value)} placeholder="Comunidad San Jose" />

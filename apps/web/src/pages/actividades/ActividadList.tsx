@@ -1,13 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import { Plus, X } from "lucide-react";
-import { Breadcrumb, Button, ConfirmDialog, LoadingSpinner, SearchInput, Select } from "../../components/ui";
+import { Button, ConfirmDialog, LoadingSpinner, SearchInput, Select } from "../../components/ui";
 import { ActividadHeader } from "../../components/actividades/ActividadHeader";
 import { ActividadKPI } from "../../components/actividades/ActividadKPI";
 import { ActividadTable } from "../../components/actividades/ActividadTable";
 import { fetchActividades, deleteActividad, tiposActividad, type Actividad } from "../../services/actividades";
-
-const toOptions = (items: { value: string; label: string }[]) => items;
+import ActividadModal from "../../components/actividades/ActividadModal";
 
 function FilterSelect({
   label,
@@ -31,7 +29,6 @@ function FilterSelect({
 }
 
 export default function ActividadList() {
-  const navigate = useNavigate();
   const [actividades, setActividades] = useState<Actividad[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -40,6 +37,9 @@ export default function ActividadList() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [viewId, setViewId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -53,8 +53,8 @@ export default function ActividadList() {
       });
       setActividades(result.data);
       setTotalPages(result.totalPages);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // handled silently
     } finally {
       setLoading(false);
     }
@@ -73,19 +73,22 @@ export default function ActividadList() {
     setPage(1);
   };
 
-  const actividadAEliminar = actividades.find((a) => a.id === deleteId);
+  const handleModalClose = () => {
+    setShowCreateModal(false);
+    setEditId(null);
+    setViewId(null);
+    loadData();
+  };
 
-  const handleView = (id: string) => navigate(`/actividades/${id}`);
-  const handleEdit = (id: string) => navigate(`/actividades/${id}/editar`);
-  const handleDelete = (id: string) => setDeleteId(id);
+  const actividadAEliminar = actividades.find((a) => a.id === deleteId);
 
   const handleConfirmDelete = async () => {
     if (!deleteId) return;
     try {
       await deleteActividad(deleteId);
       setActividades((prev) => prev.filter((a) => a.id !== deleteId));
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // handled silently
     } finally {
       setDeleteId(null);
     }
@@ -101,13 +104,11 @@ export default function ActividadList() {
 
   return (
     <div>
-      <Breadcrumb items={[{ label: "Actividades Agrícolas" }]} />
-
       <ActividadHeader
         title="Actividades Agrícolas"
-        description="Registro de las actividades y labores realizadas en el campo."
+        description="Registro de actividades y labores del campo"
         actions={
-          <Button as="link" to="/actividades/nueva" iconLeft={<Plus className="h-4 w-4" />}>
+          <Button onClick={() => setShowCreateModal(true)} iconLeft={<Plus className="h-4 w-4" />}>
             Nueva Actividad
           </Button>
         }
@@ -130,7 +131,7 @@ export default function ActividadList() {
         <FilterSelect
           label="Tipo de Actividad"
           placeholder="Todos"
-          options={toOptions(tiposActividad)}
+          options={tiposActividad}
           value={filtroTipo}
           onChange={(val) => {
             setFiltroTipo(val);
@@ -161,9 +162,9 @@ export default function ActividadList() {
 
       <ActividadTable
         data={actividades}
-        onView={handleView}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
+        onView={(id) => setViewId(id)}
+        onEdit={(id) => setEditId(id)}
+        onDelete={(id) => setDeleteId(id)}
         currentPage={page}
         totalPages={totalPages}
         onPageChange={setPage}
@@ -181,6 +182,28 @@ export default function ActividadList() {
         }
         confirmText="Eliminar"
         variant="danger"
+      />
+
+      <ActividadModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSave={handleModalClose}
+        mode="create"
+      />
+
+      <ActividadModal
+        open={editId !== null}
+        onClose={() => setEditId(null)}
+        onSave={handleModalClose}
+        mode="edit"
+        actividadId={editId || undefined}
+      />
+
+      <ActividadModal
+        open={viewId !== null}
+        onClose={() => setViewId(null)}
+        mode="view"
+        actividadId={viewId || undefined}
       />
     </div>
   );

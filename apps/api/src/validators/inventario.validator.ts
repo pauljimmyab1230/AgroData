@@ -32,7 +32,7 @@ export const createInventarioSchema = Joi.object({
   cantidad_maxima: Joi.number().precision(2).min(0).allow(null),
   ubicacion: Joi.string().max(200).allow('', null),
   estado: Joi.string().valid(...estadoInventarioEnum).default('DISPONIBLE'),
-  lote_id: Joi.string().max(36).allow('', null),
+  lote_id: Joi.string().uuid().allow(null),
   fecha_ingreso: Joi.date().iso().required().messages({
     'any.required': 'La fecha de ingreso es obligatoria',
   }),
@@ -53,7 +53,7 @@ export const updateInventarioSchema = Joi.object({
   cantidad_maxima: Joi.number().precision(2).min(0).allow(null),
   ubicacion: Joi.string().max(200).allow('', null),
   estado: Joi.string().valid(...estadoInventarioEnum),
-  lote_id: Joi.string().max(36).allow('', null),
+  lote_id: Joi.string().uuid().allow(null),
   fecha_ingreso: Joi.date().iso(),
   fecha_vencimiento: Joi.date().iso().allow(null),
   proveedor: Joi.string().max(200).allow('', null),
@@ -66,7 +66,7 @@ export const getAllInventarioSchema = Joi.object({
   search: Joi.string().max(100).allow('', null),
   estado: Joi.string().valid(...estadoInventarioEnum),
   categoria: Joi.string().max(100).allow('', null),
-  lote_id: Joi.string().max(36).allow('', null),
+  lote_id: Joi.string().uuid().allow('', null),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
 });

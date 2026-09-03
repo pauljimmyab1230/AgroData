@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { Plus, Pencil, Eye, Trash2, Download, Users, UserCheck, User } from "lucide-react";
 import {
   Badge,
-  Breadcrumb,
   Button,
   Card,
   ConfirmDialog,
@@ -14,6 +12,9 @@ import {
   Select,
 } from "../../components/ui";
 import { fetchProductores, fetchComunidades, deleteProductor, type Productor } from "../../services/productores";
+import ProductorModal from "../../components/productores/ProductorModal";
+import ProductorViewModal from "../../components/productores/ProductorViewModal";
+import { toast } from "../../utils/toast";
 
 const estadoBadge = (estado: string) => {
   switch (estado) {
@@ -29,7 +30,6 @@ const estadoBadge = (estado: string) => {
 };
 
 export default function ProductorList() {
-  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [estadoFilter, setEstadoFilter] = useState("");
@@ -38,14 +38,17 @@ export default function ProductorList() {
   const [comunidadFilter, setComunidadFilter] = useState("");
   const [comunidades, setComunidades] = useState<string[]>([]);
   const [page, setPage] = useState(1);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
   const [productores, setProductores] = useState<Productor[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editId, setEditId] = useState<number | null>(null);
+  const [viewId, setViewId] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchComunidades().then(setComunidades).catch(console.error);
+    fetchComunidades().then(setComunidades).catch(() => toast.error("Error al cargar comunidades"));
   }, []);
 
   useEffect(() => {
@@ -53,8 +56,8 @@ export default function ProductorList() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const result = await fetchProductores({
         search: debouncedSearch || undefined,
@@ -68,11 +71,18 @@ export default function ProductorList() {
       setProductores(result.data);
       setTotalPages(result.totalPages);
       setTotal(result.total);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      toast.error("Error al cargar los productores");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
+  };
+
+  const handleModalClose = () => {
+    setShowCreateModal(false);
+    setEditId(null);
+    setViewId(null);
+    loadData(true);
   };
 
   useEffect(() => {
@@ -185,7 +195,7 @@ export default function ProductorList() {
           <button
             type="button"
             aria-label={`Ver ${productor.nombres}`}
-            onClick={() => navigate(`/productores/${productor.id}`)}
+            onClick={() => setViewId(productor.id)}
             className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-forest-600/10 hover:text-forest-700"
           >
             <Eye className="h-4 w-4" />
@@ -193,7 +203,7 @@ export default function ProductorList() {
           <button
             type="button"
             aria-label={`Editar ${productor.nombres}`}
-            onClick={() => navigate(`/productores/${productor.id}/editar`)}
+            onClick={() => setEditId(productor.id)}
             className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-forest-600/10 hover:text-forest-700"
           >
             <Pencil className="h-4 w-4" />
@@ -213,18 +223,16 @@ export default function ProductorList() {
 
   return (
     <div>
-      <Breadcrumb items={[{ label: "Productores" }]} />
-
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <SectionHeader
           title="Productores"
-          description="Gestión de socios productores de la cooperativa"
+          description="Gestión de productores"
         />
         <div className="flex items-center gap-2">
           <Button variant="secondary" onClick={handleExportCsv} iconLeft={<Download className="h-4 w-4" />}>
             Exportar CSV
           </Button>
-          <Button as="link" to="/productores/nuevo" iconLeft={<Plus className="h-4 w-4" />}>
+          <Button onClick={() => setShowCreateModal(true)} iconLeft={<Plus className="h-4 w-4" />}>
             Nuevo Productor
           </Button>
         </div>
@@ -331,7 +339,7 @@ export default function ProductorList() {
         emptyTitle="No hay productores registrados"
         emptyDescription="Comienza registrando el primer productor de la cooperativa."
         emptyActionLabel="Registrar Productor"
-        emptyActionTo="/productores/nuevo"
+        emptyActionOnClick={() => setShowCreateModal(true)}
         currentPage={page}
         totalPages={totalPages}
         onPageChange={setPage}
@@ -341,19 +349,40 @@ export default function ProductorList() {
         open={deleteId !== null}
         onClose={() => setDeleteId(null)}
         onConfirm={async () => {
-          if (!deleteId) return;
+          if (deleteId === null) return;
           try {
             await deleteProductor(deleteId);
             setProductores(prev => prev.filter(p => p.id !== deleteId));
             setDeleteId(null);
-          } catch (err) {
-            console.error(err);
+          } catch {
+            toast.error("Error al eliminar el productor");
           }
         }}
         title="Eliminar Productor"
         message="¿Estás seguro de eliminar este productor? Esta acción no se puede deshacer."
         confirmText="Eliminar"
         variant="danger"
+      />
+
+      <ProductorModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSave={handleModalClose}
+        mode="create"
+      />
+
+      <ProductorModal
+        open={editId !== null}
+        onClose={() => setEditId(null)}
+        onSave={handleModalClose}
+        mode="edit"
+        productorId={editId || undefined}
+      />
+
+      <ProductorViewModal
+        open={viewId !== null}
+        onClose={() => setViewId(null)}
+        productorId={viewId || undefined}
       />
     </div>
   );

@@ -15,6 +15,9 @@ export interface Trazabilidad {
   codigo: string;
   loteId: string;
   loteCodigo: string;
+  productorId: number | null;
+  parcelaId: number | null;
+  cultivoId: string | null;
   producto: string;
   cultivo: string;
   origen: string;
@@ -41,6 +44,12 @@ interface TrazabilidadDTO {
   codigo: string;
   lote_id: string;
   lote: { id: string; codigo: string } | null;
+  productor_id: number | null;
+  parcela_id: number | null;
+  cultivo_id: string | null;
+  productor_ref: { id: number; nombres: string; apellido_paterno: string; apellido_materno: string } | null;
+  parcela_ref: { id: number; nombre: string; codigo: string } | null;
+  cultivo_ref: { id: string; cultivo: string; codigo: string } | null;
   producto: string;
   cultivo: string;
   origen: string;
@@ -68,6 +77,9 @@ function toFrontend(dto: TrazabilidadDTO): Trazabilidad {
     codigo: dto.codigo,
     loteId: dto.lote_id,
     loteCodigo: dto.lote?.codigo ?? "",
+    productorId: dto.productor_id ?? null,
+    parcelaId: dto.parcela_id ?? null,
+    cultivoId: dto.cultivo_id ?? null,
     producto: dto.producto,
     cultivo: dto.cultivo,
     origen: dto.origen,
@@ -102,6 +114,9 @@ function toBackend(data: Partial<Trazabilidad>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   if (data.codigo !== undefined) out.codigo = data.codigo;
   if (data.loteId !== undefined) out.lote_id = data.loteId;
+  if (data.productorId !== undefined) out.productor_id = data.productorId;
+  if (data.parcelaId !== undefined) out.parcela_id = data.parcelaId;
+  if (data.cultivoId !== undefined) out.cultivo_id = data.cultivoId || null;
   if (data.producto !== undefined) out.producto = data.producto;
   if (data.cultivo !== undefined) out.cultivo = data.cultivo;
   if (data.origen !== undefined) out.origen = data.origen;
@@ -127,6 +142,9 @@ function toBackend(data: Partial<Trazabilidad>): Record<string, unknown> {
 export interface TrazabilidadFormData {
   codigo: string;
   loteId: string;
+  productorId: number | null;
+  parcelaId: number | null;
+  cultivoId: string | null;
   producto: string;
   cultivo: string;
   origen: string;
@@ -149,6 +167,9 @@ export interface TrazabilidadFormData {
 export const emptyTrazabilidadForm: TrazabilidadFormData = {
   codigo: "",
   loteId: "",
+  productorId: null,
+  parcelaId: null,
+  cultivoId: null,
   producto: "",
   cultivo: "",
   origen: "",

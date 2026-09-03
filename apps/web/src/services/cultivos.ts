@@ -25,12 +25,9 @@ export interface Cultivo {
   procedenciaSemilla: string;
   cantidadSemilla: number | null;
   unidadSemilla: string;
-  fechaEmergencia: string;
-  fechaFloracion: string;
   fechaCosecha: string;
   estado: string;
   observaciones: string;
-  estadoFenologico: string;
   rendimientoEsperado: number | null;
   produccionEstimada: number | null;
   destinoProduccion: string;
@@ -64,12 +61,9 @@ interface CultivoDTO {
   procedencia_semilla: string | null;
   cantidad_semilla: number | null;
   unidad_semilla: string | null;
-  fecha_emergencia: string | null;
-  fecha_floracion: string | null;
   fecha_cosecha: string | null;
   estado: string;
   observaciones: string | null;
-  estado_fenologico: string | null;
   rendimiento_esperado: number | null;
   produccion_estimada: number | null;
   destino_produccion: string | null;
@@ -91,10 +85,10 @@ function toFrontend(dto: CultivoDTO): Cultivo {
     campaniaId: dto.campania_id,
     campaniaNombre: dto.campania?.nombre ?? "",
     campaniaCodigo: dto.campania?.codigo ?? "",
-    productorId: dto.productor_id,
+    productorId: String(dto.productor_id),
     productorNombre: `${p?.nombres ?? ""} ${p?.apellido_paterno ?? ""} ${p?.apellido_materno ?? ""}`.trim(),
     productorCodigo: p?.codigo ?? "",
-    parcelaId: dto.parcela_id,
+    parcelaId: String(dto.parcela_id),
     parcelaNombre: dto.parcela?.nombre ?? "",
     parcelaCodigo: dto.parcela?.codigo ?? "",
     cultivo: dto.cultivo,
@@ -108,12 +102,9 @@ function toFrontend(dto: CultivoDTO): Cultivo {
     procedenciaSemilla: dto.procedencia_semilla ?? "",
     cantidadSemilla: Number(dto.cantidad_semilla) || 0,
     unidadSemilla: dto.unidad_semilla ?? "",
-    fechaEmergencia: dto.fecha_emergencia?.split("T")[0] ?? "",
-    fechaFloracion: dto.fecha_floracion?.split("T")[0] ?? "",
     fechaCosecha: dto.fecha_cosecha?.split("T")[0] ?? "",
     estado: dto.estado,
     observaciones: dto.observaciones ?? "",
-    estadoFenologico: dto.estado_fenologico ?? "",
     rendimientoEsperado: Number(dto.rendimiento_esperado) || 0,
     produccionEstimada: Number(dto.produccion_estimada) || 0,
     destinoProduccion: dto.destino_produccion ?? "",
@@ -132,8 +123,8 @@ function toBackend(data: Partial<Cultivo>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   if (data.codigo !== undefined) out.codigo = data.codigo;
   if (data.campaniaId !== undefined) out.campania_id = data.campaniaId;
-  if (data.productorId !== undefined) out.productor_id = data.productorId;
-  if (data.parcelaId !== undefined) out.parcela_id = data.parcelaId;
+  if (data.productorId !== undefined) out.productor_id = Number(data.productorId) || data.productorId;
+  if (data.parcelaId !== undefined) out.parcela_id = Number(data.parcelaId) || data.parcelaId;
   if (data.cultivo !== undefined) out.cultivo = data.cultivo;
   if (data.variedad !== undefined) out.variedad = data.variedad || null;
   if (data.areaSembrada !== undefined) out.area_sembrada = data.areaSembrada;
@@ -145,12 +136,9 @@ function toBackend(data: Partial<Cultivo>): Record<string, unknown> {
   if (data.procedenciaSemilla !== undefined) out.procedencia_semilla = data.procedenciaSemilla || null;
   if (data.cantidadSemilla !== undefined) out.cantidad_semilla = data.cantidadSemilla;
   if (data.unidadSemilla !== undefined) out.unidad_semilla = data.unidadSemilla || null;
-  if (data.fechaEmergencia !== undefined) out.fecha_emergencia = data.fechaEmergencia || null;
-  if (data.fechaFloracion !== undefined) out.fecha_floracion = data.fechaFloracion || null;
   if (data.fechaCosecha !== undefined) out.fecha_cosecha = data.fechaCosecha || null;
   if (data.estado !== undefined) out.estado = data.estado;
   if (data.observaciones !== undefined) out.observaciones = data.observaciones || null;
-  if (data.estadoFenologico !== undefined) out.estado_fenologico = data.estadoFenologico || null;
   if (data.rendimientoEsperado !== undefined) out.rendimiento_esperado = data.rendimientoEsperado;
   if (data.produccionEstimada !== undefined) out.produccion_estimada = data.produccionEstimada;
   if (data.destinoProduccion !== undefined) out.destino_produccion = data.destinoProduccion || null;
@@ -214,36 +202,110 @@ export async function deleteCultivo(id: string): Promise<void> {
   await api.delete(`/cultivos/${id}`);
 }
 
-// ─── Options for selects ───────────────────────────────────
+// ─── Global Stats ─────────────────────────────────────────
 
-export const metodosSiembra = ["DIRECTA", "TRASPLANTE", "ALMACIGO", "OTRO"];
-export const sistemasProductivos = ["AGROECOLOGICO", "ORGANICO", "CONVENCIONAL", "EN_TRANSICION"];
-export const tiposAgricultura = ["TRADICIONAL", "TECNIFICADA", "MIXTA"];
-export const certificacionesCultivo = ["ORGANICA", "EN_TRANSICION", "SIN_CERTIFICAR"];
-export const procedenciasSemilla = ["CERTIFICADA", "COMUN", "PRODUCIDA_EN_CAMPO", "CONSERVADA_POR_AGRICULTOR"];
-export const unidadesSemilla = ["kg", "lb", "qq", "t"];
-export const estadosCultivo = ["ACTIVO", "EN_DESARROLLO", "COSECHADO", "FINALIZADO"];
-export const destinosProduccion = ["VENTA_COOPERATIVA", "COMERCIALIZACION_LOCAL", "AUTOCONSUMO", "SEMILLA"];
+export interface CultivoGlobalStats {
+  total: number;
+  estados: Record<string, number>;
+  areaSembrada: number;
+  campaniasActivas: number;
+}
 
-// ─── Additional types (for photos, documents, history) ─────
+export async function fetchCultivoGlobalStats(params?: {
+  search?: string;
+  estado?: string;
+  campania_id?: string;
+}): Promise<CultivoGlobalStats> {
+  const query: Record<string, string> = {};
+  if (params?.search) query.search = params.search;
+  if (params?.estado) query.estado = params.estado;
+  if (params?.campania_id) query.campania_id = params.campania_id;
 
-export type CultivoFoto = {
-  id: string;
-  titulo: string;
-  descripcion: string;
-  fecha?: string;
-  responsable?: string;
+  const res = await api.get("/cultivos/stats", { params: query });
+  return res.data.data;
+}
+
+// ─── Enum values (UPPERCASE, matching backend) ─────────────
+
+export const estadosCultivoValues = ["ACTIVO", "EN_DESARROLLO", "COSECHADO", "FINALIZADO"];
+export const metodosSiembraValues = ["DIRECTA", "TRASPLANTE", "ALMACIGO", "OTRO"];
+export const sistemasProductivosValues = ["AGROECOLOGICO", "ORGANICO", "CONVENCIONAL", "EN_TRANSICION"];
+export const tiposAgriculturaValues = ["TRADICIONAL", "TECNIFICADA", "MIXTA"];
+export const certificacionesValues = ["ORGANICA", "EN_TRANSICION", "SIN_CERTIFICAR"];
+export const procedenciasSemillaValues = ["CERTIFICADA", "COMUN", "PRODUCIDA_EN_CAMPO", "CONSERVADA_POR_AGRICULTOR"];
+export const unidadesSemillaValues = ["kg", "lb", "qq", "t"];
+export const destinosProduccionValues = ["VENTA_COOPERATIVA", "COMERCIALIZACION_LOCAL", "AUTOCONSUMO", "SEMILLA"];
+export const tiposSemillaValues = ["CERTIFICADA", "COMUN", "CONSERVADA", "HIBRIDA"];
+
+// ─── Display labels (for view mode) ────────────────────────
+
+export const estadosCultivoLabels: Record<string, string> = {
+  ACTIVO: "Activo",
+  EN_DESARROLLO: "En Desarrollo",
+  COSECHADO: "Cosechado",
+  FINALIZADO: "Finalizado",
 };
 
-export type CultivoDocumento = {
-  id: number;
-  tipo: string;
-  nombre: string;
-  tamano: string;
-  fecha: string;
-  estado: string;
-  categoria: "Técnicos" | "Análisis" | "Otros";
+export const metodosSiembraLabels: Record<string, string> = {
+  DIRECTA: "Directa",
+  TRASPLANTE: "Trasplante",
+  ALMACIGO: "Almácigo",
+  OTRO: "Otro",
 };
+
+export const sistemasProductivosLabels: Record<string, string> = {
+  AGROECOLOGICO: "Agroecológico",
+  ORGANICO: "Orgánico",
+  CONVENCIONAL: "Convencional",
+  EN_TRANSICION: "En Transición",
+};
+
+export const tiposAgriculturaLabels: Record<string, string> = {
+  TRADICIONAL: "Tradicional",
+  TECNIFICADA: "Tecnificada",
+  MIXTA: "Mixta",
+};
+
+export const certificacionesLabels: Record<string, string> = {
+  ORGANICA: "Orgánica",
+  EN_TRANSICION: "En Transición",
+  SIN_CERTIFICAR: "Sin certificar",
+};
+
+export const procedenciasSemillaLabels: Record<string, string> = {
+  CERTIFICADA: "Semilla Certificada",
+  COMUN: "Semilla Común",
+  PRODUCIDA_EN_CAMPO: "Producida en campo",
+  CONSERVADA_POR_AGRICULTOR: "Conservada por el agricultor",
+};
+
+export const unidadesSemillaLabels: Record<string, string> = {
+  kg: "kg",
+  lb: "lb",
+  qq: "qq",
+  t: "t",
+};
+
+export const destinosProduccionLabels: Record<string, string> = {
+  VENTA_COOPERATIVA: "Venta a la cooperativa",
+  COMERCIALIZACION_LOCAL: "Comercialización local",
+  AUTOCONSUMO: "Autoconsumo",
+  SEMILLA: "Semilla",
+};
+
+export const tiposSemillaLabels: Record<string, string> = {
+  CERTIFICADA: "Certificada",
+  COMUN: "Común",
+  CONSERVADA: "Conservada",
+  HIBRIDA: "Híbrida",
+};
+
+// ─── Cultivo options ───────────────────────────────────────
+
+export const cultivosOpciones = ["Quinua", "Papa Nativa", "Cebada", "Trigo", "Maíz", "Ají", "Frijol"];
+export const variedadesOpciones = ["Negra Collana", "Blanca Junín", "Huamantanga", "Peruanita", "Bordaleza", "Blanco Gigante", "Común", "Andino"];
+
+// ─── Additional types ──────────────────────────────────────
 
 export type CultivoHistorialEvento = {
   id: number;
@@ -253,21 +315,3 @@ export type CultivoHistorialEvento = {
   tipo: "registro" | "siembra" | "emergencia" | "actividad" | "inspeccion" | "floracion" | "cosecha";
   completado: boolean;
 };
-
-// ─── Display-friendly option arrays ────────────────────────
-
-export const cultivosOpciones = ["Quinua", "Papa Nativa", "Cebada", "Trigo", "Maíz", "Ají", "Frijol"];
-export const productoresOpciones = ["Apolinario Condori", "María Huamán", "Pedro Rojas", "Rosa Chávez", "Juan Gutiérrez", "Lucía Mendoza"];
-export const campanasOpciones = ["Campaña 2025-2026", "Campaña 2024-2025"];
-export const parcelasOpciones = ["Parcela A - Ñawpa Rumi", "Parcela B - Pampa Urku", "Parcela C - Qucha Pata"];
-export const variedadesOpciones = ["Negra Collana", "Blanca Junín", "Huamantanga", "Peruanita", "Bordaleza", "Blanco Gigante", "Común", "Andino"];
-export const estadosOpciones = ["Activo", "En Desarrollo", "Cosechado", "Finalizado"];
-export const metodosSiembraOpciones = ["Directa", "Trasplante", "Almácigo", "Otro"];
-export const sistemasProductivosOpciones = ["Agroecológico", "Orgánica", "Convencional", "En Transición"];
-export const tiposAgriculturaOpciones = ["Tradicional", "Tecnificada", "Mixta"];
-export const certificacionesOpciones = ["Orgánica", "En Transición", "Sin certificar"];
-export const procedenciasSemillaOpciones = ["Semilla Certificada", "Semilla Común", "Producida en campo", "Conservada por el agricultor"];
-export const unidadesSemillaOpciones = ["kg", "lb", "qq", "t"];
-export const fenologicoOpciones = ["Preparación del terreno", "Siembra", "Emergencia", "Desarrollo vegetativo", "Floración", "Fructificación", "Maduración", "Cosecha"];
-export const destinosProduccionOpciones = ["Venta a la cooperativa", "Comercialización local", "Autoconsumo", "Semilla"];
-export const tiposSemillaOpciones = ["Certificada", "Común", "Conservada", "Híbrida"];

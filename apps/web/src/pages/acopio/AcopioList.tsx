@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Boxes, Plus, Scale, Users, Warehouse, X } from "lucide-react";
-import { Breadcrumb, Button, ConfirmDialog, SearchInput, SectionHeader, Select } from "../../components/ui";
+import { Button, ConfirmDialog, LoadingSpinner, SearchInput, SectionHeader, Select } from "../../components/ui";
 import AcopioKPI from "../../components/acopio/AcopioKPI";
 import AcopioTable from "../../components/acopio/AcopioTable";
 import {
@@ -11,16 +11,16 @@ import {
   type AcopiosQuery,
 } from "../../services/acopios";
 import {
-  acopiadoresOpciones,
-  campaniasOpciones,
-  comunidadesOpciones,
-  estadosAcopioOpciones,
-  productoresOpciones,
-} from "./acopioMock";
+  fetchCampanias,
+  type Campania,
+} from "../../services/campanias";
+import {
+  fetchProductores,
+  type Productor,
+} from "../../services/productores";
+import AcopioModal from "../../components/acopio/AcopioModal";
 
 const pageSize = 10;
-
-const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: item }));
 
 const displayToApiEstado: Record<string, string> = {
   "En Proceso": "EN_PROCESO",
@@ -58,9 +58,13 @@ export default function AcopioList() {
   const [filtroEstado, setFiltroEstado] = useState("");
   const [page, setPage] = useState(1);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [viewId, setViewId] = useState<string | null>(null);
 
   const [acopios, setAcopios] = useState<AcopioView[]>([]);
   const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
 
   const [stats, setStats] = useState({
     total_acopios: 0,
@@ -69,7 +73,27 @@ export default function AcopioList() {
     kilogramos_acopiados: 0,
   });
 
+  const [campaniasOpts, setCampaniasOpts] = useState<{ value: string; label: string }[]>([]);
+  const [productoresOpts, setProductoresOpts] = useState<{ value: string; label: string }[]>([]);
+
   useEffect(() => {
+    Promise.all([
+      fetchCampanias({ limit: 100 }).catch(() => ({ data: [] })),
+      fetchProductores({ limit: 100 }).catch(() => ({ data: [] })),
+    ]).then(([campaniasRes, productoresRes]) => {
+      setCampaniasOpts(
+        (campaniasRes.data as Campania[]).map((c) => ({ value: c.id, label: c.nombre }))
+      );
+      setProductoresOpts(
+        (productoresRes.data as Productor[]).map((p) => ({
+          value: p.id,
+          label: `${p.nombres} ${p.apellidoPaterno}`,
+        }))
+      );
+    });
+  }, []);
+
+  const loadData = () => {
     const params: AcopiosQuery = { page, limit: pageSize };
     if (search) params.search = search;
     if (filtroCampania) params.campania_id = filtroCampania;
@@ -78,6 +102,7 @@ export default function AcopioList() {
     if (filtroAcopiador) params.acopiador = filtroAcopiador;
     if (filtroEstado) params.estado = displayToApiEstado[filtroEstado] ?? filtroEstado;
 
+    setLoading(true);
     fetchAcopios(params)
       .then((res) => {
         setAcopios(res.data);
@@ -85,7 +110,12 @@ export default function AcopioList() {
       })
       .catch(() => {
         setAcopios([]);
-      });
+      })
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadData();
   }, [search, filtroCampania, filtroComunidad, filtroProductor, filtroAcopiador, filtroEstado, page]);
 
   useEffect(() => {
@@ -139,12 +169,19 @@ export default function AcopioList() {
     setPage(1);
   };
 
+  const handleModalClose = () => {
+    setShowCreateModal(false);
+    setEditId(null);
+    setViewId(null);
+    loadData();
+  };
+
   const handleDelete = async () => {
     if (!deleteId) return;
     try {
       await deleteAcopio(deleteId);
       setDeleteId(null);
-      setPage(1);
+      loadData();
     } catch {
       // ignore
     }
@@ -152,15 +189,13 @@ export default function AcopioList() {
 
   return (
     <div>
-      <Breadcrumb items={[{ label: "Acopio" }]} />
-
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <SectionHeader
           title="Acopio"
-          description="Recepción de la producción de los productores en sus comunidades de origen."
+          description="Recepción de la producción de los productores"
         />
         <div className="flex items-center gap-2">
-          <Button as="link" to="/acopio/nuevo" iconLeft={<Plus className="h-4 w-4" />}>
+          <Button onClick={() => setShowCreateModal(true)} iconLeft={<Plus className="h-4 w-4" />}>
             Nuevo Acopio
           </Button>
         </div>
@@ -183,7 +218,7 @@ export default function AcopioList() {
         <FilterSelect
           label="Campaña"
           placeholder="Todas"
-          options={toOptions(campaniasOpciones)}
+          options={campaniasOpts}
           value={filtroCampania}
           onChange={(val) => {
             setFiltroCampania(val);
@@ -191,19 +226,9 @@ export default function AcopioList() {
           }}
         />
         <FilterSelect
-          label="Comunidad"
-          placeholder="Todas"
-          options={toOptions(comunidadesOpciones)}
-          value={filtroComunidad}
-          onChange={(val) => {
-            setFiltroComunidad(val);
-            setPage(1);
-          }}
-        />
-        <FilterSelect
           label="Productor"
           placeholder="Todos"
-          options={toOptions(productoresOpciones)}
+          options={productoresOpts}
           value={filtroProductor}
           onChange={(val) => {
             setFiltroProductor(val);
@@ -211,19 +236,13 @@ export default function AcopioList() {
           }}
         />
         <FilterSelect
-          label="Acopiador"
-          placeholder="Todos"
-          options={toOptions(acopiadoresOpciones)}
-          value={filtroAcopiador}
-          onChange={(val) => {
-            setFiltroAcopiador(val);
-            setPage(1);
-          }}
-        />
-        <FilterSelect
           label="Estado"
           placeholder="Todos"
-          options={toOptions(estadosAcopioOpciones)}
+          options={[
+            { value: "EN_PROCESO", label: "En Proceso" },
+            { value: "COMPLETADO", label: "Completado" },
+            { value: "EN_PLANTA", label: "En Planta" },
+          ]}
           value={filtroEstado}
           onChange={(val) => {
             setFiltroEstado(val);
@@ -238,13 +257,21 @@ export default function AcopioList() {
         )}
       </div>
 
-      <AcopioTable
-        data={acopios}
-        currentPage={page}
-        totalPages={totalPages}
-        onPageChange={setPage}
-        onDelete={(acopio) => setDeleteId(String(acopio.id))}
-      />
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <LoadingSpinner />
+        </div>
+      ) : (
+        <AcopioTable
+          data={acopios}
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          onView={(acopio) => setViewId(String(acopio.id))}
+          onEdit={(acopio) => setEditId(String(acopio.id))}
+          onDelete={(acopio) => setDeleteId(String(acopio.id))}
+        />
+      )}
 
       <ConfirmDialog
         open={deleteId !== null}
@@ -254,6 +281,28 @@ export default function AcopioList() {
         message="¿Estás seguro de eliminar este acopio? Esta acción no se puede deshacer."
         confirmText="Eliminar"
         variant="danger"
+      />
+
+      <AcopioModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSave={handleModalClose}
+        mode="create"
+      />
+
+      <AcopioModal
+        open={editId !== null}
+        onClose={() => setEditId(null)}
+        onSave={handleModalClose}
+        mode="edit"
+        acopioId={editId || undefined}
+      />
+
+      <AcopioModal
+        open={viewId !== null}
+        onClose={() => setViewId(null)}
+        mode="view"
+        acopioId={viewId || undefined}
       />
     </div>
   );

@@ -1,11 +1,10 @@
 import { CalendarClock, CalendarDays, Flag, PlayCircle } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Card } from "../ui";
-import type { Campania } from "../../services/campanias";
+import type { CampaniaGlobalStats } from "../../services/campanias";
 
 type CampaniaKPIProps = {
-  campanias: Campania[];
-  total?: number;
+  stats: CampaniaGlobalStats;
 };
 
 type Kpi = {
@@ -15,29 +14,29 @@ type Kpi = {
   iconClass: string;
 };
 
-export function CampaniaKPI({ campanias, total }: CampaniaKPIProps) {
+export function CampaniaKPI({ stats }: CampaniaKPIProps) {
   const kpis: Kpi[] = [
     {
       label: "Total Campañas",
-      value: String(total ?? campanias.length),
+      value: String(stats.total),
       icon: CalendarDays,
       iconClass: "bg-forest-600/10 text-forest-600",
     },
     {
       label: "Campañas Activas",
-      value: String(campanias.filter((c) => c.estado === "ACTIVA").length),
+      value: String(stats.estados.ACTIVA ?? 0),
       icon: PlayCircle,
       iconClass: "bg-forest-600/10 text-forest-600",
     },
     {
       label: "Campañas Finalizadas",
-      value: String(campanias.filter((c) => c.estado === "FINALIZADA").length),
+      value: String(stats.estados.FINALIZADA ?? 0),
       icon: Flag,
       iconClass: "bg-sun-100 text-sun-700",
     },
     {
       label: "Campañas Planificadas",
-      value: String(campanias.filter((c) => c.estado === "PLANIFICADA").length),
+      value: String(stats.estados.PLANIFICADA ?? 0),
       icon: CalendarClock,
       iconClass: "bg-sun-100 text-sun-700",
     },

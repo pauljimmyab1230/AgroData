@@ -7,15 +7,16 @@ import {
   updateActividadSchema,
   getAllActividadesSchema,
 } from '../validators/actividades.validator';
+import { idParamSchema } from '../validators/common.validator';
 
 const router = Router();
 
 router.use(authMiddleware);
 
 router.get('/', validate(getAllActividadesSchema), actividadesController.getAll);
-router.get('/:id', actividadesController.getById);
+router.get('/:id', validate(idParamSchema, 'params'), actividadesController.getById);
 router.post('/', validate(createActividadSchema), actividadesController.create);
-router.put('/:id', validate(updateActividadSchema), actividadesController.update);
-router.delete('/:id', actividadesController.remove);
+router.put('/:id', validate(idParamSchema, 'params'), validate(updateActividadSchema), actividadesController.update);
+router.delete('/:id', validate(idParamSchema, 'params'), actividadesController.remove);
 
 export default router;

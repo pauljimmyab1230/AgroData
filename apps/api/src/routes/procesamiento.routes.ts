@@ -10,21 +10,22 @@ import {
   addOperacionSchema,
   updateOperacionSchema,
 } from '../validators/procesamiento.validator';
+import { idParamSchema } from '../validators/common.validator';
 
 const router = Router();
 
 router.use(authMiddleware);
 
 router.get('/', validate(getAllProcesamientosSchema), procesamientoController.getAll);
-router.get('/:id', procesamientoController.getById);
+router.get('/:id', validate(idParamSchema, 'params'), procesamientoController.getById);
 router.post('/', validate(createProcesamientoSchema), procesamientoController.create);
-router.put('/:id', validate(updateProcesamientoSchema), procesamientoController.update);
-router.delete('/:id', procesamientoController.remove);
+router.put('/:id', validate(idParamSchema, 'params'), validate(updateProcesamientoSchema), procesamientoController.update);
+router.delete('/:id', validate(idParamSchema, 'params'), procesamientoController.remove);
 
-router.post('/:id/lotes', validate(addLoteSchema), procesamientoController.addLote);
+router.post('/:id/lotes', validate(idParamSchema, 'params'), validate(addLoteSchema), procesamientoController.addLote);
 router.delete('/:id/lotes/:loteId', procesamientoController.removeLote);
 
-router.post('/:id/operaciones', validate(addOperacionSchema), procesamientoController.addOperacion);
-router.put('/:id/operaciones/:operacionId', validate(updateOperacionSchema), procesamientoController.updateOperacion);
+router.post('/:id/operaciones', validate(idParamSchema, 'params'), validate(addOperacionSchema), procesamientoController.addOperacion);
+router.put('/:id/operaciones/:operacionId', validate(idParamSchema, 'params'), validate(updateOperacionSchema), procesamientoController.updateOperacion);
 
 export default router;

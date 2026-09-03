@@ -31,6 +31,7 @@ export interface Parcela {
   area: string;
   areaCertificada: string;
   areaUnidad: string;
+  acreditacion: string;
   ubicacion: string;
   comunidad: string;
   sector: string;
@@ -43,6 +44,9 @@ export interface Parcela {
   latitud: string;
   longitud: string;
   precisionGps: string;
+  utmEste: string;
+  utmNorte: string;
+  utmZona: string;
   tipoSuelo: string;
   textura: string;
   pendiente: string;
@@ -84,6 +88,7 @@ interface ParcelaDTO {
   area: number | string;
   area_certificada: number | string | null;
   area_unidad: string;
+  acreditacion: string | null;
   ubicacion: string | null;
   comunidad: string | null;
   sector: string | null;
@@ -96,6 +101,9 @@ interface ParcelaDTO {
   latitud: string | null;
   longitud: string | null;
   precision_gps: string | null;
+  utm_este: string | null;
+  utm_norte: string | null;
+  utm_zona: string | null;
   tipo_suelo: string | null;
   textura: string | null;
   pendiente: string | null;
@@ -175,12 +183,13 @@ function toFrontend(dto: ParcelaDTO): Parcela {
     id: dto.id,
     codigo: dto.codigo,
     nombre: dto.nombre,
-    productorId: dto.productor_id,
+    productorId: String(dto.productor_id),
     productorNombre: `${dto.productor.nombres} ${dto.productor.apellido_paterno} ${dto.productor.apellido_materno}`.trim(),
     cultivo: dto.cultivo,
     area: numToStr(dto.area),
     areaCertificada: numToStr(dto.area_certificada),
     areaUnidad: dto.area_unidad,
+    acreditacion: dto.acreditacion ?? "",
     ubicacion: dto.ubicacion ?? "",
     comunidad: dto.comunidad ?? "",
     sector: dto.sector ?? "",
@@ -193,6 +202,9 @@ function toFrontend(dto: ParcelaDTO): Parcela {
     latitud: dto.latitud ?? "",
     longitud: dto.longitud ?? "",
     precisionGps: dto.precision_gps ?? "",
+    utmEste: dto.utm_este ?? "",
+    utmNorte: dto.utm_norte ?? "",
+    utmZona: dto.utm_zona ?? "",
     tipoSuelo: dto.tipo_suelo ?? "",
     textura: dto.textura ?? "",
     pendiente: dto.pendiente ?? "",
@@ -219,7 +231,7 @@ function toFrontend(dto: ParcelaDTO): Parcela {
 
 function toBackend(data: Partial<Parcela>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
-  if (data.productorId !== undefined) out.productor_id = data.productorId;
+  if (data.productorId !== undefined && data.productorId !== '') out.productor_id = data.productorId;
   if (data.codigo !== undefined) out.codigo = data.codigo;
   if (data.nombre !== undefined) out.nombre = data.nombre;
   if (data.cultivo !== undefined) out.cultivo_principal = data.cultivo;
@@ -227,6 +239,7 @@ function toBackend(data: Partial<Parcela>): Record<string, unknown> {
   if (data.areaCertificada !== undefined)
     out.area_certificada = data.areaCertificada === "" ? null : Number(data.areaCertificada);
   if (data.areaUnidad !== undefined) out.area_unidad = data.areaUnidad;
+  if (data.acreditacion !== undefined) out.acreditacion = data.acreditacion;
   if (data.ubicacion !== undefined) out.ubicacion = data.ubicacion;
   if (data.comunidad !== undefined) out.comunidad = data.comunidad;
   if (data.sector !== undefined) out.sector = data.sector;
@@ -239,6 +252,9 @@ function toBackend(data: Partial<Parcela>): Record<string, unknown> {
   if (data.latitud !== undefined) out.latitud = data.latitud;
   if (data.longitud !== undefined) out.longitud = data.longitud;
   if (data.precisionGps !== undefined) out.precision_gps = data.precisionGps;
+  if (data.utmEste !== undefined) out.utm_este = data.utmEste;
+  if (data.utmNorte !== undefined) out.utm_norte = data.utmNorte;
+  if (data.utmZona !== undefined) out.utm_zona = data.utmZona;
   if (data.tipoSuelo !== undefined) out.tipo_suelo = data.tipoSuelo;
   if (data.textura !== undefined) out.textura = data.textura;
   if (data.pendiente !== undefined) out.pendiente = data.pendiente;
@@ -363,10 +379,10 @@ export async function deleteFoto(parcelaId: string, fotoId: string): Promise<voi
 
 export async function fetchProductoresOpciones(): Promise<{ value: string; label: string }[]> {
   const res = await api.get("/productores");
-  const data: Array<{ id: string; nombres: string; apellido_paterno: string; apellido_materno: string }> =
+  const data: Array<{ id: string | number; nombres: string; apellido_paterno: string; apellido_materno: string }> =
     res.data.data ?? [];
   return data.map((p) => ({
-    value: p.id,
+    value: String(p.id),
     label: `${p.nombres} ${p.apellido_paterno} ${p.apellido_materno}`.trim(),
   }));
 }

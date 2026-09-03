@@ -13,10 +13,10 @@ export const createCultivoSchema = Joi.object({
   campania_id: Joi.string().uuid().required().messages({
     'any.required': 'La campaña es obligatoria',
   }),
-  productor_id: Joi.string().uuid().required().messages({
+  productor_id: Joi.number().integer().positive().required().messages({
     'any.required': 'El productor es obligatorio',
   }),
-  parcela_id: Joi.string().uuid().required().messages({
+  parcela_id: Joi.number().integer().positive().required().messages({
     'any.required': 'La parcela es obligatoria',
   }),
   cultivo: Joi.string().max(100).required().messages({
@@ -32,12 +32,9 @@ export const createCultivoSchema = Joi.object({
   procedencia_semilla: Joi.string().valid(...procedenciaSemillaEnum).allow(null),
   cantidad_semilla: Joi.number().min(0).allow(null),
   unidad_semilla: Joi.string().max(10).allow('', null),
-  fecha_emergencia: Joi.date().iso().allow(null),
-  fecha_floracion: Joi.date().iso().allow(null),
   fecha_cosecha: Joi.date().iso().allow(null),
   estado: Joi.string().valid(...estadoCultivoEnum).default('ACTIVO'),
   observaciones: Joi.string().allow('', null),
-  estado_fenologico: Joi.string().max(100).allow('', null),
   rendimiento_esperado: Joi.number().min(0).allow(null),
   produccion_estimada: Joi.number().min(0).allow(null),
   destino_produccion: Joi.string().valid(...destinoProduccionEnum).allow(null),
@@ -52,8 +49,8 @@ export const createCultivoSchema = Joi.object({
 export const updateCultivoSchema = Joi.object({
   codigo: Joi.string().max(20).allow(''),
   campania_id: Joi.string().uuid(),
-  productor_id: Joi.string().uuid(),
-  parcela_id: Joi.string().uuid(),
+  productor_id: Joi.number().integer().positive(),
+  parcela_id: Joi.number().integer().positive(),
   cultivo: Joi.string().max(100),
   variedad: Joi.string().max(100).allow('', null),
   area_sembrada: Joi.number().positive().allow(null),
@@ -65,12 +62,9 @@ export const updateCultivoSchema = Joi.object({
   procedencia_semilla: Joi.string().valid(...procedenciaSemillaEnum).allow(null),
   cantidad_semilla: Joi.number().min(0).allow(null),
   unidad_semilla: Joi.string().max(10).allow('', null),
-  fecha_emergencia: Joi.date().iso().allow(null),
-  fecha_floracion: Joi.date().iso().allow(null),
   fecha_cosecha: Joi.date().iso().allow(null),
   estado: Joi.string().valid(...estadoCultivoEnum),
   observaciones: Joi.string().allow('', null),
-  estado_fenologico: Joi.string().max(100).allow('', null),
   rendimiento_esperado: Joi.number().min(0).allow(null),
   produccion_estimada: Joi.number().min(0).allow(null),
   destino_produccion: Joi.string().valid(...destinoProduccionEnum).allow(null),
@@ -86,8 +80,8 @@ export const getAllCultivosSchema = Joi.object({
   search: Joi.string().max(100).allow('', null),
   estado: Joi.string().valid(...estadoCultivoEnum),
   campania_id: Joi.string().uuid(),
-  productor_id: Joi.string().uuid(),
-  parcela_id: Joi.string().uuid(),
+  productor_id: Joi.number().integer().positive(),
+  parcela_id: Joi.number().integer().positive(),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
 });

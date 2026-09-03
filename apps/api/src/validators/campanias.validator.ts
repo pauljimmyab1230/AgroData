@@ -24,7 +24,9 @@ export const createCampaniaSchema = Joi.object({
   tecnico_coordinador: Joi.string().max(150).required().messages({
     'any.required': 'El técnico coordinador es obligatorio',
   }),
-  objetivo: Joi.string().allow('', null),
+  objetivo: Joi.string().allow('', null).required().messages({
+    'any.required': 'El objetivo es obligatorio',
+  }),
   permitir_cultivos: Joi.boolean().default(true),
   permitir_actividades: Joi.boolean().default(true),
   permitir_cosechas: Joi.boolean().default(true),

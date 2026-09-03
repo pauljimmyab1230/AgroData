@@ -22,11 +22,11 @@ export function ResultadosCard({ mode, value, onChange }: ResultadosCardProps) {
         description="Objetivo, resultado obtenido y próxima actividad recomendada"
       />
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-1">
           <Field label="Objetivo de la Actividad" mode={mode} value={value.objetivo}>
             <Textarea
-              rows={4}
+              rows={3}
               value={value.objetivo}
               onChange={(e) => onChange?.({ objetivo: e.target.value })}
               placeholder="¿Cuál era el objetivo de esta actividad?"
@@ -37,7 +37,7 @@ export function ResultadosCard({ mode, value, onChange }: ResultadosCardProps) {
         <div className="lg:col-span-1">
           <Field label="Resultado Obtenido" mode={mode} value={value.resultado}>
             <Textarea
-              rows={4}
+              rows={3}
               value={value.resultado}
               onChange={(e) => onChange?.({ resultado: e.target.value })}
               placeholder="Describe el resultado obtenido..."

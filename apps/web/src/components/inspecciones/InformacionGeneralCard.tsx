@@ -1,15 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ClipboardList } from "lucide-react";
 import { DatePicker, Input, Select } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
-import {
-  cultivosOpciones,
-  inspectoresOpciones,
-  parcelasOpciones,
-  productoresOpciones,
-  campaniasOpciones,
-  type Inspeccion,
-} from "../../services/inspecciones";
+import type { Inspeccion } from "../../services/inspecciones";
+import { useUsuariosBasic } from "../../services/usuarios";
+import api from "../../services/api";
 
 type InformacionGeneralCardProps = {
   mode: FormMode;
@@ -18,11 +13,61 @@ type InformacionGeneralCardProps = {
 
 const parseDate = (s?: string) => (s ? new Date(s + "T00:00:00") : null);
 
+interface SelectOption {
+  value: string;
+  label: string;
+}
+
 export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardProps) {
   const editable = mode !== "view";
   const [fecha, setFecha] = useState<Date | null>(() => parseDate(values?.fecha));
+  const { usuarios: inspectores } = useUsuariosBasic("INSPECTOR");
+  const [campanias, setCampanias] = useState<SelectOption[]>([]);
+  const [productores, setProductores] = useState<SelectOption[]>([]);
+  const [parcelas, setParcelas] = useState<SelectOption[]>([]);
+  const [cultivos, setCultivos] = useState<SelectOption[]>([]);
+  const [selectedProductorId, setSelectedProductorId] = useState<string>(values?.productorId ?? "");
 
-  const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: item }));
+  const inspectoresOptions = inspectores.map((u) => ({ value: u.nombre, label: u.nombre }));
+
+  useEffect(() => {
+    if (!editable) return;
+    Promise.all([
+      api.get("/campanias", { params: { limit: 200 } }).catch(() => ({ data: { data: [] } })),
+      api.get("/productores", { params: { limit: 200 } }).catch(() => ({ data: { data: [] } })),
+    ]).then(([campaniasRes, productoresRes]) => {
+      setCampanias(
+        (campaniasRes.data.data ?? []).map((c: { id: string | number; nombre: string; codigo: string }) => ({
+          value: String(c.id),
+          label: `${c.codigo} - ${c.nombre}`,
+        }))
+      );
+      setProductores(
+        (productoresRes.data.data ?? []).map((p: { id: string | number; nombres: string; apellido_paterno: string; apellido_materno: string }) => ({
+          value: String(p.id),
+          label: `${p.nombres} ${p.apellido_paterno} ${p.apellido_materno}`.trim(),
+        }))
+      );
+    });
+  }, [editable]);
+
+  useEffect(() => {
+    if (!editable || !selectedProductorId) {
+      setParcelas([]);
+      setCultivos([]);
+      return;
+    }
+    api.get("/parcelas", { params: { productor_id: selectedProductorId, limit: 200 } })
+      .then((res) => {
+        setParcelas(
+          (res.data.data ?? []).map((p: { id: string | number; nombre: string; codigo: string }) => ({
+            value: String(p.id),
+            label: `${p.codigo} - ${p.nombre}`,
+          }))
+        );
+      })
+      .catch(() => setParcelas([]));
+  }, [editable, selectedProductorId]);
 
   return (
     <CardShell>
@@ -34,7 +79,7 @@ export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardP
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <Field label="Código" mode={mode} value={values?.codigo}>
-          <Input placeholder="Se genera automáticamente" disabled defaultValue={editable ? values?.codigo : undefined} />
+          <Input placeholder="Se genera automáticamente" disabled value={editable ? values?.codigo : undefined} />
         </Field>
 
         <Field label="Fecha de Inspección" mode={mode} value={values?.fecha}>
@@ -43,41 +88,48 @@ export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardP
 
         <Field label="Campaña" mode={mode} value={values?.campaniaNombre}>
           <Select
-            options={toOptions(campaniasOpciones)}
+            options={campanias}
             placeholder="Seleccione"
-            defaultValue={editable ? values?.campaniaNombre : undefined}
+            value={values?.campaniaId}
           />
         </Field>
 
         <Field label="Productor" mode={mode} value={values?.productorNombre}>
           <Select
-            options={toOptions(productoresOpciones)}
+            options={productores}
             placeholder="Seleccione"
-            defaultValue={editable ? values?.productorNombre : undefined}
+            value={selectedProductorId}
+            onChange={(val) => {
+              setSelectedProductorId(val);
+              setParcelas([]);
+              setCultivos([]);
+            }}
           />
         </Field>
 
         <Field label="Parcela" mode={mode} value={values?.parcelaNombre}>
           <Select
-            options={toOptions(parcelasOpciones)}
-            placeholder="Seleccione"
-            defaultValue={editable ? values?.parcelaNombre : undefined}
+            options={parcelas}
+            placeholder={selectedProductorId ? "Seleccione" : "Primero seleccione un productor"}
+            value={values?.parcelaId}
+            disabled={!selectedProductorId}
           />
         </Field>
 
         <Field label="Cultivo" mode={mode} value={values?.cultivoNombre}>
           <Select
-            options={toOptions(cultivosOpciones)}
-            placeholder="Seleccione"
-            defaultValue={editable ? values?.cultivoNombre : undefined}
+            options={cultivos}
+            placeholder={values?.parcelaId ? "Seleccione" : "Primero seleccione una parcela"}
+            value={values?.cultivoId}
+            disabled={!values?.parcelaId}
           />
         </Field>
 
         <Field label="Inspector" mode={mode} value={values?.inspector}>
           <Select
-            options={toOptions(inspectoresOpciones)}
+            options={inspectoresOptions}
             placeholder="Seleccione"
-            defaultValue={editable ? values?.inspector : undefined}
+            value={editable ? values?.inspector : undefined}
           />
         </Field>
       </div>

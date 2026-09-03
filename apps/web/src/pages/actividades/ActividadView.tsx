@@ -10,8 +10,6 @@ import { ActividadEstadoBadge, ActividadPrioridadBadge, ActividadTipoBadge } fro
 import { InsumosCard } from "../../components/actividades/InsumosCard";
 import { ManoObraCard } from "../../components/actividades/ManoObraCard";
 import { MaquinariaCard } from "../../components/actividades/MaquinariaCard";
-import { FotografiasCard } from "../../components/actividades/FotografiasCard";
-import { MapaCard } from "../../components/actividades/MapaCard";
 import { ObservacionesCard } from "../../components/actividades/ObservacionesCard";
 import { ResultadosCard } from "../../components/actividades/ResultadosCard";
 import { ActividadTimeline } from "../../components/actividades/ActividadTimeline";
@@ -24,8 +22,14 @@ import {
   type Actividad,
 } from "../../services/actividades";
 
-export default function ActividadView() {
-  const { id } = useParams();
+interface ActividadViewProps {
+  inModal?: boolean;
+  actividadId?: string;
+}
+
+export default function ActividadView({ inModal, actividadId: propId }: ActividadViewProps) {
+  const { id: paramId } = useParams();
+  const id = propId || paramId;
   const [actividad, setActividad] = useState<Actividad | null>(null);
   const [actividades, setActividades] = useState<Actividad[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,7 +45,7 @@ export default function ActividadView() {
         setActividad(act);
         setActividades(list.data);
       })
-      .catch(console.error)
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -58,24 +62,28 @@ export default function ActividadView() {
 
   return (
     <div>
-      <Breadcrumb
-        items={[{ label: "Actividades Agrícolas", to: "/actividades" }, { label: actividad.codigo }]}
-      />
+      {!inModal && (
+        <>
+          <Breadcrumb
+            items={[{ label: "Actividades Agrícolas", to: "/actividades" }, { label: actividad.codigo }]}
+          />
 
-      <ActividadHeader
-        title={`${tipoLabel} · ${actividad.cultivoNombre}`}
-        backTo="/actividades"
-        actions={
-          <Button
-            variant="secondary"
-            as="link"
-            to={`/actividades/${actividad.id}/editar`}
-            iconLeft={<Wrench className="h-4 w-4" />}
-          >
-            Editar
-          </Button>
-        }
-      />
+          <ActividadHeader
+            title={`${tipoLabel} · ${actividad.cultivoNombre}`}
+            backTo="/actividades"
+            actions={
+              <Button
+                variant="secondary"
+                as="link"
+                to={`/actividades/${actividad.id}/editar`}
+                iconLeft={<Wrench className="h-4 w-4" />}
+              >
+                Editar
+              </Button>
+            }
+          />
+        </>
+      )}
 
       <Card padding="lg" hover={false} className="mb-6 shadow-sm">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
@@ -118,8 +126,6 @@ export default function ActividadView() {
         <InsumosCard mode="view" value={formData} />
         <ManoObraCard mode="view" value={formData} />
         <MaquinariaCard mode="view" value={formData} />
-        <FotografiasCard mode="view" value={formData} />
-        <MapaCard mode="view" value={formData} />
         <ObservacionesCard mode="view" value={formData} />
         <ResultadosCard mode="view" value={formData} />
         <ActividadTimeline actividades={actividades} current={actividad} />

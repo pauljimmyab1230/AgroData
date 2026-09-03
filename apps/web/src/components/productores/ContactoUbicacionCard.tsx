@@ -1,38 +1,48 @@
+
 import { MapPin } from "lucide-react";
 import { Input, Select, Textarea } from "../ui";
 import { CardHeader, CardShell, Field } from "../shared/formControls";
 import type { FormMode } from "../shared/formControls";
 import type { Productor } from "../../services/productores";
 import { useProductorForm } from "../../contexts/ProductorFormContext";
+import { useUbigeo } from "../../hooks/useUbigeo";
 
 type ContactoUbicacionCardProps = {
   mode: FormMode;
   values?: Partial<Productor>;
 };
 
-const departamentoOptions = [{ value: "Ayacucho", label: "Ayacucho" }];
-
-const provinciaOptions = [
-  { value: "Huamanga", label: "Huamanga" },
-  { value: "Cangallo", label: "Cangallo" },
-  { value: "Fajardo", label: "Fajardo" },
-  { value: "Vilcas Huamán", label: "Vilcas Huamán" },
-];
-
-const distritoOptions = [
-  { value: "Chiara", label: "Chiara" },
-  { value: "Vinchos", label: "Vinchos" },
-  { value: "Vilcas Huamán", label: "Vilcas Huamán" },
-  { value: "Huancapi", label: "Huancapi" },
-];
-
 export function ContactoUbicacionCard({ mode, values }: ContactoUbicacionCardProps) {
   const editable = mode !== "view";
   const { data, updateData, errors, clearFieldError } = useProductorForm();
 
+  const ubigeo = useUbigeo({
+    initialDepartamento: values?.departamento ?? data?.departamento,
+    initialProvincia: values?.provincia ?? data?.provincia,
+    initialDistrito: values?.distrito ?? data?.distrito,
+  });
+
   const display = (field: keyof Productor) => {
     if (mode === "view") return values?.[field] ?? "";
     return data?.[field] ?? "";
+  };
+
+  const handleDepartamentoChange = (val: string) => {
+    clearFieldError("departamento");
+    ubigeo.onDepartamentoChange(val);
+    updateData({ departamento: val, provincia: "", distrito: "" });
+  };
+
+  const handleProvinciaChange = (val: string) => {
+    clearFieldError("provincia");
+    ubigeo.onProvinciaChange(val);
+    updateData({ provincia: val, distrito: "" });
+  };
+
+  const handleDistritoChange = (val: string) => {
+    clearFieldError("distrito");
+    ubigeo.onDistritoChange(val);
+    updateData({ distrito: val });
   };
 
   return (
@@ -79,40 +89,31 @@ export function ContactoUbicacionCard({ mode, values }: ContactoUbicacionCardPro
 
         <Field label="Departamento" mode={mode} value={values?.departamento} required error={errors?.departamento}>
           <Select
-            options={departamentoOptions}
-            placeholder="Seleccione"
-            value={display("departamento") as string}
-            onChange={(val) => {
-              clearFieldError("departamento");
-              updateData({ departamento: val });
-            }}
+            options={ubigeo.departamentoOptions}
+            placeholder="Seleccione departamento"
+            value={mode === "view" ? display("departamento") as string : ubigeo.departamento}
+            onChange={editable ? handleDepartamentoChange : undefined}
             disabled={!editable}
           />
         </Field>
 
         <Field label="Provincia" mode={mode} value={values?.provincia} required error={errors?.provincia}>
           <Select
-            options={provinciaOptions}
-            placeholder="Seleccione"
-            value={display("provincia") as string}
-            onChange={(val) => {
-              clearFieldError("provincia");
-              updateData({ provincia: val });
-            }}
-            disabled={!editable}
+            options={ubigeo.provinciaOptions}
+            placeholder={ubigeo.departamento ? "Seleccione provincia" : "Primero seleccione departamento"}
+            value={mode === "view" ? display("provincia") as string : ubigeo.provincia}
+            onChange={editable ? handleProvinciaChange : undefined}
+            disabled={!editable || !ubigeo.departamento}
           />
         </Field>
 
         <Field label="Distrito" mode={mode} value={values?.distrito} required error={errors?.distrito}>
           <Select
-            options={distritoOptions}
-            placeholder="Seleccione"
-            value={display("distrito") as string}
-            onChange={(val) => {
-              clearFieldError("distrito");
-              updateData({ distrito: val });
-            }}
-            disabled={!editable}
+            options={ubigeo.distritoOptions}
+            placeholder={ubigeo.provincia ? "Seleccione distrito" : "Primero seleccione provincia"}
+            value={mode === "view" ? display("distrito") as string : ubigeo.distrito}
+            onChange={editable ? handleDistritoChange : undefined}
+            disabled={!editable || !ubigeo.provincia}
           />
         </Field>
 

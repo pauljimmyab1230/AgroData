@@ -5,7 +5,6 @@ import { OperacionesCard } from "./OperacionesCard";
 import { ControlProcesoCard } from "./ControlProcesoCard";
 import { ProductoBaseCard } from "./ProductoBaseCard";
 import { ReporteProcesamientoCard } from "./ReporteProcesamientoCard";
-import { EvidenciasCard } from "./EvidenciasCard";
 import { ObservacionesCard } from "./ObservacionesCard";
 import ActionButtons from "./ActionButtons";
 import type { FormMode } from "../shared/formControls";
@@ -14,14 +13,20 @@ import type { OrdenProcesamiento } from "../../services/procesamientos";
 interface ProcesamientoFormProps {
   mode: Extract<FormMode, "create" | "edit">;
   values?: OrdenProcesamiento;
+  inModal?: boolean;
+  onSave?: () => void;
 }
 
-export default function ProcesamientoForm({ mode, values }: ProcesamientoFormProps) {
+export default function ProcesamientoForm({ mode, values, inModal, onSave }: ProcesamientoFormProps) {
   const navigate = useNavigate();
   const detailTo = `/procesamiento/${values?.id ?? 1}`;
 
   const handleSave = () => {
-    navigate(mode === "create" ? "/procesamiento" : detailTo);
+    if (!inModal) {
+      navigate(mode === "create" ? "/procesamiento" : detailTo);
+    } else {
+      onSave?.();
+    }
   };
 
   return (
@@ -32,7 +37,6 @@ export default function ProcesamientoForm({ mode, values }: ProcesamientoFormPro
       <ControlProcesoCard mode={mode} values={values} />
       <ProductoBaseCard mode={mode} values={values} />
       <ReporteProcesamientoCard mode={mode} values={values} />
-      <EvidenciasCard mode={mode} values={values} />
       <ObservacionesCard mode={mode} values={values} />
 
       <ActionButtons

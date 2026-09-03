@@ -36,7 +36,7 @@ export function RecomendacionesCard({ mode, values }: RecomendacionesCardProps) 
           <Select
             options={toOptions(prioridadesOpciones)}
             placeholder="Seleccione"
-            defaultValue={editable ? values?.prioridadRecomendacion : undefined}
+            value={editable ? values?.prioridadRecomendacion : undefined}
           />
         </Field>
 
@@ -44,7 +44,7 @@ export function RecomendacionesCard({ mode, values }: RecomendacionesCardProps) 
           <Select
             options={toOptions(responsablesOpciones)}
             placeholder="Seleccione"
-            defaultValue={editable ? values?.responsableRecomendacion : undefined}
+            value={editable ? values?.responsableRecomendacion : undefined}
           />
         </Field>
 
@@ -63,7 +63,7 @@ export function RecomendacionesCard({ mode, values }: RecomendacionesCardProps) 
           <Textarea
             rows={6}
             placeholder="Escribe aquí las recomendaciones de la inspección..."
-            defaultValue={values?.recomendaciones}
+            value={values?.recomendaciones}
           />
         ) : (
           <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-5">

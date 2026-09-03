@@ -1,12 +1,19 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { Breadcrumb, Button, SectionHeader } from "../../components/ui";
+import { Breadcrumb, Button, LoadingSpinner, SectionHeader } from "../../components/ui";
 import RecepcionForm from "../../components/recepcion/RecepcionForm";
 import { type Recepcion, fetchRecepcion } from "../../services/recepciones";
 
-export default function RecepcionEdit() {
-  const { id } = useParams();
+interface RecepcionEditProps {
+  inModal?: boolean;
+  recepcionId?: string;
+  onSave?: () => void;
+}
+
+export default function RecepcionEdit({ inModal, recepcionId: propId, onSave }: RecepcionEditProps) {
+  const { id: paramId } = useParams();
+  const id = propId || paramId;
   const [recepcion, setRecepcion] = useState<Recepcion | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -17,9 +24,7 @@ export default function RecepcionEdit() {
       .then((r) => {
         if (!cancelled) setRecepcion(r);
       })
-      .catch((err) => {
-        console.error("Error fetching recepcion:", err);
-      })
+      .catch(() => {})
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
@@ -31,7 +36,7 @@ export default function RecepcionEdit() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <p className="text-sm text-gray-500">Cargando recepción...</p>
+        <LoadingSpinner />
       </div>
     );
   }
@@ -40,39 +45,45 @@ export default function RecepcionEdit() {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-20">
         <p className="text-sm text-gray-500">No se encontró la recepción.</p>
-        <Button as="link" to="/recepcion" iconLeft={<ArrowLeft className="h-4 w-4" />}>
-          Volver
-        </Button>
+        {!inModal && (
+          <Button as="link" to="/recepcion" iconLeft={<ArrowLeft className="h-4 w-4" />}>
+            Volver
+          </Button>
+        )}
       </div>
     );
   }
 
   return (
     <div>
-      <Breadcrumb
-        items={[
-          { label: "Recepción", to: "/recepcion" },
-          { label: recepcion.codigo, to: `/recepcion/${recepcion.id}` },
-          { label: "Editar Recepción" },
-        ]}
-      />
+      {!inModal && (
+        <>
+          <Breadcrumb
+            items={[
+              { label: "Recepción", to: "/recepcion" },
+              { label: recepcion.codigo, to: `/recepcion/${recepcion.id}` },
+              { label: "Editar Recepción" },
+            ]}
+          />
 
-      <div className="mb-8 flex items-center gap-4">
-        <Button
-          variant="ghost"
-          as="link"
-          to={`/recepcion/${recepcion.id}`}
-          iconLeft={<ArrowLeft className="h-4 w-4" />}
-        >
-          Volver
-        </Button>
-        <SectionHeader
-          title="Editar Recepción"
-          description={`Actualizando la información de la recepción ${recepcion.codigo}`}
-        />
-      </div>
+          <div className="mb-8 flex items-center gap-4">
+            <Button
+              variant="ghost"
+              as="link"
+              to={`/recepcion/${recepcion.id}`}
+              iconLeft={<ArrowLeft className="h-4 w-4" />}
+            >
+              Volver
+            </Button>
+            <SectionHeader
+              title="Editar Recepción"
+              description={`Actualizando la información de la recepción ${recepcion.codigo}`}
+            />
+          </div>
+        </>
+      )}
 
-      <RecepcionForm mode="edit" values={recepcion} />
+      <RecepcionForm mode="edit" values={recepcion} inModal={inModal} onSave={onSave} />
     </div>
   );
 }

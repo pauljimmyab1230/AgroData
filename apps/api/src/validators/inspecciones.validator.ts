@@ -6,6 +6,7 @@ const cumplimientoEnum = ['CUMPLE', 'NO_CUMPLE', 'NO_APLICA'];
 const riesgoEnum = ['BAJO', 'MEDIO', 'ALTO'];
 const severidadEnum = ['LEVE', 'MODERADA', 'CRITICA'];
 const estadoNoConformidadEnum = ['PENDIENTE', 'EN_PROCESO', 'CORREGIDA', 'VERIFICADA'];
+const estadoAccionCorrectivaEnum = ['PENDIENTE', 'EN_PROCESO', 'COMPLETADA', 'VERIFICADA'];
 
 const checklistItemSchema = Joi.object({
   criterio: Joi.string().max(200).required(),
@@ -32,7 +33,7 @@ const accionCorrectivaSchema = Joi.object({
   responsable: Joi.string().max(150).required(),
   fecha_inicio: Joi.date().iso().allow(null),
   fecha_limite: Joi.date().iso().allow(null),
-  estado: Joi.string().max(20).default('PENDIENTE'),
+  estado: Joi.string().valid(...estadoAccionCorrectivaEnum).default('PENDIENTE'),
   observaciones: Joi.string().allow('', null),
 });
 
@@ -59,6 +60,7 @@ export const createInspeccionSchema = Joi.object({
   cultivo_id: Joi.string().uuid().allow(null),
   fecha: Joi.date().iso().required().messages({ 'any.required': 'La fecha es obligatoria' }),
   inspector: Joi.string().max(150).required().messages({ 'any.required': 'El inspector es obligatorio' }),
+  inspector_id: Joi.string().uuid().allow(null),
   estado: Joi.string().valid(...estadoInspeccionEnum).default('PENDIENTE'),
   resultado: Joi.string().valid(...resultadoInspeccionEnum).allow(null),
   latitud: Joi.string().max(30).allow('', null),
@@ -90,6 +92,7 @@ export const updateInspeccionSchema = Joi.object({
   cultivo_id: Joi.string().uuid().allow(null),
   fecha: Joi.date().iso(),
   inspector: Joi.string().max(150),
+  inspector_id: Joi.string().uuid().allow(null),
   estado: Joi.string().valid(...estadoInspeccionEnum),
   resultado: Joi.string().valid(...resultadoInspeccionEnum).allow(null),
   latitud: Joi.string().max(30).allow('', null),

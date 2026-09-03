@@ -62,6 +62,7 @@ export const getAll = async (
       where,
       include: {
         _count: { select: { participantes: true } },
+        ubigeo: true,
         participantes: {
           include: {
             productor: { select: { id: true, nombres: true, apellido_paterno: true, apellido_materno: true, dni: true } },
@@ -83,6 +84,7 @@ export const getById = async (id: string) => {
   const capacitacion = await prisma.sic_capacitaciones.findFirst({
     where: { id, activo: true },
     include: {
+      ubigeo: true,
       participantes: {
         include: {
           productor: { select: { id: true, codigo: true, nombres: true, apellido_paterno: true, apellido_materno: true, dni: true, comunidad: true } },
@@ -120,6 +122,7 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
       departamento: (data.departamento as string) || null,
       provincia: (data.provincia as string) || null,
       distrito: (data.distrito as string) || null,
+      ubigeo_id: data.ubigeo_id ? Number(data.ubigeo_id) : null,
       material_entregado: (data.material_entregado as string) || null,
       observaciones: (data.observaciones as string) || null,
       created_by: userId || null,
@@ -162,6 +165,7 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
   if (data.departamento !== undefined) updateData.departamento = (data.departamento as string) || null;
   if (data.provincia !== undefined) updateData.provincia = (data.provincia as string) || null;
   if (data.distrito !== undefined) updateData.distrito = (data.distrito as string) || null;
+  if (data.ubigeo_id !== undefined) updateData.ubigeo_id = data.ubigeo_id ? Number(data.ubigeo_id) : null;
   if (data.material_entregado !== undefined) updateData.material_entregado = (data.material_entregado as string) || null;
   if (data.observaciones !== undefined) updateData.observaciones = (data.observaciones as string) || null;
 
@@ -201,7 +205,7 @@ export const addParticipante = async (capacitacionId: string, data: Record<strin
   }
 
   if (data.productor_id) {
-    const productor = await prisma.productores.findFirst({ where: { id: data.productor_id as string, activo: true } });
+    const productor = await prisma.productores.findFirst({ where: { id: Number(data.productor_id), activo: true } });
     if (!productor) throw createError('Productor no encontrado', 404);
   }
 
@@ -213,7 +217,7 @@ export const addParticipante = async (capacitacionId: string, data: Record<strin
   const participante = await prisma.sic_capacitacion_participantes.create({
     data: {
       capacitacion_id: capacitacionId,
-      productor_id: (data.productor_id as string) || null,
+      productor_id: data.productor_id ? Number(data.productor_id) : null,
       usuario_id: (data.usuario_id as string) || null,
       asistio: (data.asistio as boolean) ?? false,
       firma_url: (data.firma_url as string) || null,

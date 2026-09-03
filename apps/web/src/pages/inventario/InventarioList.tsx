@@ -62,8 +62,10 @@ export default function InventarioList() {
   const [items, setItems] = useState<InventarioItem[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
 
   const load = () => {
+    setLoading(true);
     const params: InventariosQuery = { page, limit: pageSize };
     if (search) params.search = search;
     if (filtroEstado) params.estado = filtroEstado;
@@ -77,7 +79,8 @@ export default function InventarioList() {
       })
       .catch(() => {
         setItems([]);
-      });
+      })
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {

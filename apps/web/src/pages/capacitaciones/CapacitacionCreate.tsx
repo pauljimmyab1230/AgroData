@@ -13,6 +13,7 @@ import {
 } from "../../components/ui";
 import { createCapacitacion } from "../../services/capacitaciones";
 import { fetchProductores, type Productor } from "../../services/productores";
+import { useUbigeo } from "../../hooks/useUbigeo";
 import api from "../../services/api";
 
 interface Usuario {
@@ -40,6 +41,8 @@ export default function CapacitacionCreate() {
   const [searchProductor, setSearchProductor] = useState("");
   const [participantes, setParticipantes] = useState<ParticipanteTemp[]>([]);
 
+  const ubigeo = useUbigeo();
+
   const [form, setForm] = useState({
     tipo: "PRODUCTORES",
     tema: "",
@@ -66,8 +69,8 @@ export default function CapacitacionCreate() {
         ]);
         setProductores(prodResult.data);
         setUsuarios(userResult.data.data || []);
-      } catch (err) {
-        console.error(err);
+      } catch {
+        // handled silently
       } finally {
         setLoadingCombos(false);
       }
@@ -145,8 +148,7 @@ export default function CapacitacionCreate() {
         })),
       });
       navigate("/capacitaciones");
-    } catch (err) {
-      console.error(err);
+    } catch {
       alert("Error al registrar la capacitación");
     } finally {
       setSaving(false);
@@ -274,26 +276,40 @@ export default function CapacitacionCreate() {
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-gray-500">Departamento</label>
-                <Input
-                  placeholder="Departamento"
-                  value={form.departamento}
-                  onChange={(e) => handleChange("departamento", e.target.value)}
+                <Select
+                  options={ubigeo.departamentoOptions}
+                  placeholder="Seleccione departamento"
+                  value={ubigeo.departamento}
+                  onChange={(val) => {
+                    ubigeo.onDepartamentoChange(val);
+                    setForm((prev) => ({ ...prev, departamento: val, provincia: "", distrito: "" }));
+                  }}
                 />
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-gray-500">Provincia</label>
-                <Input
-                  placeholder="Provincia"
-                  value={form.provincia}
-                  onChange={(e) => handleChange("provincia", e.target.value)}
+                <Select
+                  options={ubigeo.provinciaOptions}
+                  placeholder={ubigeo.departamento ? "Seleccione provincia" : "Primero seleccione departamento"}
+                  value={ubigeo.provincia}
+                  onChange={(val) => {
+                    ubigeo.onProvinciaChange(val);
+                    setForm((prev) => ({ ...prev, provincia: val, distrito: "" }));
+                  }}
+                  disabled={!ubigeo.departamento}
                 />
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-gray-500">Distrito</label>
-                <Input
-                  placeholder="Distrito"
-                  value={form.distrito}
-                  onChange={(e) => handleChange("distrito", e.target.value)}
+                <Select
+                  options={ubigeo.distritoOptions}
+                  placeholder={ubigeo.provincia ? "Seleccione distrito" : "Primero seleccione provincia"}
+                  value={ubigeo.distrito}
+                  onChange={(val) => {
+                    ubigeo.onDistritoChange(val);
+                    setForm((prev) => ({ ...prev, distrito: val }));
+                  }}
+                  disabled={!ubigeo.provincia}
                 />
               </div>
             </div>

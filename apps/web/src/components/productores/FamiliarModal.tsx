@@ -161,6 +161,7 @@ export function FamiliarModal({ open, onClose, onSave, familiar, saving }: Famil
             <DatePicker
               selected={form.fechaNacimiento ? new Date(form.fechaNacimiento + "T00:00:00") : null}
               onChange={(date) => setField({ fechaNacimiento: date ? date.toISOString().split("T")[0] : "" })}
+              maxDate={new Date()}
             />
           </FormField>
 

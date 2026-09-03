@@ -48,8 +48,8 @@ export default function UsuarioView() {
       try {
         const data = await fetchUsuario(id!);
         setUsuario(data);
-      } catch (err) {
-        console.error(err);
+      } catch {
+        // handled silently
       } finally {
         setLoading(false);
       }
@@ -62,8 +62,8 @@ export default function UsuarioView() {
     try {
       await deleteUsuario(id);
       navigate("/usuarios");
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // handled silently
     }
   };
 

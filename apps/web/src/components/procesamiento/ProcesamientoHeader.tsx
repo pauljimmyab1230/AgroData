@@ -24,7 +24,7 @@ export default function ProcesamientoHeader({ orden, actions }: ProcesamientoHea
           </div>
           <p className="mt-1 text-sm text-gray-500">
             Producto: <span className="font-medium text-[#111827]">{orden.producto}</span>
-            {" · "}Campaña: <span className="font-medium text-[#111827]">{orden.campania}</span>
+            {" · "}Campaña: <span className="font-medium text-[#111827]">{orden.campaniaNombre}</span>
           </p>
           <p className="mt-1 text-sm text-gray-500">
             Fecha: <span className="font-medium text-[#111827]">{formatFecha(orden.fecha)}</span>

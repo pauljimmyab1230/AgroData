@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router-dom";
 import { Eye, Pencil, SearchCheck, Trash2 } from "lucide-react";
 import { DataTable } from "../ui";
 import { EstadoBadge, ResultadoBadge } from "./badges";
@@ -9,6 +8,8 @@ interface InspeccionTableProps {
   currentPage?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
+  onView?: (inspeccion: Inspeccion) => void;
+  onEdit?: (inspeccion: Inspeccion) => void;
   onDelete: (inspeccion: Inspeccion) => void;
 }
 
@@ -17,10 +18,10 @@ export default function InspeccionTable({
   currentPage,
   totalPages,
   onPageChange,
+  onView,
+  onEdit,
   onDelete,
 }: InspeccionTableProps) {
-  const navigate = useNavigate();
-
   const columns = [
     { key: "codigo", label: "Código", sortable: true, className: "font-medium text-forest-700" },
     {
@@ -67,7 +68,7 @@ export default function InspeccionTable({
           <button
             type="button"
             aria-label={`Ver ${inspeccion.codigo}`}
-            onClick={() => navigate(`/inspecciones/${inspeccion.id}`)}
+            onClick={() => onView?.(inspeccion)}
             className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-forest-600/10 hover:text-forest-700"
           >
             <Eye className="h-4 w-4" />
@@ -75,7 +76,7 @@ export default function InspeccionTable({
           <button
             type="button"
             aria-label={`Editar ${inspeccion.codigo}`}
-            onClick={() => navigate(`/inspecciones/${inspeccion.id}/editar`)}
+            onClick={() => onEdit?.(inspeccion)}
             className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-forest-600/10 hover:text-forest-700"
           >
             <Pencil className="h-4 w-4" />

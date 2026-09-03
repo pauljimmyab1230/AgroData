@@ -1,15 +1,17 @@
 import { useState, useEffect, useCallback } from "react";
 import { Factory, Hash, Scale, TrendingDown, X } from "lucide-react";
-import { Breadcrumb, Button, ConfirmDialog, SearchInput, SectionHeader, Select } from "../../components/ui";
+import { Button, ConfirmDialog, LoadingSpinner, SearchInput, SectionHeader, Select } from "../../components/ui";
 import ProcesamientoKPI from "../../components/procesamiento/ProcesamientoKPI";
 import ProcesamientoTable from "../../components/procesamiento/ProcesamientoTable";
 import {
   type OrdenProcesamiento,
   type ProcesamientosQuery,
   fetchProcesamientos,
+  deleteProcesamiento,
   procesamientoEstados,
   formatearPeso,
 } from "../../services/procesamientos";
+import ProcesamientoModal from "../../components/procesamiento/ProcesamientoModal";
 
 const pageSize = 5;
 
@@ -38,12 +40,12 @@ function FilterSelect({
 
 export default function ProcesamientoList() {
   const [search, setSearch] = useState("");
-  const [filtroCampania, setFiltroCampania] = useState("");
-  const [filtroProducto, setFiltroProducto] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
-  const [filtroResponsable, setFiltroResponsable] = useState("");
   const [page, setPage] = useState(1);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [viewId, setViewId] = useState<string | null>(null);
 
   const [data, setData] = useState<OrdenProcesamiento[]>([]);
   const [total, setTotal] = useState(0);
@@ -64,8 +66,8 @@ export default function ProcesamientoList() {
       setData(result.data);
       setTotal(result.total);
       setTotalPages(result.totalPages);
-    } catch (err) {
-      console.error("Error loading procesamientos:", err);
+    } catch {
+      // handled silently
     } finally {
       setLoading(false);
     }
@@ -112,31 +114,41 @@ export default function ProcesamientoList() {
 
   const hasFilters =
     Boolean(search) ||
-    Boolean(filtroCampania) ||
-    Boolean(filtroProducto) ||
-    Boolean(filtroEstado) ||
-    Boolean(filtroResponsable);
+    Boolean(filtroEstado);
 
   const clearFilters = () => {
     setSearch("");
-    setFiltroCampania("");
-    setFiltroProducto("");
     setFiltroEstado("");
-    setFiltroResponsable("");
     setPage(1);
+  };
+
+  const handleModalClose = () => {
+    setShowCreateModal(false);
+    setEditId(null);
+    setViewId(null);
+    loadData();
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    try {
+      await deleteProcesamiento(deleteId);
+      setDeleteId(null);
+      loadData();
+    } catch {
+      // handled silently
+    }
   };
 
   return (
     <div>
-      <Breadcrumb items={[{ label: "Procesamiento" }]} />
-
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <SectionHeader
           title="Procesamiento Primario"
-          description="Registro y seguimiento de Órdenes de Procesamiento de materia prima."
+          description="Registro y seguimiento de órdenes de procesamiento"
         />
         <div className="flex items-center gap-2">
-          <Button as="link" to="/procesamiento/nuevo" iconLeft={<Factory className="h-4 w-4" />}>
+          <Button onClick={() => setShowCreateModal(true)} iconLeft={<Factory className="h-4 w-4" />}>
             Nueva Orden de Procesamiento
           </Button>
         </div>
@@ -174,22 +186,52 @@ export default function ProcesamientoList() {
         )}
       </div>
 
-      <ProcesamientoTable
-        data={data}
-        currentPage={page}
-        totalPages={totalPages}
-        onPageChange={setPage}
-        onDelete={(op) => setDeleteId(op.id ?? null)}
-      />
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <LoadingSpinner />
+        </div>
+      ) : (
+        <ProcesamientoTable
+          data={data}
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          onView={(op) => setViewId(op.id ?? null)}
+          onEdit={(op) => setEditId(op.id ?? null)}
+          onDelete={(op) => setDeleteId(op.id ?? null)}
+        />
+      )}
 
       <ConfirmDialog
         open={deleteId !== null}
         onClose={() => setDeleteId(null)}
-        onConfirm={() => setDeleteId(null)}
+        onConfirm={handleDelete}
         title="Eliminar Orden de Procesamiento"
         message="¿Estás seguro de eliminar esta orden de procesamiento? Esta acción no se puede deshacer."
         confirmText="Eliminar"
         variant="danger"
+      />
+
+      <ProcesamientoModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSave={handleModalClose}
+        mode="create"
+      />
+
+      <ProcesamientoModal
+        open={editId !== null}
+        onClose={() => setEditId(null)}
+        onSave={handleModalClose}
+        mode="edit"
+        procesamientoId={editId || undefined}
+      />
+
+      <ProcesamientoModal
+        open={viewId !== null}
+        onClose={() => setViewId(null)}
+        mode="view"
+        procesamientoId={viewId || undefined}
       />
     </div>
   );

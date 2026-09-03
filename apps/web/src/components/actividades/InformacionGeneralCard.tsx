@@ -1,52 +1,14 @@
+import { useEffect, useState } from "react";
 import { ClipboardList } from "lucide-react";
 import { DatePicker, Input, Select } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import { formatearFecha, type ActividadFormData } from "../../services/actividades";
+import { fetchCampanias } from "../../services/campanias";
+import { fetchProductores } from "../../services/productores";
+import { fetchParcelas } from "../../services/parcelas";
+import { fetchCultivos } from "../../services/cultivos";
 
-const campaniasOpciones = [
-  "Campaña 2025-2026 Quinua Orgánica",
-  "Campaña 2024-2025 Granos Andinos",
-  "Campaña 2025-2026 Papa Nativa",
-  "Campaña 2023-2024 Diversificación",
-  "Campaña 2025-2026 Tarwi",
-];
-
-const cultivosOpciones = ["Quinua", "Papa Nativa", "Cebada", "Maíz", "Haba", "Tarwi"];
-
-const productoresOpciones = [
-  "Apolinario Condori",
-  "María Huamán",
-  "Pedro Rojas",
-  "Rosa Chávez",
-  "Juan Gutiérrez",
-  "Lucía Mendoza",
-];
-
-type ParcelaOption = {
-  id: number;
-  codigo: string;
-  nombre: string;
-  productor: string;
-  cultivoPrincipal: string;
-};
-
-const parcelasOpciones: ParcelaOption[] = [
-  { id: 1, codigo: "PAR-001", nombre: "Parcela A - Ñawpa Rumi", productor: "Apolinario Condori", cultivoPrincipal: "Quinua" },
-  { id: 2, codigo: "PAR-002", nombre: "Parcela B - Pampa Urku", productor: "María Huamán", cultivoPrincipal: "Papa Nativa" },
-  { id: 3, codigo: "PAR-003", nombre: "Parcela C - Qucha Pata", productor: "Pedro Rojas", cultivoPrincipal: "Cebada" },
-  { id: 4, codigo: "PAR-004", nombre: "Parcela D - Puca Pampa", productor: "Rosa Chávez", cultivoPrincipal: "Maíz" },
-  { id: 5, codigo: "PAR-005", nombre: "Parcela E - San Martín", productor: "Juan Gutiérrez", cultivoPrincipal: "Haba" },
-  { id: 6, codigo: "PAR-006", nombre: "Parcela F - Tiquihua Alta", productor: "Lucía Mendoza", cultivoPrincipal: "Tarwi" },
-  { id: 7, codigo: "PAR-007", nombre: "Parcela G - Rumi Pata", productor: "Apolinario Condori", cultivoPrincipal: "Quinua" },
-  { id: 8, codigo: "PAR-008", nombre: "Parcela H - Inti Huasi", productor: "Rosa Chávez", cultivoPrincipal: "Papa Nativa" },
-];
-
-const tecnicosOpciones = [
-  "Ing. Marco Salas",
-  "Ing. Ana Paredes",
-  "Téc. Jorge Quispe",
-  "Ing. Carmen Villalobos",
-];
+type DropdownOption = { value: string; label: string };
 
 type InformacionGeneralCardProps = {
   mode: FormMode;
@@ -54,31 +16,58 @@ type InformacionGeneralCardProps = {
   onChange?: (patch: Partial<ActividadFormData>) => void;
 };
 
-const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: item }));
-
 export function InformacionGeneralCard({ mode, value, onChange }: InformacionGeneralCardProps) {
   const editable = mode !== "view";
 
-  const parcelasDisponibles = value.productor
-    ? parcelasOpciones.filter((p) => p.productor === value.productor)
-    : parcelasOpciones;
+  const [campaniasOptions, setCampaniasOptions] = useState<DropdownOption[]>([]);
+  const [productoresOptions, setProductoresOptions] = useState<DropdownOption[]>([]);
+  const [parcelasOptions, setParcelasOptions] = useState<DropdownOption[]>([]);
+  const [cultivosOptions, setCultivosOptions] = useState<DropdownOption[]>([]);
+  const [loadingParcelas, setLoadingParcelas] = useState(false);
+  const [loadingCultivos, setLoadingCultivos] = useState(false);
 
-  const parcelasOptions = parcelasDisponibles.map((p) => ({
-    value: p.nombre,
-    label: `${p.codigo} - ${p.nombre}`,
-  }));
+  useEffect(() => {
+    fetchCampanias({ limit: 100 })
+      .then((res) => setCampaniasOptions(res.data.map((c) => ({ value: c.id, label: `${c.nombre} (${c.codigo})` }))))
+      .catch(() => {});
+    fetchProductores({ limit: 100 })
+      .then((res) => setProductoresOptions(res.data.map((p) => ({ value: String(p.id), label: `${p.nombres} ${p.apellidoPaterno} ${p.apellidoMaterno}`.trim() }))))
+      .catch(() => {});
+  }, []);
 
-  const handleProductorChange = (productor: string) => {
-    onChange?.({ productor, parcela: "", cultivo: "" });
+  useEffect(() => {
+    if (!value.productorId) {
+      setParcelasOptions([]);
+      setCultivosOptions([]);
+      return;
+    }
+    setLoadingParcelas(true);
+    fetchParcelas({ productorId: value.productorId, limit: 100 })
+      .then((res) => setParcelasOptions(res.data.map((p) => ({ value: String(p.id), label: `${p.codigo} - ${p.nombre}` }))))
+      .catch(() => {})
+      .finally(() => setLoadingParcelas(false));
+  }, [value.productorId]);
+
+  useEffect(() => {
+    if (!value.parcelaId) {
+      setCultivosOptions([]);
+      return;
+    }
+    setLoadingCultivos(true);
+    fetchCultivos({ parcela_id: value.parcelaId, limit: 100 })
+      .then((res) => setCultivosOptions(res.data.map((c) => ({ value: c.id, label: c.cultivo }))))
+      .catch(() => {})
+      .finally(() => setLoadingCultivos(false));
+  }, [value.parcelaId]);
+
+  const handleProductorChange = (productorId: string) => {
+    const productor = productoresOptions.find((o) => o.value === productorId);
+    onChange?.({ productorId, productor: productor?.label ?? "", parcelaId: "", parcela: "", cultivoId: "", cultivo: "" });
   };
 
-  const handleParcelaChange = (parcela: string) => {
-    const seleccionada = parcelasOpciones.find((p) => p.nombre === parcela);
-    onChange?.({
-      parcela,
-      productor: value.productor || seleccionada?.productor || "",
-      cultivo: seleccionada?.cultivoPrincipal || value.cultivo,
-    });
+  const handleParcelaChange = (parcelaId: string) => {
+    const parcela = parcelasOptions.find((o) => o.value === parcelaId);
+    onChange?.({ parcelaId, parcela: parcela?.label ?? "", cultivoId: "", cultivo: "" });
   };
 
   return (
@@ -89,7 +78,7 @@ export function InformacionGeneralCard({ mode, value, onChange }: InformacionGen
         description="Datos básicos de la actividad agrícola"
       />
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Field label="Código" mode={mode} value={value.codigo}>
           <Input
             value={value.codigo}
@@ -107,18 +96,21 @@ export function InformacionGeneralCard({ mode, value, onChange }: InformacionGen
 
         <Field label="Campaña" mode={mode} value={value.campania} required>
           <Select
-            options={toOptions(campaniasOpciones)}
+            options={campaniasOptions}
             placeholder="Seleccione"
-            value={value.campania}
-            onChange={(v) => onChange?.({ campania: v })}
+            value={value.campaniaId}
+            onChange={(v) => {
+              const campania = campaniasOptions.find((o) => o.value === v);
+              onChange?.({ campaniaId: v, campania: campania?.label ?? "" });
+            }}
           />
         </Field>
 
         <Field label="Productor" mode={mode} value={value.productor} required>
           <Select
-            options={toOptions(productoresOpciones)}
+            options={productoresOptions}
             placeholder="Seleccione"
-            value={value.productor}
+            value={value.productorId}
             onChange={handleProductorChange}
           />
         </Field>
@@ -126,33 +118,44 @@ export function InformacionGeneralCard({ mode, value, onChange }: InformacionGen
         <Field label="Parcela" mode={mode} value={value.parcela} required>
           <Select
             options={parcelasOptions}
-            placeholder={value.productor ? "Seleccione parcela del productor" : "Seleccione un productor primero"}
-            value={value.parcela}
+            placeholder={loadingParcelas ? "Cargando..." : value.productorId ? "Seleccione parcela" : "Seleccione un productor primero"}
+            value={value.parcelaId}
             onChange={handleParcelaChange}
           />
         </Field>
 
-        <Field label="Cultivo" mode={mode} value={value.cultivo} required>
+        <Field label="Cultivo" mode={mode} value={value.cultivo}>
           <Select
-            options={toOptions(cultivosOpciones)}
-            placeholder="Seleccione"
-            value={value.cultivo}
-            onChange={(v) => onChange?.({ cultivo: v })}
+            options={cultivosOptions}
+            placeholder={
+              loadingCultivos
+                ? "Cargando..."
+                : value.parcelaId
+                  ? cultivosOptions.length === 0
+                    ? "Sin cultivos registrados"
+                    : "Seleccione cultivo"
+                  : "Seleccione una parcela primero"
+            }
+            value={value.cultivoId}
+            onChange={(v) => {
+              const cultivo = cultivosOptions.find((o) => o.value === v);
+              onChange?.({ cultivoId: v, cultivo: cultivo?.label ?? "" });
+            }}
           />
         </Field>
 
         <Field label="Responsable Técnico" mode={mode} value={value.responsableTecnico} required>
-          <Select
-            options={toOptions(tecnicosOpciones)}
-            placeholder="Seleccione"
+          <Input
             value={value.responsableTecnico}
-            onChange={(v) => onChange?.({ responsableTecnico: v })}
+            disabled={!editable}
+            onChange={(e) => onChange?.({ responsableTecnico: e.target.value })}
+            placeholder="Nombre del responsable"
           />
         </Field>
 
         {editable && (
           <div className="flex items-end text-xs text-gray-400 sm:col-span-2 lg:col-span-2">
-            <span>Al seleccionar un productor se muestran sus parcelas registradas.</span>
+            <span>Cascada: Productor → Parcela → Cultivo</span>
           </div>
         )}
       </div>

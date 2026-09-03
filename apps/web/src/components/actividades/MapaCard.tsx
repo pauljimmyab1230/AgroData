@@ -38,7 +38,7 @@ export function MapaCard({ mode, value, onChange }: MapaCardProps) {
         description="Coordenadas geográficas, altitud y precisión de la ubicación"
       />
 
-      <div className="grid gap-6 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Latitud" mode={mode} value={value.latitud}>
           <Input
             type="text"
@@ -84,18 +84,18 @@ export function MapaCard({ mode, value, onChange }: MapaCardProps) {
         </Field>
       </div>
 
-      <div className="mt-8">
+      <div className="mt-4">
         <ParcelaMap
           lat={value.latitud}
           lng={value.longitud}
           label={value.parcela || "Ubicación"}
-          className="h-80"
+          className="h-56"
         />
 
         {editable && (
           <Button
             variant="secondary"
-            className="mt-4"
+            className="mt-3"
             onClick={handleObtenerUbicacion}
             loading={obteniendo}
             iconLeft={<Crosshair className="h-4 w-4" />}

@@ -186,10 +186,49 @@ export async function createCampania(data: Partial<Campania>): Promise<Campania>
 }
 
 export async function updateCampania(id: string, data: Partial<Campania>): Promise<Campania> {
-  const res = await api.put(`/campanias/${id}`, toBackend(data));
+  const res = await api.patch(`/campanias/${id}`, toBackend(data));
   return toFrontend(res.data.data);
 }
 
 export async function deleteCampania(id: string): Promise<void> {
   await api.delete(`/campanias/${id}`);
+}
+
+// ─── Stats ─────────────────────────────────────────────────
+
+export interface CampaniaStats {
+  productores: number;
+  parcelas: number;
+  cultivos: number;
+  areaSembrada: number;
+  actividades: number;
+  inspecciones: number;
+  acopios: number;
+  cultivosPorTipo: Record<string, number>;
+}
+
+export async function fetchCampaniaStats(id: string): Promise<CampaniaStats> {
+  const res = await api.get(`/campanias/${id}/stats`);
+  return res.data.data;
+}
+
+// ─── Global Stats ─────────────────────────────────────────
+
+export interface CampaniaGlobalStats {
+  total: number;
+  estados: Record<string, number>;
+}
+
+export async function fetchCampaniaGlobalStats(params?: {
+  search?: string;
+  estado?: string;
+  anioAgricola?: string;
+}): Promise<CampaniaGlobalStats> {
+  const query: Record<string, string> = {};
+  if (params?.search) query.search = params.search;
+  if (params?.estado) query.estado = params.estado;
+  if (params?.anioAgricola) query.anio_agricola = params.anioAgricola;
+
+  const res = await api.get("/campanias/stats", { params: query });
+  return res.data.data;
 }

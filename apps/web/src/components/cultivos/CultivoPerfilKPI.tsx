@@ -1,4 +1,4 @@
-import { Ruler, Package, Sprout } from "lucide-react";
+import { Ruler, Package } from "lucide-react";
 import { Card } from "../ui";
 import type { Cultivo } from "../../services/cultivos";
 
@@ -19,12 +19,6 @@ export default function CultivoPerfilKPI({ cultivo }: CultivoPerfilKPIProps) {
       value: `${cultivo.produccionEstimada?.toLocaleString("es-PE") ?? "—"} kg`,
       icon: Package,
       iconClass: "bg-forest-600/10 text-forest-600",
-    },
-    {
-      label: "Estado Fenológico",
-      value: cultivo.estadoFenologico || "—",
-      icon: Sprout,
-      iconClass: "bg-sun-100 text-sun-700",
     },
   ];
 

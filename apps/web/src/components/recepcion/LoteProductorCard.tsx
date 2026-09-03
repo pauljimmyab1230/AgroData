@@ -9,11 +9,11 @@ import { fetchAcopios } from "../../services/acopios";
 type LoteProductorCardProps = {
   mode: FormMode;
   values?: Partial<Recepcion>;
+  onChange?: <K extends keyof Recepcion>(field: K, value: Recepcion[K]) => void;
 };
 
-export function LoteProductorCard({ mode, values }: LoteProductorCardProps) {
+export function LoteProductorCard({ mode, values, onChange }: LoteProductorCardProps) {
   const editable = mode !== "view";
-  const [loteSeleccionado, setLoteSeleccionado] = useState<string | undefined>(values?.loteProductor);
   const [lps, setLps] = useState<{ value: string; label: string }[]>([]);
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export function LoteProductorCard({ mode, values }: LoteProductorCardProps) {
   const items = [
     {
       label: "Código LP",
-      value: loteSeleccionado || values?.loteProductor || "—",
+      value: values?.loteProductor || "—",
       icon: Hash,
       iconClass: "bg-purple-50 text-purple-600",
     },
@@ -85,8 +85,8 @@ export function LoteProductorCard({ mode, values }: LoteProductorCardProps) {
               <Select
                 options={lps}
                 placeholder="Seleccione el LP a recepcionar"
-                value={loteSeleccionado ?? ""}
-                onChange={(val) => setLoteSeleccionado(val || undefined)}
+                value={values?.loteProductor ?? ""}
+                onChange={(val) => onChange?.("loteProductor", val)}
               />
             </div>
           ) : (

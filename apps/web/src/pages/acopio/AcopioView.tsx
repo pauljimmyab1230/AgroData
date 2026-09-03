@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { ArrowLeft, Boxes, Hash, Pencil, Scale, TrendingUp } from "lucide-react";
+import { ArrowLeft, Boxes, Hash, Pencil, Scale } from "lucide-react";
 import { Breadcrumb, Button } from "../../components/ui";
 import AcopioHeader from "../../components/acopio/AcopioHeader";
 import AcopioKPI from "../../components/acopio/AcopioKPI";
@@ -13,8 +13,14 @@ import { EvidenciasCard } from "../../components/acopio/EvidenciasCard";
 import { ObservacionesCard } from "../../components/acopio/ObservacionesCard";
 import { fetchAcopio, toAcopioView, formatKg, type AcopioView } from "../../services/acopios";
 
-export default function AcopioView() {
-  const { id } = useParams();
+interface AcopioViewProps {
+  inModal?: boolean;
+  acopioId?: string;
+}
+
+export default function AcopioView({ inModal, acopioId: propId }: AcopioViewProps) {
+  const { id: paramId } = useParams();
+  const id = propId || paramId;
   const [acopio, setAcopio] = useState<AcopioView | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -56,12 +62,6 @@ export default function AcopioView() {
       iconClass: "bg-sun-100 text-sun-700",
     },
     {
-      label: "Peso Promedio",
-      value: formatKg(acopio.pesoPromedio),
-      icon: TrendingUp,
-      iconClass: "bg-forest-600/10 text-forest-600",
-    },
-    {
       label: "Lote del Productor",
       value: acopio.loteProductor,
       icon: Hash,
@@ -71,27 +71,31 @@ export default function AcopioView() {
 
   return (
     <div>
-      <Breadcrumb items={[{ label: "Acopio", to: "/acopio" }, { label: acopio.codigo }]} />
+      {!inModal && (
+        <>
+          <Breadcrumb items={[{ label: "Acopio", to: "/acopio" }, { label: acopio.codigo }]} />
 
-      <div className="mb-8 flex items-center gap-4">
-        <Button variant="ghost" as="link" to="/acopio" iconLeft={<ArrowLeft className="h-4 w-4" />}>
-          Acopio
-        </Button>
-      </div>
+          <div className="mb-8 flex items-center gap-4">
+            <Button variant="ghost" as="link" to="/acopio" iconLeft={<ArrowLeft className="h-4 w-4" />}>
+              Acopio
+            </Button>
+          </div>
 
-      <AcopioHeader
-        acopio={acopio}
-        actions={
-          <Button
-            variant="secondary"
-            as="link"
-            to={`/acopio/${acopio.id}/editar`}
-            iconLeft={<Pencil className="h-4 w-4" />}
-          >
-            Editar
-          </Button>
-        }
-      />
+          <AcopioHeader
+            acopio={acopio}
+            actions={
+              <Button
+                variant="secondary"
+                as="link"
+                to={`/acopio/${acopio.id}/editar`}
+                iconLeft={<Pencil className="h-4 w-4" />}
+              >
+                Editar
+              </Button>
+            }
+          />
+        </>
+      )}
 
       <AcopioKPI items={kpis} />
 

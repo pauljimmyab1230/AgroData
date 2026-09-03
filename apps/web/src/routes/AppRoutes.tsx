@@ -2,11 +2,9 @@ import { Routes, Route } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import ProtectedRoute from "../components/ProtectedRoute";
 import Login from "../pages/auth/Login";
-import Register from "../pages/auth/Register";
 import Dashboard from "../pages/dashboard/Dashboard";
 import ProductorList from "../pages/productores/ProductorList";
 import ParcelaList from "../pages/parcelas/ParcelaList";
-import ParcelaCreate from "../pages/parcelas/ParcelaCreate";
 import ParcelaView from "../pages/parcelas/ParcelaView";
 import ParcelaEdit from "../pages/parcelas/ParcelaEdit";
 import CultivoList from "../pages/cultivos/CultivoList";
@@ -58,28 +56,21 @@ import UsuarioCreate from "../pages/usuarios/UsuarioCreate";
 import UsuarioView from "../pages/usuarios/UsuarioView";
 import UsuarioEdit from "../pages/usuarios/UsuarioEdit";
 import CatalogPage from "../pages/catalogos/CatalogPage";
-import ProductorCreate from "../pages/productores/ProductorCreate";
 import ProductorView from "../pages/productores/ProductorView";
-import ProductorEdit from "../pages/productores/ProductorEdit";
 
 export default function AppRoutes() {
     return (
         <Routes>
             <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
 
             <Route element={<ProtectedRoute />}>
                 <Route element={<MainLayout />}>
                     <Route path="/" element={<Dashboard />} />
-                    <Route path="/productores" element={<ProductorList />} />
                     <Route path="/parcelas" element={<ParcelaList />} />
-                    <Route path="/parcelas/nueva" element={<ParcelaCreate />} />
                     <Route path="/parcelas/:id" element={<ParcelaView />} />
                     <Route path="/parcelas/:id/editar" element={<ParcelaEdit />} />
                     <Route path="/cultivos" element={<CultivoList />} />
-                    <Route path="/cultivos/nuevo" element={<CultivoCreate />} />
                     <Route path="/cultivos/:id" element={<CultivoView />} />
-                    <Route path="/cultivos/:id/editar" element={<CultivoEdit />} />
                     <Route path="/campanias" element={<CampaniaList />} />
                     <Route path="/campanias/nueva" element={<CampaniaCreate />} />
                     <Route path="/campanias/:id" element={<CampaniaView />} />
@@ -93,17 +84,11 @@ export default function AppRoutes() {
                     <Route path="/inspecciones/:id" element={<InspeccionView />} />
                     <Route path="/inspecciones/:id/editar" element={<InspeccionEdit />} />
                     <Route path="/acopio" element={<AcopioList />} />
-                    <Route path="/acopio/nuevo" element={<AcopioCreate />} />
                     <Route path="/acopio/:id" element={<AcopioView />} />
-                    <Route path="/acopio/:id/editar" element={<AcopioEdit />} />
                     <Route path="/recepcion" element={<RecepcionList />} />
-                    <Route path="/recepcion/nuevo" element={<RecepcionCreate />} />
                     <Route path="/recepcion/:id" element={<RecepcionView />} />
-                    <Route path="/recepcion/:id/editar" element={<RecepcionEdit />} />
                     <Route path="/procesamiento" element={<ProcesamientoList />} />
-                    <Route path="/procesamiento/nuevo" element={<ProcesamientoCreate />} />
                     <Route path="/procesamiento/:id" element={<ProcesamientoView />} />
-                    <Route path="/procesamiento/:id/editar" element={<ProcesamientoEdit />} />
                     <Route path="/lotes" element={<LoteList />} />
                     <Route path="/lotes/nuevo" element={<LoteCreate />} />
                     <Route path="/lotes/:id" element={<LoteView />} />
@@ -125,9 +110,8 @@ export default function AppRoutes() {
                     <Route path="/usuarios/:id" element={<UsuarioView />} />
                     <Route path="/usuarios/:id/editar" element={<UsuarioEdit />} />
                     <Route path="/catalogos/:catalogoId" element={<CatalogPage />} />
-                    <Route path="/productores/nuevo" element={<ProductorCreate />} />
+                    <Route path="/productores" element={<ProductorList />} />
                     <Route path="/productores/:id" element={<ProductorView />} />
-                    <Route path="/productores/:id/editar" element={<ProductorEdit />} />
                 </Route>
             </Route>
         </Routes>

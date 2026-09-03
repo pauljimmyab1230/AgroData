@@ -11,10 +11,11 @@ import {
   type Parcela,
 } from "../../services/productores";
 import { ParcelaModal, type ParcelaFormData } from "./ParcelaModal";
+import { toast } from "../../utils/toast";
 
 type ParcelaTableProps = {
   mode: FormMode;
-  productorId?: string;
+  productorId?: number;
 };
 
 const certificacionLabel: Record<string, string> = {
@@ -47,10 +48,10 @@ export function ParcelaTable({ mode, productorId }: ParcelaTableProps) {
   }, [mode, productorId, setParcelas]);
 
   const totalParcelas = parcelas.length;
-  const areaTotal = parcelas.reduce((sum, p) => sum + parseFloat(p.area), 0);
+  const areaTotal = parcelas.reduce((sum, p) => sum + Number(p.area), 0);
   const areaCertificada = parcelas
     .filter((p) => p.certificacion === "ORGANICA")
-    .reduce((sum, p) => sum + parseFloat(p.area), 0);
+    .reduce((sum, p) => sum + Number(p.area), 0);
   const cultivosActivos = new Set(
     parcelas.filter((p) => p.estado === "ACTIVA").map((p) => p.cultivo),
   ).size;
@@ -94,7 +95,7 @@ export function ParcelaTable({ mode, productorId }: ParcelaTableProps) {
         }
       } else {
         if (mode === "create") {
-          setParcelas([...parcelas, { id: `temp-${Date.now()}`, ...form }]);
+          setParcelas([...parcelas, { id: -Date.now(), ...form }]);
         } else if (productorId) {
           const created = await createParcela(productorId, form);
           setParcelas([...parcelas, created]);
@@ -104,7 +105,7 @@ export function ParcelaTable({ mode, productorId }: ParcelaTableProps) {
       setEditTarget(null);
     } catch (err) {
       console.error(err);
-      alert("Error al guardar la parcela.");
+      toast.error("Error al guardar la parcela.");
     } finally {
       setSaving(false);
     }
@@ -122,7 +123,7 @@ export function ParcelaTable({ mode, productorId }: ParcelaTableProps) {
       setDeleteTarget(null);
     } catch (err) {
       console.error(err);
-      alert("Error al eliminar la parcela.");
+      toast.error("Error al eliminar la parcela.");
     }
   };
 

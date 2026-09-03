@@ -7,9 +7,9 @@ import {
   lineasProcesamientoOpciones,
   plantasOpciones,
   productosOpciones,
-  responsablesOpciones,
   type OrdenProcesamiento,
 } from "../../services/procesamientos";
+import { useUsuariosBasic } from "../../services/usuarios";
 
 type InformacionGeneralCardProps = {
   mode: FormMode;
@@ -23,6 +23,8 @@ const parseDate = (s?: string) => (s ? new Date(s + "T00:00:00") : null);
 export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardProps) {
   const editable = mode !== "view";
   const [fecha, setFecha] = useState<Date | null>(() => parseDate(values?.fecha));
+  const { usuarios: responsables } = useUsuariosBasic();
+  const responsablesOptions = responsables.map((u) => ({ value: u.nombre, label: u.nombre }));
 
   return (
     <CardShell>
@@ -34,7 +36,7 @@ export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardP
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <Field label="Código OP" mode={mode} value={values?.codigo}>
-          <Input placeholder="Se genera automáticamente" disabled defaultValue={editable ? values?.codigo : undefined} />
+          <Input placeholder="Se genera automáticamente" disabled value={editable ? values?.codigo : undefined} />
         </Field>
 
         <Field label="Fecha" mode={mode} value={values?.fecha}>
@@ -43,9 +45,9 @@ export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardP
 
         <Field label="Responsable" mode={mode} value={values?.responsable}>
           <Select
-            options={toOptions(responsablesOpciones)}
+            options={responsablesOptions}
             placeholder="Seleccione el responsable"
-            defaultValue={editable ? values?.responsable : undefined}
+            value={editable ? values?.responsable : undefined}
           />
         </Field>
 
@@ -53,7 +55,7 @@ export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardP
           <Select
             options={toOptions(plantasOpciones)}
             placeholder="Seleccione la planta"
-            defaultValue={editable ? values?.planta : undefined}
+            value={editable ? values?.planta : undefined}
           />
         </Field>
 
@@ -61,15 +63,15 @@ export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardP
           <Select
             options={toOptions(lineasProcesamientoOpciones)}
             placeholder="Seleccione la línea"
-            defaultValue={editable ? values?.lineaProcesamiento : undefined}
+            value={editable ? values?.lineaProcesamiento : undefined}
           />
         </Field>
 
-        <Field label="Campaña" mode={mode} value={values?.campania}>
+        <Field label="Campaña" mode={mode} value={values?.campaniaNombre}>
           <Select
             options={toOptions(campaniasOpciones)}
             placeholder="Seleccione la campaña"
-            defaultValue={editable ? values?.campania : undefined}
+            value={editable ? values?.campaniaNombre : undefined}
           />
         </Field>
 
@@ -77,7 +79,7 @@ export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardP
           <Select
             options={toOptions(productosOpciones)}
             placeholder="Seleccione el producto"
-            defaultValue={editable ? values?.producto : undefined}
+            value={editable ? values?.producto : undefined}
           />
         </Field>
       </div>

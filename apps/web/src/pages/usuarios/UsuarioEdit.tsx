@@ -41,8 +41,8 @@ export default function UsuarioEdit() {
           rolSic: usuario.rolSic || "",
           activo: usuario.activo,
         });
-      } catch (err) {
-        console.error(err);
+      } catch {
+        // handled silently
       } finally {
         setLoading(false);
       }
@@ -84,8 +84,7 @@ export default function UsuarioEdit() {
       }
       await updateUsuario(id!, payload);
       navigate(`/usuarios/${id}`);
-    } catch (err) {
-      console.error(err);
+    } catch {
       alert("Error al actualizar el usuario");
     } finally {
       setSaving(false);

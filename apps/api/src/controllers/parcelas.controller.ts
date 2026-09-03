@@ -26,7 +26,7 @@ export const getAll = async (req: AuthRequest, res: Response, next: NextFunction
 
 export const getById = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const parcela = await parcelasService.getById(req.params.id);
+    const parcela = await parcelasService.getById(Number(req.params.id));
     res.status(200).json({
       success: true,
       data: parcela,
@@ -51,7 +51,7 @@ export const create = async (req: AuthRequest, res: Response, next: NextFunction
 
 export const update = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const parcela = await parcelasService.update(req.params.id, req.body, req.user?.id);
+    const parcela = await parcelasService.update(Number(req.params.id), req.body, req.user?.id);
     res.status(200).json({
       success: true,
       message: 'Parcela actualizada exitosamente',
@@ -64,7 +64,7 @@ export const update = async (req: AuthRequest, res: Response, next: NextFunction
 
 export const remove = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const result = await parcelasService.remove(req.params.id);
+    const result = await parcelasService.remove(Number(req.params.id));
     res.status(200).json({
       success: true,
       ...result,
@@ -78,7 +78,7 @@ export const remove = async (req: AuthRequest, res: Response, next: NextFunction
 
 export const getDocumentos = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const documentos = await parcelasService.getDocumentos(req.params.id);
+    const documentos = await parcelasService.getDocumentos(Number(req.params.id));
     res.status(200).json({
       success: true,
       data: documentos,
@@ -91,7 +91,7 @@ export const getDocumentos = async (req: AuthRequest, res: Response, next: NextF
 
 export const createDocumento = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const documento = await parcelasService.createDocumento(req.params.id, req.body);
+    const documento = await parcelasService.createDocumento(Number(req.params.id), req.body);
     res.status(201).json({
       success: true,
       message: 'Documento registrado exitosamente',
@@ -104,7 +104,7 @@ export const createDocumento = async (req: AuthRequest, res: Response, next: Nex
 
 export const updateDocumento = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const documento = await parcelasService.updateDocumento(req.params.id, req.params.documentoId, req.body);
+    const documento = await parcelasService.updateDocumento(Number(req.params.id), Number(req.params.documentoId), req.body);
     res.status(200).json({
       success: true,
       message: 'Documento actualizado exitosamente',
@@ -117,7 +117,7 @@ export const updateDocumento = async (req: AuthRequest, res: Response, next: Nex
 
 export const removeDocumento = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const result = await parcelasService.removeDocumento(req.params.id, req.params.documentoId);
+    const result = await parcelasService.removeDocumento(Number(req.params.id), Number(req.params.documentoId));
     res.status(200).json({
       success: true,
       ...result,
@@ -131,7 +131,7 @@ export const removeDocumento = async (req: AuthRequest, res: Response, next: Nex
 
 export const getFotos = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const fotos = await parcelasService.getFotos(req.params.id);
+    const fotos = await parcelasService.getFotos(Number(req.params.id));
     res.status(200).json({
       success: true,
       data: fotos,
@@ -144,7 +144,7 @@ export const getFotos = async (req: AuthRequest, res: Response, next: NextFuncti
 
 export const createFoto = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const foto = await parcelasService.createFoto(req.params.id, req.body);
+    const foto = await parcelasService.createFoto(Number(req.params.id), req.body);
     res.status(201).json({
       success: true,
       message: 'Fotografía registrada exitosamente',
@@ -157,7 +157,7 @@ export const createFoto = async (req: AuthRequest, res: Response, next: NextFunc
 
 export const updateFoto = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const foto = await parcelasService.updateFoto(req.params.id, req.params.fotoId, req.body);
+    const foto = await parcelasService.updateFoto(Number(req.params.id), Number(req.params.fotoId), req.body);
     res.status(200).json({
       success: true,
       message: 'Fotografía actualizada exitosamente',
@@ -170,7 +170,7 @@ export const updateFoto = async (req: AuthRequest, res: Response, next: NextFunc
 
 export const removeFoto = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const result = await parcelasService.removeFoto(req.params.id, req.params.fotoId);
+    const result = await parcelasService.removeFoto(Number(req.params.id), Number(req.params.fotoId));
     res.status(200).json({
       success: true,
       ...result,

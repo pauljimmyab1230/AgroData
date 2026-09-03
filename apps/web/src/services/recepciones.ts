@@ -7,14 +7,6 @@ export interface Evidencia {
   ruta_archivo: string;
 }
 
-export interface HistorialRecepcion {
-  id?: string;
-  titulo: string;
-  descripcion: string;
-  tipo: string;
-  fecha: string;
-}
-
 export interface Recepcion {
   id: string;
   codigo: string;
@@ -50,7 +42,6 @@ export interface Recepcion {
   firmaResponsableUrl: string;
   activo: boolean;
   evidencias: Evidencia[];
-  historial: HistorialRecepcion[];
   createdAt: string;
   updatedAt: string;
 }
@@ -90,7 +81,6 @@ interface RecepcionDTO {
   firma_responsable_url: string | null;
   activo: boolean;
   evidencias: Array<{ id: string; nombre: string; tipo?: string; ruta_archivo: string | null }>;
-  historial: Array<{ id: string; titulo: string; descripcion: string; tipo: string; fecha: string }>;
   created_at: string;
   updated_at: string;
 }
@@ -136,13 +126,6 @@ function toFrontend(dto: RecepcionDTO): Recepcion {
       tipo: e.tipo ?? "",
       ruta_archivo: e.ruta_archivo ?? "",
     })),
-    historial: (dto.historial ?? []).map(h => ({
-      id: h.id,
-      titulo: h.titulo,
-      descripcion: h.descripcion,
-      tipo: h.tipo,
-      fecha: h.fecha,
-    })),
     createdAt: dto.created_at,
     updatedAt: dto.updated_at,
   };
@@ -152,9 +135,9 @@ function toBackend(data: Partial<Recepcion>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   if (data.codigo !== undefined) out.codigo = data.codigo;
   if (data.campaniaId !== undefined) out.campania_id = data.campaniaId;
-  if (data.acopioId !== undefined) out.acopio_id = data.acopioId;
-  if (data.loteProductor !== undefined) out.lote_productor = data.loteProductor || null;
-  if (data.fecha !== undefined) out.fecha = data.fecha || null;
+  if (data.acopioId !== undefined) out.acopio_id = data.acopioId || null;
+  if (data.loteProductor !== undefined) out.lote_productor = data.loteProductor;
+  if (data.fecha !== undefined) out.fecha = data.fecha;
   if (data.responsable !== undefined) out.responsable = data.responsable;
   if (data.planta !== undefined) out.planta = data.planta;
   if (data.sacos !== undefined) out.sacos = data.sacos;

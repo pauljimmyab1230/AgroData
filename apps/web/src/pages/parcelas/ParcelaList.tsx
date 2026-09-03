@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { Plus, Pencil, Eye, Trash2, MapPin, Ruler, Users, BadgeCheck, X, Download } from "lucide-react";
 import {
   Badge,
-  Breadcrumb,
   Button,
   Card,
   ConfirmDialog,
@@ -20,6 +18,7 @@ import {
   estadosOpciones,
   toOptions,
 } from "../../constants/parcelaOpciones";
+import ParcelaModal from "../../components/parcelas/ParcelaModal";
 
 const estadoBadge = (estado: string) =>
   estado === "ACTIVA" ? <Badge variant="forest">Activa</Badge> : <Badge variant="gray">Inactiva</Badge>;
@@ -46,8 +45,8 @@ function FilterSelect({
 }
 
 export default function ParcelaList() {
-  const navigate = useNavigate();
   const [parcelas, setParcelas] = useState<Parcela[]>([]);
+  const [allParcelas, setAllParcelas] = useState<Parcela[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filtroComunidad, setFiltroComunidad] = useState("");
@@ -57,23 +56,36 @@ export default function ParcelaList() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [viewId, setViewId] = useState<string | null>(null);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const result = await fetchParcelas({
-        search: search || undefined,
-        comunidad: filtroComunidad || undefined,
-        cultivo: filtroCultivo || undefined,
-        estado: filtroEstado || undefined,
-        page,
-        limit: 10,
-      });
+      const [result, allResult] = await Promise.all([
+        fetchParcelas({
+          search: search || undefined,
+          comunidad: filtroComunidad || undefined,
+          cultivo: filtroCultivo || undefined,
+          estado: filtroEstado || undefined,
+          page,
+          limit: 10,
+        }),
+        fetchParcelas({
+          search: search || undefined,
+          comunidad: filtroComunidad || undefined,
+          cultivo: filtroCultivo || undefined,
+          estado: filtroEstado || undefined,
+          limit: 1000,
+        }),
+      ]);
       setParcelas(result.data);
+      setAllParcelas(allResult.data);
       setTotalPages(result.totalPages);
       setTotal(result.total);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // handled silently
     } finally {
       setLoading(false);
     }
@@ -95,6 +107,13 @@ export default function ParcelaList() {
     setFiltroCultivo("");
     setFiltroEstado("");
     setPage(1);
+  };
+
+  const handleModalClose = () => {
+    setShowCreateModal(false);
+    setEditId(null);
+    setViewId(null);
+    loadData();
   };
 
   const handleExportCsv = () => {
@@ -125,19 +144,19 @@ export default function ParcelaList() {
     { label: "Total Parcelas", value: String(total), icon: MapPin, iconClass: "bg-forest-600/10 text-forest-600" },
     {
       label: "Área Total",
-      value: `${parcelas.reduce((acc, p) => acc + (Number.isNaN(Number(p.area)) ? 0 : Number(p.area)), 0).toFixed(2)} ha`,
+      value: `${allParcelas.reduce((acc, p) => acc + (Number.isNaN(Number(p.area)) ? 0 : Number(p.area)), 0).toFixed(2)} ha`,
       icon: Ruler,
       iconClass: "bg-sun-100 text-sun-700",
     },
     {
       label: "Productores con Parcelas",
-      value: String(new Set(parcelas.map((p) => p.productorId)).size),
+      value: String(new Set(allParcelas.map((p) => p.productorId)).size),
       icon: Users,
       iconClass: "bg-forest-600/10 text-forest-600",
     },
     {
       label: "Parcelas Certificadas",
-      value: String(parcelas.filter((p) => p.certificacion === "ORGANICA").length),
+      value: String(allParcelas.filter((p) => p.certificacion === "ORGANICA").length),
       icon: BadgeCheck,
       iconClass: "bg-sun-100 text-sun-700",
     },
@@ -175,7 +194,7 @@ export default function ParcelaList() {
           <button
             type="button"
             aria-label={`Ver ${parcela.nombre}`}
-            onClick={() => navigate(`/parcelas/${parcela.id}`)}
+            onClick={() => setViewId(parcela.id)}
             className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-forest-600/10 hover:text-forest-700"
           >
             <Eye className="h-4 w-4" />
@@ -183,7 +202,7 @@ export default function ParcelaList() {
           <button
             type="button"
             aria-label={`Editar ${parcela.nombre}`}
-            onClick={() => navigate(`/parcelas/${parcela.id}/editar`)}
+            onClick={() => setEditId(parcela.id)}
             className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-forest-600/10 hover:text-forest-700"
           >
             <Pencil className="h-4 w-4" />
@@ -211,18 +230,16 @@ export default function ParcelaList() {
 
   return (
     <div>
-      <Breadcrumb items={[{ label: "Parcelas" }]} />
-
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <SectionHeader
           title="Parcelas"
-          description="Gestión de parcelas productivas de los socios de la cooperativa"
+          description="Gestión de parcelas productivas"
         />
         <div className="flex items-center gap-2">
           <Button variant="secondary" onClick={handleExportCsv} iconLeft={<Download className="h-4 w-4" />}>
             Exportar CSV
           </Button>
-          <Button as="link" to="/parcelas/nueva" iconLeft={<Plus className="h-4 w-4" />}>
+          <Button onClick={() => setShowCreateModal(true)} iconLeft={<Plus className="h-4 w-4" />}>
             Nueva Parcela
           </Button>
         </div>
@@ -301,7 +318,7 @@ export default function ParcelaList() {
         emptyTitle="No hay parcelas registradas"
         emptyDescription="Comienza registrando la primera parcela de la cooperativa."
         emptyActionLabel="Registrar Parcela"
-        emptyActionTo="/parcelas/nueva"
+        emptyActionOnClick={() => setShowCreateModal(true)}
         currentPage={page}
         totalPages={totalPages}
         onPageChange={setPage}
@@ -316,14 +333,36 @@ export default function ParcelaList() {
             await deleteParcela(deleteId);
             setParcelas((prev) => prev.filter((p) => p.id !== deleteId));
             setDeleteId(null);
-          } catch (err) {
-            console.error(err);
+          } catch {
+            // handled silently
           }
         }}
         title="Eliminar Parcela"
         message="¿Estás seguro de eliminar esta parcela? Esta acción no se puede deshacer."
         confirmText="Eliminar"
         variant="danger"
+      />
+
+      <ParcelaModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSave={handleModalClose}
+        mode="create"
+      />
+
+      <ParcelaModal
+        open={editId !== null}
+        onClose={() => setEditId(null)}
+        onSave={handleModalClose}
+        mode="edit"
+        parcelaId={editId || undefined}
+      />
+
+      <ParcelaModal
+        open={viewId !== null}
+        onClose={() => setViewId(null)}
+        mode="view"
+        parcelaId={viewId || undefined}
       />
     </div>
   );

@@ -13,14 +13,20 @@ import { ContactoUbicacionCard } from "../../components/productores/ContactoUbic
 import { SocioculturalCard } from "../../components/productores/SocioculturalCard";
 import { OrganizacionCard } from "../../components/productores/OrganizacionCard";
 import { FamiliarTable } from "../../components/productores/FamiliarTable";
-import { ParcelaTable } from "../../components/productores/ParcelaTable";
 import { DocumentoUploader } from "../../components/productores/DocumentoUploader";
 import { fetchProductor, updateProductor, type Productor } from "../../services/productores";
 import { ProductorFormProvider, useProductorForm } from "../../contexts/ProductorFormContext";
+import { toast } from "../../utils/toast";
 
-const totalPasos = 4;
+const totalPasos = 3;
 
-function ProductorEditForm({ id }: { id: string }) {
+interface ProductorEditProps {
+  id: string;
+  inModal?: boolean;
+  onSave?: () => void;
+}
+
+function ProductorEditForm({ id, inModal, onSave }: ProductorEditProps) {
   const { data, validateStep } = useProductorForm();
   const navigate = useNavigate();
   const [pasoActual, setPasoActual] = useState(1);
@@ -28,7 +34,6 @@ function ProductorEditForm({ id }: { id: string }) {
   const [saving, setSaving] = useState(false);
 
   const handleNext = () => {
-    if (!validateStep(pasoActual)) return;
     setPasoActual((paso) => {
       const siguiente = Math.min(totalPasos, paso + 1);
       setPasoMaximoAlcanzado((max) => Math.max(max, siguiente));
@@ -37,12 +42,6 @@ function ProductorEditForm({ id }: { id: string }) {
   };
 
   const handlePasoChange = (paso: number) => {
-    if (paso <= pasoActual) {
-      setPasoActual(paso);
-      return;
-    }
-    if (paso > pasoMaximoAlcanzado) return;
-    if (!validateStep(pasoActual)) return;
     setPasoActual(paso);
     setPasoMaximoAlcanzado((max) => Math.max(max, paso));
   };
@@ -54,12 +53,15 @@ function ProductorEditForm({ id }: { id: string }) {
     }
     setSaving(true);
     try {
-      await updateProductor(id, data);
-      navigate(`/productores/${id}`);
+      await updateProductor(Number(id), data);
+      if (!inModal) {
+        navigate(`/productores/${id}`);
+      } else {
+        onSave?.();
+      }
     } catch (err: unknown) {
-      console.error(err);
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Error al guardar. Verifique los datos.";
-      alert(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -67,28 +69,32 @@ function ProductorEditForm({ id }: { id: string }) {
 
   return (
     <div>
-      <Breadcrumb
-        items={[
-          { label: "Productores", to: "/productores" },
-          { label: id, to: `/productores/${id}` },
-          { label: "Editar Productor" },
-        ]}
-      />
+      {!inModal && (
+        <>
+          <Breadcrumb
+            items={[
+              { label: "Productores", to: "/productores" },
+              { label: id, to: `/productores/${id}` },
+              { label: "Editar Productor" },
+            ]}
+          />
 
-      <div className="mb-8 flex items-center gap-4">
-        <Button
-          variant="ghost"
-          as="link"
-          to={`/productores/${id}`}
-          iconLeft={<ArrowLeft className="h-4 w-4" />}
-        >
-          Volver
-        </Button>
-        <SectionHeader
-          title="Editar Productor"
-          description="Actualizando la información del productor"
-        />
-      </div>
+          <div className="mb-8 flex items-center gap-4">
+            <Button
+              variant="ghost"
+              as="link"
+              to={`/productores/${id}`}
+              iconLeft={<ArrowLeft className="h-4 w-4" />}
+            >
+              Volver
+            </Button>
+            <SectionHeader
+              title="Editar Productor"
+              description="Actualizando la información del productor"
+            />
+          </div>
+        </>
+      )}
 
       <div className="mb-6">
         <ProductorStepper pasoActual={pasoActual} pasoMaximoAlcanzado={pasoMaximoAlcanzado} onPasoChange={handlePasoChange} />
@@ -104,11 +110,9 @@ function ProductorEditForm({ id }: { id: string }) {
           </>
         )}
 
-        {pasoActual === 2 && <FamiliarTable mode="edit" productorId={id} />}
+        {pasoActual === 2 && <FamiliarTable mode="edit" productorId={Number(id)} />}
 
-        {pasoActual === 3 && <ParcelaTable mode="edit" productorId={id} />}
-
-        {pasoActual === 4 && <DocumentoUploader mode="edit" productorId={id} />}
+        {pasoActual === 3 && <DocumentoUploader mode="edit" productorId={Number(id)} />}
       </div>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm">
@@ -157,16 +161,23 @@ function ProductorEditForm({ id }: { id: string }) {
   );
 }
 
-export default function ProductorEdit() {
-  const { id } = useParams();
+interface ProductorEditDefaultProps {
+  inModal?: boolean;
+  id?: string;
+  onSave?: () => void;
+}
+
+export default function ProductorEdit({ inModal, id: propId, onSave }: ProductorEditDefaultProps) {
+  const { id: paramId } = useParams();
+  const id = propId || paramId;
   const [productor, setProductor] = useState<Productor | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!id) return;
-    fetchProductor(id)
+    fetchProductor(Number(id))
       .then(setProductor)
-      .catch(console.error)
+      .catch(() => toast.error("Error al cargar el productor"))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -188,7 +199,7 @@ export default function ProductorEdit() {
 
   return (
     <ProductorFormProvider initial={productor}>
-      <ProductorEditForm id={id!} />
+      <ProductorEditForm id={id!} inModal={inModal} onSave={onSave} />
     </ProductorFormProvider>
   );
 }

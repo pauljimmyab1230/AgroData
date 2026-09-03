@@ -6,6 +6,7 @@ import type { Recepcion } from "../../services/recepciones";
 type CalidadCardProps = {
   mode: FormMode;
   values?: Partial<Recepcion>;
+  onChange?: <K extends keyof Recepcion>(field: K, value: Recepcion[K]) => void;
 };
 
 const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: item }));
@@ -34,7 +35,7 @@ const estadoProductoLabels: Record<string, string> = {
   RECHAZADO: "Rechazado",
 };
 
-export function CalidadCard({ mode, values }: CalidadCardProps) {
+export function CalidadCard({ mode, values, onChange }: CalidadCardProps) {
   const editable = mode !== "view";
 
   const presenciaLabel = values?.presenciaInsectos
@@ -61,7 +62,8 @@ export function CalidadCard({ mode, values }: CalidadCardProps) {
             min="0"
             max="100"
             placeholder="0.0"
-            defaultValue={editable ? values?.humedad : undefined}
+            value={values?.humedad ?? ""}
+            onChange={(e) => onChange?.("humedad", parseFloat(e.target.value) || 0)}
           />
         </Field>
 
@@ -76,7 +78,8 @@ export function CalidadCard({ mode, values }: CalidadCardProps) {
             min="0"
             max="100"
             placeholder="0.0"
-            defaultValue={editable ? values?.impurezas : undefined}
+            value={values?.impurezas ?? ""}
+            onChange={(e) => onChange?.("impurezas", parseFloat(e.target.value) || 0)}
           />
         </Field>
 
@@ -91,7 +94,8 @@ export function CalidadCard({ mode, values }: CalidadCardProps) {
             min="0"
             max="100"
             placeholder="0.0"
-            defaultValue={editable ? values?.materiaExtrana : undefined}
+            value={values?.materiaExtrana ?? ""}
+            onChange={(e) => onChange?.("materiaExtrana", parseFloat(e.target.value) || 0)}
           />
         </Field>
 
@@ -99,7 +103,8 @@ export function CalidadCard({ mode, values }: CalidadCardProps) {
           <Select
             options={toOptions(coloresOpciones)}
             placeholder="Seleccione el color"
-            defaultValue={editable ? values?.color : undefined}
+            value={values?.color ?? ""}
+            onChange={(val) => onChange?.("color", val)}
           />
         </Field>
 
@@ -107,7 +112,8 @@ export function CalidadCard({ mode, values }: CalidadCardProps) {
           <Select
             options={toOptions(oloresOpciones)}
             placeholder="Seleccione el olor"
-            defaultValue={editable ? values?.olor : undefined}
+            value={values?.olor ?? ""}
+            onChange={(val) => onChange?.("olor", val)}
           />
         </Field>
 
@@ -115,7 +121,8 @@ export function CalidadCard({ mode, values }: CalidadCardProps) {
           <Select
             options={presenciaInsectosOpciones.map((o) => ({ value: o, label: presenciaInsectosLabels[o] ?? o }))}
             placeholder="Seleccione"
-            defaultValue={editable ? values?.presenciaInsectos : undefined}
+            value={values?.presenciaInsectos ?? ""}
+            onChange={(val) => onChange?.("presenciaInsectos", val)}
           />
         </Field>
 
@@ -123,7 +130,8 @@ export function CalidadCard({ mode, values }: CalidadCardProps) {
           <Select
             options={estadosProductoOpciones.map((o) => ({ value: o, label: estadoProductoLabels[o] ?? o }))}
             placeholder="Seleccione el estado"
-            defaultValue={editable ? values?.estadoProducto : undefined}
+            value={values?.estadoProducto ?? ""}
+            onChange={(val) => onChange?.("estadoProducto", val)}
           />
         </Field>
       </div>

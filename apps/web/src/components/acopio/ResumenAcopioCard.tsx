@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, Hash, Scale, TrendingUp } from "lucide-react";
+import { Hash, Scale } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { CardHeader, CardShell, type FormMode } from "../shared/formControls";
 import { formatKg, type AcopioView } from "../../services/acopios";
@@ -30,24 +30,6 @@ export default function ResumenAcopioCard({ mode, values }: ResumenAcopioCardPro
       value: values?.pesoTotal !== undefined ? formatKg(values.pesoTotal) : undefined,
       icon: Scale,
       iconClass: "bg-sun-100 text-sun-700",
-    },
-    {
-      label: "Peso Promedio",
-      value: values?.pesoPromedio !== undefined ? formatKg(values.pesoPromedio) : undefined,
-      icon: TrendingUp,
-      iconClass: "bg-forest-600/10 text-forest-600",
-    },
-    {
-      label: "Peso Máximo",
-      value: values?.pesoMaximo !== undefined ? formatKg(values.pesoMaximo) : undefined,
-      icon: ArrowUp,
-      iconClass: "bg-emerald-50 text-emerald-600",
-    },
-    {
-      label: "Peso Mínimo",
-      value: values?.pesoMinimo !== undefined ? formatKg(values.pesoMinimo) : undefined,
-      icon: ArrowDown,
-      iconClass: "bg-red-50 text-red-600",
     },
   ];
 

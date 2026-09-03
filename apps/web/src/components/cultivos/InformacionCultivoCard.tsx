@@ -4,8 +4,9 @@ import { DatePicker, Input, Select } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import {
   cultivosOpciones,
-  metodosSiembraOpciones,
+  metodosSiembraValues,
   variedadesOpciones,
+  estadosCultivoValues,
   type Cultivo,
 } from "../../services/cultivos";
 
@@ -14,13 +15,10 @@ const parseDate = (s?: string) => (s ? new Date(s + "T00:00:00") : null);
 type InformacionCultivoCardProps = {
   mode: FormMode;
   values?: Partial<Cultivo>;
+  onChange?: (patch: Partial<Cultivo>) => void;
 };
 
-const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: item }));
-
-export function InformacionCultivoCard({ mode, values }: InformacionCultivoCardProps) {
-  const editable = mode !== "view";
-
+export function InformacionCultivoCard({ mode, values, onChange }: InformacionCultivoCardProps) {
   const [fechaSiembra, setFechaSiembra] = useState<Date | null>(parseDate(values?.fechaSiembra));
 
   return (
@@ -34,36 +32,62 @@ export function InformacionCultivoCard({ mode, values }: InformacionCultivoCardP
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <Field label="Cultivo" mode={mode} value={values?.cultivo} required>
           <Select
-            options={toOptions(cultivosOpciones)}
+            options={cultivosOpciones.map((c) => ({ value: c, label: c }))}
             placeholder="Seleccione el cultivo"
-            defaultValue={editable ? values?.cultivo : undefined}
+            value={values?.cultivo}
+            onChange={(val) => onChange?.({ cultivo: val })}
             required
           />
         </Field>
 
         <Field label="Variedad" mode={mode} value={values?.variedad} required>
           <Select
-            options={toOptions(variedadesOpciones)}
+            options={variedadesOpciones.map((v) => ({ value: v, label: v }))}
             placeholder="Seleccione la variedad"
-            defaultValue={editable ? values?.variedad : undefined}
+            value={values?.variedad}
+            onChange={(val) => onChange?.({ variedad: val })}
             required
           />
         </Field>
 
         <Field label="Área Sembrada (ha)" mode={mode} value={values?.areaSembrada?.toFixed(2)} required>
-          <Input type="number" min="0" step="0.01" placeholder="Ej. 2.40" defaultValue={values?.areaSembrada ?? undefined} required />
+          <Input
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="Ej. 2.40"
+            value={values?.areaSembrada ?? undefined}
+            onChange={(e) => onChange?.({ areaSembrada: Number(e.target.value) || 0 })}
+            required
+          />
         </Field>
 
         <Field label="Fecha de Siembra" mode={mode} value={values?.fechaSiembra} required>
-          <DatePicker selected={fechaSiembra} onChange={(d) => setFechaSiembra(d)} />
+          <DatePicker
+            selected={fechaSiembra}
+            onChange={(d) => {
+              setFechaSiembra(d);
+              onChange?.({ fechaSiembra: d?.toISOString().split("T")[0] ?? "" });
+            }}
+          />
         </Field>
 
         <Field label="Método de Siembra" mode={mode} value={values?.metodoSiembra} required>
           <Select
-            options={toOptions(metodosSiembraOpciones)}
+            options={metodosSiembraValues.map((v) => ({ value: v, label: v }))}
             placeholder="Seleccione el método"
-            defaultValue={editable ? values?.metodoSiembra : undefined}
+            value={values?.metodoSiembra}
+            onChange={(val) => onChange?.({ metodoSiembra: val })}
             required
+          />
+        </Field>
+
+        <Field label="Estado" mode={mode} value={values?.estado}>
+          <Select
+            options={estadosCultivoValues.map((v) => ({ value: v, label: v }))}
+            placeholder="Seleccione el estado"
+            value={values?.estado}
+            onChange={(val) => onChange?.({ estado: val })}
           />
         </Field>
       </div>

@@ -20,7 +20,10 @@ const eventoSchema = Joi.object({
 
 export const createTrazabilidadSchema = Joi.object({
   codigo: Joi.string().max(20).allow(''),
-  lote_id: Joi.string().max(36).allow('', null),
+  lote_id: Joi.string().uuid().allow(null),
+  productor_id: Joi.number().integer().positive().allow(null),
+  parcela_id: Joi.number().integer().positive().allow(null),
+  cultivo_id: Joi.string().uuid().allow(null),
   producto: Joi.string().max(200).required().messages({
     'any.required': 'El producto es obligatorio',
   }),
@@ -48,7 +51,10 @@ export const createTrazabilidadSchema = Joi.object({
 
 export const updateTrazabilidadSchema = Joi.object({
   codigo: Joi.string().max(20).allow(''),
-  lote_id: Joi.string().max(36).allow('', null),
+  lote_id: Joi.string().uuid().allow(null),
+  productor_id: Joi.number().integer().positive().allow(null),
+  parcela_id: Joi.number().integer().positive().allow(null),
+  cultivo_id: Joi.string().uuid().allow(null),
   producto: Joi.string().max(200),
   cultivo: Joi.string().max(100),
   origen: Joi.string().max(200),
@@ -72,7 +78,7 @@ export const getAllTrazabilidadSchema = Joi.object({
   search: Joi.string().max(100).allow('', null),
   estado: Joi.string().max(50).allow('', null),
   cultivo: Joi.string().max(100).allow('', null),
-  lote_id: Joi.string().max(36).allow('', null),
+  lote_id: Joi.string().uuid().allow('', null),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
 });

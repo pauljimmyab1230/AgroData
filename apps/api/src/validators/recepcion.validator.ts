@@ -29,6 +29,7 @@ export const createRecepcionSchema = Joi.object({
   responsable: Joi.string().max(150).required().messages({
     'any.required': 'El responsable es obligatorio',
   }),
+  responsable_id: Joi.string().uuid().allow(null),
   planta: Joi.string().max(100).required().messages({
     'any.required': 'La planta es obligatoria',
   }),
@@ -63,6 +64,7 @@ export const updateRecepcionSchema = Joi.object({
   lote_productor: Joi.string().max(100),
   fecha: Joi.date().iso(),
   responsable: Joi.string().max(150),
+  responsable_id: Joi.string().uuid().allow(null),
   planta: Joi.string().max(100),
   sacos: Joi.number().integer().min(0),
   peso_campo: Joi.number().precision(2).min(0).allow(null),

@@ -1,4 +1,4 @@
-import prisma from '../config/database';
+import prisma, { type PrismaTransaction } from '../config/database';
 import { createError } from '../middleware/error.middleware';
 
 const generateCodigo = async (): Promise<string> => {
@@ -118,6 +118,7 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
   await ensureRelationExists('productores', data.productor_id as string);
   await ensureRelationExists('parcelas_productor', data.parcela_id as string);
   if (data.cultivo_id) await ensureRelationExists('cultivos', data.cultivo_id as string);
+  if (data.inspector_id) await ensureRelationExists('usuarios', data.inspector_id as string);
 
   const checklist = (data.checklist as any[]) || [];
   const noConformidades = (data.no_conformidades as any[]) || [];
@@ -129,13 +130,14 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
     data: {
       codigo,
       campania_id: data.campania_id as string,
-      productor_id: data.productor_id as string,
-      parcela_id: data.parcela_id as string,
+      productor_id: Number(data.productor_id),
+      parcela_id: Number(data.parcela_id),
       cultivo_id: (data.cultivo_id as string) || null,
       fecha: new Date(data.fecha as string),
       inspector: data.inspector as string,
-      estado: (data.estado as any) || 'PENDIENTE',
-      resultado: (data.resultado as any) || null,
+      inspector_id: (data.inspector_id as string) || null,
+      estado: (data.estado as 'PENDIENTE' | 'APROBADA' | 'NO_CONFORME') || 'PENDIENTE',
+      resultado: (data.resultado as 'CONFORME' | 'CONFORME_CON_OBSERVACIONES' | 'NO_CONFORME') || null,
       latitud: (data.latitud as string) || null,
       longitud: (data.longitud as string) || null,
       altitud: (data.altitud as string) || null,
@@ -146,19 +148,19 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
       prioridad_recomendacion: (data.prioridad_recomendacion as string) || null,
       responsable_recomendacion: (data.responsable_recomendacion as string) || null,
       fecha_recomendacion: data.fecha_recomendacion ? new Date(data.fecha_recomendacion as string) : null,
-      riesgo_general: (data.riesgo_general as any) || 'BAJO',
+      riesgo_general: (data.riesgo_general as 'BAJO' | 'MEDIO' | 'ALTO') || 'BAJO',
       resumen_ejecutivo: (data.resumen_ejecutivo as string) || null,
       fecha_proxima_inspeccion: data.fecha_proxima_inspeccion ? new Date(data.fecha_proxima_inspeccion as string) : null,
       nivel_cumplimiento: (data.nivel_cumplimiento as string) || null,
       created_by: userId || null,
-      checklist: checklist.length ? { create: checklist.map((c: any) => ({
+      checklist: checklist.length ? { create: checklist.map((c) => ({
         criterio: c.criterio,
         cumplimiento: c.cumplimiento || null,
         riesgo: c.riesgo || 'BAJO',
         observacion: c.observacion || null,
         evidencia: c.evidencia || null,
       }))} : undefined,
-      no_conformidades: noConformidades.length ? { create: noConformidades.map((nc: any) => ({
+      no_conformidades: noConformidades.length ? { create: noConformidades.map((nc) => ({
         codigo: nc.codigo || null,
         tipo: nc.tipo,
         categoria: nc.categoria,
@@ -169,7 +171,7 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
         estado: nc.estado || 'PENDIENTE',
         accion_correctiva: nc.accion_correctiva || null,
       }))} : undefined,
-      acciones_correctivas: accionesCorrectivas.length ? { create: accionesCorrectivas.map((ac: any) => ({
+      acciones_correctivas: accionesCorrectivas.length ? { create: accionesCorrectivas.map((ac) => ({
         accion: ac.accion,
         responsable: ac.responsable,
         fecha_inicio: ac.fecha_inicio ? new Date(ac.fecha_inicio) : null,
@@ -177,7 +179,7 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
         estado: ac.estado || 'PENDIENTE',
         observaciones: ac.observaciones || null,
       }))} : undefined,
-      evidencias: evidencias.length ? { create: evidencias.map((e: any) => ({
+      evidencias: evidencias.length ? { create: evidencias.map((e) => ({
         nombre: e.nombre,
         descripcion: e.descripcion || null,
         tipo: e.tipo || null,
@@ -185,7 +187,7 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
         fecha: e.fecha ? new Date(e.fecha) : null,
         responsable: e.responsable || null,
       }))} : undefined,
-      historial: historial.length ? { create: historial.map((h: any) => ({
+      historial: historial.length ? { create: historial.map((h) => ({
         fecha: new Date(h.fecha),
         titulo: h.titulo,
         descripcion: h.descripcion || null,
@@ -206,6 +208,8 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
   for (const field of stringFields) {
     if (data[field] !== undefined) updateData[field] = (data[field] as string) || null;
   }
+
+  if (data.inspector_id !== undefined) updateData.inspector_id = (data.inspector_id as string) || null;
 
   const uuidFields = ['campania_id', 'productor_id', 'parcela_id', 'cultivo_id'];
   for (const field of uuidFields) {
@@ -229,7 +233,7 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
   const hasEvidenciasUpdate = data.evidencias !== undefined;
   const hasHistorialUpdate = data.historial !== undefined;
 
-  return prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx: PrismaTransaction) => {
     const updated = await tx.inspecciones.update({
       where: { id },
       data: updateData,

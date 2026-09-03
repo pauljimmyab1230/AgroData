@@ -68,3 +68,16 @@ export const remove = async (req: AuthRequest, res: Response, next: NextFunction
     next(error);
   }
 };
+
+export const getBasic = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const rol_sic = req.query.rol_sic as string | undefined;
+    const data = await usuariosService.getBasic(rol_sic);
+    res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

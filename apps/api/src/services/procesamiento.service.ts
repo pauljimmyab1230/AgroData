@@ -64,7 +64,6 @@ export const getAll = async (filters: {
         campania: { select: { id: true, codigo: true, nombre: true } },
         lotes: true,
         operaciones: true,
-        evidencias: true,
       },
     }),
     prisma.procesamientos.count({ where }),
@@ -80,8 +79,6 @@ export const getById = async (id: string) => {
       campania: { select: { id: true, codigo: true, nombre: true } },
       lotes: { orderBy: { created_at: 'asc' } },
       operaciones: { orderBy: { created_at: 'asc' } },
-      evidencias: { orderBy: { created_at: 'asc' } },
-      historial: { orderBy: { fecha: 'desc' } },
     },
   });
 
@@ -105,7 +102,11 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
 
   const lotesData = (data.lotes as Array<Record<string, unknown>>) || [];
   const operacionesData = (data.operaciones as Array<Record<string, unknown>>) || [];
-  const evidenciasData = (data.evidencias as Array<Record<string, unknown>>) || [];
+
+  if (data.responsable_id) {
+    const usuario = await prisma.usuarios.findFirst({ where: { id: data.responsable_id as string, activo: true } });
+    if (!usuario) throw createError('Usuario responsable no encontrado', 404);
+  }
 
   return prisma.procesamientos.create({
     data: {
@@ -114,6 +115,7 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
       fecha: new Date(data.fecha as string),
       producto: data.producto as string,
       responsable: data.responsable as string,
+      responsable_id: (data.responsable_id as string) || null,
       planta: data.planta as string,
       linea_procesamiento: data.linea_procesamiento as 'GRANOS' | 'TUBERCULOS' | 'LEGUMBRES' | 'SEMILLAS',
       estado: (data.estado as 'REGISTRADA' | 'EN_PROCESO' | 'COMPLETADA' | 'PAUSADA' | 'CANCELADA') || 'REGISTRADA',
@@ -144,19 +146,10 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
           observaciones: (o.observaciones as string) || null,
         })),
       },
-      evidencias: {
-        create: evidenciasData.map(e => ({
-          nombre: e.nombre as string,
-          descripcion: (e.descripcion as string) || null,
-          tipo: (e.tipo as string) || null,
-          ruta_archivo: (e.ruta_archivo as string) || null,
-        })),
-      },
     },
     include: {
       lotes: true,
       operaciones: true,
-      evidencias: true,
     },
   });
 };
@@ -174,6 +167,8 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
   for (const field of stringFields) {
     if (data[field] !== undefined) updateData[field] = data[field];
   }
+
+  if (data.responsable_id !== undefined) updateData.responsable_id = (data.responsable_id as string) || null;
 
   if (data.observaciones !== undefined) updateData.observaciones = (data.observaciones as string) || null;
   if (data.fecha !== undefined) updateData.fecha = new Date(data.fecha as string);
@@ -196,7 +191,6 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
     include: {
       lotes: true,
       operaciones: true,
-      evidencias: true,
     },
   });
 };

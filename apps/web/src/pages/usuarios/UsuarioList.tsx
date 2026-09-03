@@ -70,8 +70,8 @@ export default function UsuarioList() {
       setUsuarios(result.data);
       setTotalPages(result.totalPages);
       setTotal(result.total);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // handled silently
     } finally {
       setLoading(false);
     }
@@ -295,8 +295,8 @@ export default function UsuarioList() {
             await deleteUsuario(deleteId);
             setUsuarios(prev => prev.filter(u => u.id !== deleteId));
             setDeleteId(null);
-          } catch (err) {
-            console.error(err);
+          } catch {
+            // handled silently
           }
         }}
         title="Eliminar Usuario"

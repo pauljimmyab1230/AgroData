@@ -35,7 +35,7 @@ export const getComunidades = async (): Promise<string[]> => {
     distinct: ['comunidad'],
     orderBy: { comunidad: 'asc' },
   });
-  return result.map((r) => r.comunidad);
+  return result.map((r: { comunidad: string | null }) => r.comunidad ?? "");
 };
 
 export const getAll = async (
@@ -67,12 +67,12 @@ export const getAll = async (
 
   if (search) {
     where.OR = [
-      { codigo: { contains: search } },
-      { dni: { contains: search } },
-      { nombres: { contains: search } },
-      { apellido_paterno: { contains: search } },
-      { apellido_materno: { contains: search } },
-      { comunidad: { contains: search } },
+      { codigo: { contains: search, mode: 'insensitive' } },
+      { dni: { contains: search, mode: 'insensitive' } },
+      { nombres: { contains: search, mode: 'insensitive' } },
+      { apellido_paterno: { contains: search, mode: 'insensitive' } },
+      { apellido_materno: { contains: search, mode: 'insensitive' } },
+      { comunidad: { contains: search, mode: 'insensitive' } },
     ];
   }
 
@@ -81,6 +81,7 @@ export const getAll = async (
       where,
       include: {
         _count: { select: { familiares: true, parcelas: true, documentos: true } },
+        ubigeo: true,
       },
       orderBy: { created_at: 'desc' },
       skip: (page - 1) * limit,
@@ -92,13 +93,14 @@ export const getAll = async (
   return { data: productores, total, page, limit, totalPages: Math.ceil(total / limit) };
 };
 
-export const getById = async (id: string) => {
+export const getById = async (id: number) => {
   const productor = await prisma.productores.findFirst({
     where: { id, activo: true },
     include: {
       familiares: true,
       parcelas: true,
       documentos: true,
+      ubigeo: true,
     },
   });
 
@@ -127,11 +129,19 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
       departamento: data.departamento as string,
       provincia: data.provincia as string,
       distrito: data.distrito as string,
+      ubigeo_id: data.ubigeo_id ? Number(data.ubigeo_id) : null,
       comunidad: data.comunidad as string,
       direccion: (data.direccion as string) || null,
       nivel_educativo: data.nivel_educativo as 'SIN_ESTUDIOS' | 'PRIMARIA' | 'SECUNDARIA' | 'TECNICO' | 'UNIVERSITARIO',
       idioma_principal: data.idioma_principal as 'QUECHUA' | 'ESPANOL' | 'OTRO',
       idioma_secundario: (data.idioma_secundario as 'NINGUNO' | 'QUECHUA' | 'ESPANOL' | 'OTRO') || 'NINGUNO',
+      material_vivienda: (data.material_vivienda as string) || null,
+      acceso_agua: (data.acceso_agua as string) || null,
+      acceso_energia: (data.acceso_energia as string) || null,
+      acceso_internet: (data.acceso_internet as string) || null,
+      seguro_salud: (data.seguro_salud as string) || null,
+      acceso_credito: (data.acceso_credito as string) || null,
+      servicio_sanitario: (data.servicio_sanitario as string) || null,
       estado: (data.estado as 'ACTIVO' | 'INACTIVO' | 'SUSPENDIDO') || 'ACTIVO',
       fecha_ingreso: new Date(data.fecha_ingreso as string),
       organizacion: data.organizacion as string,
@@ -145,7 +155,7 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
   return productor;
 };
 
-export const update = async (id: string, data: Record<string, unknown>, userId?: string) => {
+export const update = async (id: number, data: Record<string, unknown>, userId?: string) => {
   const existing = await prisma.productores.findFirst({ where: { id, activo: true } });
 
   if (!existing) {
@@ -159,7 +169,9 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
     if (data[field] !== undefined) updateData[field] = data[field];
   }
 
-  const nullableFields = ['telefono', 'correo', 'direccion', 'foto_url', 'firma_url'];
+  if (data.ubigeo_id !== undefined) updateData.ubigeo_id = data.ubigeo_id ? Number(data.ubigeo_id) : null;
+
+  const nullableFields = ['telefono', 'correo', 'direccion', 'foto_url', 'firma_url', 'material_vivienda', 'acceso_agua', 'acceso_energia', 'acceso_internet', 'seguro_salud', 'acceso_credito', 'servicio_sanitario'];
   for (const field of nullableFields) {
     if (data[field] !== undefined) updateData[field] = (data[field] as string) || null;
   }
@@ -184,7 +196,7 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
   return updated;
 };
 
-export const remove = async (id: string) => {
+export const remove = async (id: number) => {
   const existing = await prisma.productores.findFirst({ where: { id, activo: true } });
 
   if (!existing) {
@@ -201,7 +213,7 @@ export const remove = async (id: string) => {
 
 // ─── Familiares ─────────────────────────────────────────────
 
-export const getFamiliares = async (productorId: string) => {
+export const getFamiliares = async (productorId: number) => {
   await ensureProductorExists(productorId);
 
   return prisma.familiares_productor.findMany({
@@ -210,7 +222,7 @@ export const getFamiliares = async (productorId: string) => {
   });
 };
 
-export const createFamiliar = async (productorId: string, data: Record<string, unknown>) => {
+export const createFamiliar = async (productorId: number, data: Record<string, unknown>) => {
   await ensureProductorExists(productorId);
 
   return prisma.familiares_productor.create({
@@ -230,7 +242,7 @@ export const createFamiliar = async (productorId: string, data: Record<string, u
   });
 };
 
-export const updateFamiliar = async (productorId: string, familiarId: string, data: Record<string, unknown>) => {
+export const updateFamiliar = async (productorId: number, familiarId: number, data: Record<string, unknown>) => {
   await ensureProductorExists(productorId);
 
   const existing = await prisma.familiares_productor.findFirst({
@@ -257,7 +269,7 @@ export const updateFamiliar = async (productorId: string, familiarId: string, da
   });
 };
 
-export const removeFamiliar = async (productorId: string, familiarId: string) => {
+export const removeFamiliar = async (productorId: number, familiarId: number) => {
   await ensureProductorExists(productorId);
 
   const existing = await prisma.familiares_productor.findFirst({
@@ -273,77 +285,9 @@ export const removeFamiliar = async (productorId: string, familiarId: string) =>
   return { message: 'Familiar eliminado exitosamente' };
 };
 
-// ─── Parcelas ───────────────────────────────────────────────
-
-export const getParcelas = async (productorId: string) => {
-  await ensureProductorExists(productorId);
-
-  return prisma.parcelas_productor.findMany({
-    where: { productor_id: productorId },
-    orderBy: { created_at: 'asc' },
-  });
-};
-
-export const createParcela = async (productorId: string, data: Record<string, unknown>) => {
-  await ensureProductorExists(productorId);
-
-  return prisma.parcelas_productor.create({
-    data: {
-      productor_id: productorId,
-      codigo: data.codigo as string,
-      nombre: data.nombre as string,
-      cultivo: data.cultivo as string,
-      area: data.area as number,
-      area_unidad: (data.area_unidad as string) || 'ha',
-      ubicacion: data.ubicacion as string,
-      certificacion: (data.certificacion as 'ORGANICA' | 'EN_TRANSICION' | 'CONVENCIONAL') || 'CONVENCIONAL',
-      estado: (data.estado as 'ACTIVA' | 'INACTIVA') || 'ACTIVA',
-    },
-  });
-};
-
-export const updateParcela = async (productorId: string, parcelaId: string, data: Record<string, unknown>) => {
-  await ensureProductorExists(productorId);
-
-  const existing = await prisma.parcelas_productor.findFirst({
-    where: { id: parcelaId, productor_id: productorId },
-  });
-
-  if (!existing) {
-    throw createError('Parcela no encontrada', 404);
-  }
-
-  const updateData: Record<string, unknown> = {};
-  const fields = ['codigo', 'nombre', 'cultivo', 'area', 'area_unidad', 'ubicacion', 'certificacion', 'estado'];
-  for (const field of fields) {
-    if (data[field] !== undefined) updateData[field] = data[field];
-  }
-
-  return prisma.parcelas_productor.update({
-    where: { id: parcelaId },
-    data: updateData,
-  });
-};
-
-export const removeParcela = async (productorId: string, parcelaId: string) => {
-  await ensureProductorExists(productorId);
-
-  const existing = await prisma.parcelas_productor.findFirst({
-    where: { id: parcelaId, productor_id: productorId },
-  });
-
-  if (!existing) {
-    throw createError('Parcela no encontrada', 404);
-  }
-
-  await prisma.parcelas_productor.delete({ where: { id: parcelaId } });
-
-  return { message: 'Parcela eliminada exitosamente' };
-};
-
 // ─── Documentos ─────────────────────────────────────────────
 
-export const getDocumentos = async (productorId: string) => {
+export const getDocumentos = async (productorId: number) => {
   await ensureProductorExists(productorId);
 
   return prisma.documentos_productor.findMany({
@@ -352,7 +296,7 @@ export const getDocumentos = async (productorId: string) => {
   });
 };
 
-export const createDocumento = async (productorId: string, data: Record<string, unknown>) => {
+export const createDocumento = async (productorId: number, data: Record<string, unknown>) => {
   await ensureProductorExists(productorId);
 
   return prisma.documentos_productor.create({
@@ -369,7 +313,7 @@ export const createDocumento = async (productorId: string, data: Record<string, 
   });
 };
 
-export const updateDocumentoEstado = async (productorId: string, documentoId: string, estado: 'PENDIENTE' | 'VERIFICADO' | 'RECHAZADO') => {
+export const updateDocumentoEstado = async (productorId: number, documentoId: number, estado: 'PENDIENTE' | 'VERIFICADO' | 'RECHAZADO') => {
   await ensureProductorExists(productorId);
 
   const existing = await prisma.documentos_productor.findFirst({
@@ -386,7 +330,7 @@ export const updateDocumentoEstado = async (productorId: string, documentoId: st
   });
 };
 
-export const removeDocumento = async (productorId: string, documentoId: string) => {
+export const removeDocumento = async (productorId: number, documentoId: number) => {
   await ensureProductorExists(productorId);
 
   const existing = await prisma.documentos_productor.findFirst({
@@ -404,7 +348,7 @@ export const removeDocumento = async (productorId: string, documentoId: string) 
 
 // ─── Helpers ────────────────────────────────────────────────
 
-const ensureProductorExists = async (id: string) => {
+const ensureProductorExists = async (id: number) => {
   const exists = await prisma.productores.findUnique({ where: { id }, select: { id: true } });
   if (!exists) {
     throw createError('Productor no encontrado', 404);

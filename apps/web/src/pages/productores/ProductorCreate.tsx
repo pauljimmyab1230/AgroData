@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, ChevronLeft, Save } from "lucide-react";
 import {
   Breadcrumb,
@@ -12,23 +12,26 @@ import { ContactoUbicacionCard } from "../../components/productores/ContactoUbic
 import { SocioculturalCard } from "../../components/productores/SocioculturalCard";
 import { OrganizacionCard } from "../../components/productores/OrganizacionCard";
 import { FamiliarTable } from "../../components/productores/FamiliarTable";
-import { ParcelaTable } from "../../components/productores/ParcelaTable";
 import { DocumentoUploader } from "../../components/productores/DocumentoUploader";
 import { ProductorFormProvider, useProductorForm } from "../../contexts/ProductorFormContext";
-import { createProductor, createFamiliar, createParcela } from "../../services/productores";
+import { createProductor, createFamiliar } from "../../services/productores";
 
-const totalPasos = 4;
+const totalPasos = 3;
 
-function ProductorCreateForm() {
-  const { data, familiares, parcelas, validateStep } = useProductorForm();
+interface ProductorCreateProps {
+  inModal?: boolean;
+  onSave?: () => void;
+}
+
+function ProductorCreateForm({ inModal, onSave }: ProductorCreateProps) {
+  const { data, familiares, validateStep } = useProductorForm();
   const navigate = useNavigate();
   const [pasoActual, setPasoActual] = useState(1);
   const [pasoMaximoAlcanzado, setPasoMaximoAlcanzado] = useState(1);
   const [saving, setSaving] = useState(false);
-  const [createdId, setCreatedId] = useState<string | null>(null);
+  const [createdId, setCreatedId] = useState<number | null>(null);
 
   const handleNext = () => {
-    if (!validateStep(pasoActual)) return;
     setPasoActual((paso) => {
       const siguiente = Math.min(totalPasos, paso + 1);
       setPasoMaximoAlcanzado((max) => Math.max(max, siguiente));
@@ -37,12 +40,6 @@ function ProductorCreateForm() {
   };
 
   const handlePasoChange = (paso: number) => {
-    if (paso <= pasoActual) {
-      setPasoActual(paso);
-      return;
-    }
-    if (paso > pasoMaximoAlcanzado) return;
-    if (!validateStep(pasoActual)) return;
     setPasoActual(paso);
     setPasoMaximoAlcanzado((max) => Math.max(max, paso));
   };
@@ -59,11 +56,12 @@ function ProductorCreateForm() {
       for (const familiar of familiares) {
         await createFamiliar(result.id, familiar);
       }
-      for (const parcela of parcelas) {
-        await createParcela(result.id, parcela);
-      }
       if (pasoActual === totalPasos) {
-        navigate(`/productores/${result.id}`);
+        if (!inModal) {
+          navigate(`/productores/${result.id}`);
+        } else {
+          onSave?.();
+        }
       } else {
         setPasoActual((paso) => {
           const siguiente = Math.min(totalPasos, paso + 1);
@@ -72,7 +70,6 @@ function ProductorCreateForm() {
         });
       }
     } catch (err: unknown) {
-      console.error(err);
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Error al guardar. Verifique los datos.";
       alert(msg);
     } finally {
@@ -82,17 +79,21 @@ function ProductorCreateForm() {
 
   return (
     <div>
-      <Breadcrumb items={[{ label: "Productores", to: "/productores" }, { label: "Nuevo Productor" }]} />
+      {!inModal && (
+        <>
+          <Breadcrumb items={[{ label: "Productores", to: "/productores" }, { label: "Nuevo Productor" }]} />
 
-      <div className="mb-8 flex items-center gap-4">
-        <Button variant="ghost" as="link" to="/productores" iconLeft={<ArrowLeft className="h-4 w-4" />}>
-          Volver
-        </Button>
-        <SectionHeader
-          title="Nuevo Productor"
-          description="Registra un nuevo socio productor mediante el asistente de cuatro pasos"
-        />
-      </div>
+          <div className="mb-8 flex items-center gap-4">
+            <Button variant="ghost" as="link" to="/productores" iconLeft={<ArrowLeft className="h-4 w-4" />}>
+              Volver
+            </Button>
+            <SectionHeader
+              title="Nuevo Productor"
+              description="Registra un nuevo socio productor mediante el asistente de tres pasos"
+            />
+          </div>
+        </>
+      )}
 
       <div className="mb-6">
         <ProductorStepper pasoActual={pasoActual} pasoMaximoAlcanzado={pasoMaximoAlcanzado} onPasoChange={handlePasoChange} />
@@ -110,9 +111,7 @@ function ProductorCreateForm() {
 
         {pasoActual === 2 && <FamiliarTable mode="create" />}
 
-        {pasoActual === 3 && <ParcelaTable mode="create" />}
-
-        {pasoActual === 4 && <DocumentoUploader mode="create" productorId={createdId || undefined} />}
+        {pasoActual === 3 && <DocumentoUploader mode="create" productorId={createdId || undefined} />}
       </div>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm">
@@ -144,19 +143,15 @@ function ProductorCreateForm() {
         )}
       </div>
 
-      <div className="mt-4 flex justify-end">
-        <Link to="/productores" className="text-sm text-gray-500 transition-colors hover:text-forest-700">
-          Cancelar
-        </Link>
-      </div>
+
     </div>
   );
 }
 
-export default function ProductorCreate() {
+export default function ProductorCreate({ inModal, onSave }: ProductorCreateProps) {
   return (
     <ProductorFormProvider>
-      <ProductorCreateForm />
+      <ProductorCreateForm inModal={inModal} onSave={onSave} />
     </ProductorFormProvider>
   );
 }

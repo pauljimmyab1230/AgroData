@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   Users,
@@ -9,7 +10,8 @@ import {
   ClipboardList,
   Plus,
 } from "lucide-react";
-import { Badge, Breadcrumb, Button, Card, SectionHeader } from "../../components/ui";
+import { Badge, Breadcrumb, Button, Card, SectionHeader, LoadingSpinner } from "../../components/ui";
+import api from "../../services/api";
 
 type Stat = {
   label: string;
@@ -19,57 +21,132 @@ type Stat = {
   iconClass: string;
 };
 
-const stats: Stat[] = [
-  {
-    label: "Productores",
-    value: "144",
-    hint: "+4 este mes",
-    icon: Users,
-    iconClass: "bg-forest-600/10 text-forest-600",
-  },
-  {
-    label: "Parcelas",
-    value: "186",
-    hint: "188.13 ha totales",
-    icon: MapPin,
-    iconClass: "bg-sun-100 text-sun-600",
-  },
-  {
-    label: "Cultivos",
-    value: "12",
-    hint: "especies registradas",
-    icon: Wheat,
-    iconClass: "bg-forest-600/10 text-forest-600",
-  },
-  {
-    label: "Campañas",
-    value: "3",
-    hint: "1 activa",
-    icon: CalendarDays,
-    iconClass: "bg-sun-100 text-sun-600",
-  },
-];
-
-const actividades = [
-  { nombre: "Abonamiento orgánico", parcela: "Parcela P-014 · Collpaccasa", estado: "Pendiente" },
-  { nombre: "Riego por aspersión", parcela: "Parcela P-023 · Pampa Cangallo", estado: "En curso" },
-  { nombre: "Cosecha de papa nativa", parcela: "Parcela P-041 · Chaupimayo", estado: "Completada" },
-];
-
 const estadoBadge = (estado: string) => {
   switch (estado) {
-    case "Pendiente":
+    case "PENDIENTE":
       return <Badge variant="yellow">Pendiente</Badge>;
-    case "En curso":
+    case "EN_PROCESO":
       return <Badge variant="forest">En curso</Badge>;
-    case "Completada":
+    case "COMPLETADO":
       return <Badge variant="gray">Completada</Badge>;
     default:
       return <Badge>{estado}</Badge>;
   }
 };
 
+interface DashboardData {
+  productores: number;
+  parcelas: number;
+  cultivos: number;
+  campanias: number;
+  campaniaActiva: {
+    nombre: string;
+    parcelasCultivadas: number;
+    actividades: number;
+  } | null;
+  actividadesRecientes: Array<{
+    nombre: string;
+    parcela: string;
+    estado: string;
+  }>;
+}
+
 export default function Dashboard() {
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<DashboardData>({
+    productores: 0,
+    parcelas: 0,
+    cultivos: 0,
+    campanias: 0,
+    campaniaActiva: null,
+    actividadesRecientes: [],
+  });
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const [productoresRes, parcelasRes, cultivosRes, campaniasRes, actividadesRes] =
+          await Promise.all([
+            api.get("/productores?limit=1").catch(() => ({ data: { total: 0 } })),
+            api.get("/parcelas?limit=1").catch(() => ({ data: { total: 0 } })),
+            api.get("/cultivos?limit=1").catch(() => ({ data: { total: 0 } })),
+            api.get("/campanias?limit=1").catch(() => ({ data: { total: 0, data: [] } })),
+            api.get("/actividades?limit=5").catch(() => ({ data: { data: [] } })),
+          ]);
+
+        const campaniaActiva = campaniasRes.data.data?.find(
+          (c: { estado: string }) => c.estado === "ACTIVA"
+        );
+
+        setData({
+          productores: productoresRes.data.total ?? 0,
+          parcelas: parcelasRes.data.total ?? 0,
+          cultivos: cultivosRes.data.total ?? 0,
+          campanias: campaniasRes.data.total ?? 0,
+          campaniaActiva: campaniaActiva
+            ? {
+                nombre: campaniaActiva.nombre,
+                parcelasCultivadas: 0,
+                actividades: 0,
+              }
+            : null,
+          actividadesRecientes: (actividadesRes.data.data ?? []).map(
+            (a: { nombre: string; parcela_nombre: string; estado: string }) => ({
+              nombre: a.nombre,
+              parcela: a.parcela_nombre ?? "",
+              estado: a.estado,
+            })
+          ),
+        });
+      } catch {
+        // keep defaults
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboard();
+  }, []);
+
+  const stats: Stat[] = [
+    {
+      label: "Productores",
+      value: String(data.productores),
+      hint: "registrados",
+      icon: Users,
+      iconClass: "bg-forest-600/10 text-forest-600",
+    },
+    {
+      label: "Parcelas",
+      value: String(data.parcelas),
+      hint: "georeferenciadas",
+      icon: MapPin,
+      iconClass: "bg-sun-100 text-sun-600",
+    },
+    {
+      label: "Cultivos",
+      value: String(data.cultivos),
+      hint: "registrados",
+      icon: Wheat,
+      iconClass: "bg-forest-600/10 text-forest-600",
+    },
+    {
+      label: "Campañas",
+      value: String(data.campanias),
+      hint: data.campaniaActiva ? "1 activa" : "ninguna activa",
+      icon: CalendarDays,
+      iconClass: "bg-sun-100 text-sun-600",
+    },
+  ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <LoadingSpinner text="Cargando dashboard..." />
+      </div>
+    );
+  }
+
   return (
     <div>
       <Breadcrumb items={[{ label: "Dashboard" }]} />
@@ -114,17 +191,21 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <ul className="divide-y divide-gray-100">
-            {actividades.map((act) => (
-              <li key={act.nombre} className="flex items-center justify-between gap-4 py-3.5">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-[#111827]">{act.nombre}</p>
-                  <p className="mt-0.5 truncate text-xs text-gray-500">{act.parcela}</p>
-                </div>
-                {estadoBadge(act.estado)}
-              </li>
-            ))}
-          </ul>
+          {data.actividadesRecientes.length === 0 ? (
+            <p className="py-6 text-center text-sm text-gray-400">No hay actividades registradas.</p>
+          ) : (
+            <ul className="divide-y divide-gray-100">
+              {data.actividadesRecientes.map((act, i) => (
+                <li key={i} className="flex items-center justify-between gap-4 py-3.5">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-[#111827]">{act.nombre}</p>
+                    <p className="mt-0.5 truncate text-xs text-gray-500">{act.parcela || "Sin parcela"}</p>
+                  </div>
+                  {estadoBadge(act.estado)}
+                </li>
+              ))}
+            </ul>
+          )}
         </Card>
 
         <div className="overflow-hidden rounded-2xl bg-forest-900 p-6 text-white shadow-card">
@@ -134,29 +215,34 @@ export default function Dashboard() {
             </div>
             <div>
               <h2 className="text-lg font-semibold text-white">Campaña actual</h2>
-              <p className="text-xs text-forest-300">Campaña 2025–2026</p>
+              <p className="text-xs text-forest-300">
+                {data.campaniaActiva ? data.campaniaActiva.nombre : "Sin campaña activa"}
+              </p>
             </div>
           </div>
 
-          <dl className="mt-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <dt className="text-sm text-forest-200">Parcelas cultivadas</dt>
-              <dd className="text-lg font-semibold text-white">42</dd>
-            </div>
-            <div className="flex items-center justify-between">
-              <dt className="text-sm text-forest-200">Superficie sembrada</dt>
-              <dd className="text-lg font-semibold text-white">68.4 ha</dd>
-            </div>
-            <div className="flex items-center justify-between">
-              <dt className="text-sm text-forest-200">Actividades planificadas</dt>
-              <dd className="text-lg font-semibold text-white">127</dd>
-            </div>
-          </dl>
-
-          <div className="mt-6 h-2 overflow-hidden rounded-full bg-white/10">
-            <div className="h-full w-[68%] rounded-full bg-gradient-to-r from-forest-400 to-sun-400" />
-          </div>
-          <p className="mt-2 text-xs text-forest-300">68% de avance de la campaña</p>
+          {data.campaniaActiva ? (
+            <>
+              <dl className="mt-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <dt className="text-sm text-forest-200">Parcelas cultivadas</dt>
+                  <dd className="text-lg font-semibold text-white">
+                    {data.campaniaActiva.parcelasCultivadas}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <dt className="text-sm text-forest-200">Actividades planificadas</dt>
+                  <dd className="text-lg font-semibold text-white">
+                    {data.campaniaActiva.actividades}
+                  </dd>
+                </div>
+              </dl>
+            </>
+          ) : (
+            <p className="mt-6 text-sm text-forest-300">
+              No hay campaña activa. Crea una nueva campaña para comenzar.
+            </p>
+          )}
         </div>
       </div>
     </div>

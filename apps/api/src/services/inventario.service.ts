@@ -1,4 +1,4 @@
-import prisma from '../config/database';
+import prisma, { type PrismaTransaction } from '../config/database';
 import { createError } from '../middleware/error.middleware';
 
 const generateCodigo = async (): Promise<string> => {
@@ -66,6 +66,7 @@ export const getAll = async (filters: {
       take: limit,
       include: {
         movimientos: { orderBy: { fecha: 'desc' } },
+        lote: true,
       },
     }),
     prisma.inventario.count({ where }),
@@ -79,6 +80,7 @@ export const getById = async (id: string) => {
     where: { id, activo: true },
     include: {
       movimientos: { orderBy: { fecha: 'desc' } },
+      lote: true,
     },
   });
 
@@ -98,6 +100,11 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
     if (exists) {
       throw createError(`El código ${codigo} ya está en uso`, 409);
     }
+  }
+
+  if (data.lote_id) {
+    const lote = await prisma.lotes.findFirst({ where: { id: data.lote_id as string, activo: true } });
+    if (!lote) throw createError('Lote no encontrado', 404);
   }
 
   const movimientosData = (data.movimientos as Array<Record<string, unknown>>) || [];
@@ -133,6 +140,7 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
     },
     include: {
       movimientos: true,
+      lote: true,
     },
   });
 };
@@ -156,37 +164,46 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
   if (data.cantidad_minima !== undefined) updateData.cantidad_minima = data.cantidad_minima != null ? Number(data.cantidad_minima) : null;
   if (data.cantidad_maxima !== undefined) updateData.cantidad_maxima = data.cantidad_maxima != null ? Number(data.cantidad_maxima) : null;
   if (data.estado !== undefined) updateData.estado = data.estado;
-  if (data.lote_id !== undefined) updateData.lote_id = (data.lote_id as string) || null;
+  if (data.lote_id !== undefined) {
+    if (data.lote_id) {
+      const lote = await prisma.lotes.findFirst({ where: { id: data.lote_id as string, activo: true } });
+      if (!lote) throw createError('Lote no encontrado', 404);
+    }
+    updateData.lote_id = (data.lote_id as string) || null;
+  }
   if (data.fecha_ingreso !== undefined) updateData.fecha_ingreso = new Date(data.fecha_ingreso as string);
   if (data.fecha_vencimiento !== undefined) updateData.fecha_vencimiento = data.fecha_vencimiento ? new Date(data.fecha_vencimiento as string) : null;
   if (data.costo_unitario !== undefined) updateData.costo_unitario = data.costo_unitario != null ? Number(data.costo_unitario) : null;
 
   if (userId) updateData.updated_by = userId;
 
-  if (data.movimientos !== undefined) {
-    const movimientosData = data.movimientos as Array<Record<string, unknown>>;
-    await prisma.inventario_movimientos.deleteMany({ where: { inventario_id: id } });
-    if (movimientosData.length > 0) {
-      await prisma.inventario_movimientos.createMany({
-        data: movimientosData.map(m => ({
-          inventario_id: id,
-          tipo: m.tipo as 'ENTRADA' | 'SALIDA' | 'TRANSFERENCIA' | 'AJUSTE',
-          cantidad: Number(m.cantidad),
-          referencia: (m.referencia as string) || null,
-          responsable: (m.responsable as string) || null,
-          observaciones: (m.observaciones as string) || null,
-          fecha: m.fecha ? new Date(m.fecha as string) : new Date(),
-        })),
-      });
+  return prisma.$transaction(async (tx: PrismaTransaction) => {
+    if (data.movimientos !== undefined) {
+      const movimientosData = data.movimientos as Array<Record<string, unknown>>;
+      await tx.inventario_movimientos.deleteMany({ where: { inventario_id: id } });
+      if (movimientosData.length > 0) {
+        await tx.inventario_movimientos.createMany({
+          data: movimientosData.map(m => ({
+            inventario_id: id,
+            tipo: m.tipo as 'ENTRADA' | 'SALIDA' | 'TRANSFERENCIA' | 'AJUSTE',
+            cantidad: Number(m.cantidad),
+            referencia: (m.referencia as string) || null,
+            responsable: (m.responsable as string) || null,
+            observaciones: (m.observaciones as string) || null,
+            fecha: m.fecha ? new Date(m.fecha as string) : new Date(),
+          })),
+        });
+      }
     }
-  }
 
-  return prisma.inventario.update({
-    where: { id },
-    data: updateData,
-    include: {
-      movimientos: true,
-    },
+    return tx.inventario.update({
+      where: { id },
+      data: updateData,
+      include: {
+        movimientos: true,
+        lote: true,
+      },
+    });
   });
 };
 
@@ -223,7 +240,7 @@ export const addMovimiento = async (inventarioId: string, data: Record<string, u
     }
   }
 
-  const movimiento = await prisma.$transaction(async (tx) => {
+  const movimiento = await prisma.$transaction(async (tx: PrismaTransaction) => {
     const mov = await tx.inventario_movimientos.create({
       data: {
         inventario_id: inventarioId,

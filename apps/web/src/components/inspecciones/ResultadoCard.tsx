@@ -38,7 +38,7 @@ export function ResultadoCard({ mode, values }: ResultadoCardProps) {
           <Select
             options={toOptions(resultadosOpciones)}
             placeholder="Seleccione el resultado"
-            defaultValue={editable ? (values?.resultado ?? undefined) : undefined}
+            value={editable ? (values?.resultado ?? undefined) : undefined}
           />
         </Field>
 
@@ -46,7 +46,7 @@ export function ResultadoCard({ mode, values }: ResultadoCardProps) {
           <Select
             options={toOptions(riesgosOpciones)}
             placeholder="Seleccione"
-            defaultValue={editable ? values?.riesgoGeneral : undefined}
+            value={editable ? values?.riesgoGeneral : undefined}
           />
         </Field>
 
@@ -65,7 +65,7 @@ export function ResultadoCard({ mode, values }: ResultadoCardProps) {
           <Textarea
             rows={4}
             placeholder="Resumen ejecutivo de la inspección para el expediente..."
-            defaultValue={values?.resumenEjecutivo}
+            value={values?.resumenEjecutivo}
           />
         ) : (
           <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-4">

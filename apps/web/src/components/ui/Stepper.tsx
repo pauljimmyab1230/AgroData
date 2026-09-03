@@ -19,82 +19,77 @@ type StepState = "done" | "active" | "todo";
 
 export function Stepper({ steps, active, onChange, maxReached, className }: StepperProps) {
   return (
-    <div
-      className={`overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm ${className ?? ""}`}
-    >
-      <div className="overflow-x-auto px-4 py-5 sm:px-6">
-        <ol className="flex min-w-max items-center gap-3 sm:gap-4">
-          {steps.map((step, index) => {
-            const state: StepState =
-              step.id < active ? "done" : step.id === active ? "active" : "todo";
-            const Icon = step.icon;
-            const isLast = index === steps.length - 1;
-            const canClick = onChange && (maxReached === undefined || step.id <= maxReached);
+    <div className={`py-4 px-2 ${className ?? ""}`}>
+      <ol className="flex items-center">
+        {steps.map((step, index) => {
+          const state: StepState =
+            step.id < active ? "done" : step.id === active ? "active" : "todo";
+          const Icon = step.icon;
+          const isLast = index === steps.length - 1;
+          const canClick = onChange && (maxReached === undefined || step.id <= maxReached);
 
-            return (
-              <li key={step.id} className="flex items-center gap-3 sm:gap-4">
+          return (
+            <li key={step.id} className="flex flex-1 items-center">
+              <div className="flex w-full flex-col items-center">
+                {/* Icon circle */}
                 <button
                   type="button"
                   onClick={() => canClick && onChange?.(step.id)}
                   disabled={!canClick}
                   aria-current={state === "active" ? "step" : undefined}
-                  className={`group flex items-center gap-3 text-left ${
+                  className={`relative flex h-12 w-12 items-center justify-center rounded-full transition-all ${
                     canClick ? "cursor-pointer" : "cursor-default"
+                  } ${
+                    state === "done"
+                      ? "bg-[#0A4174] text-white shadow-lg shadow-[#0A4174]/30"
+                      : state === "active"
+                        ? "bg-[#4E8EA2] text-white shadow-lg shadow-[#4E8EA2]/30 ring-4 ring-[#4E8EA2]/20"
+                        : canClick
+                          ? "border-2 border-gray-300 bg-white text-gray-400 hover:border-[#4E8EA2]/50"
+                          : "border-2 border-gray-200 bg-gray-50 text-gray-300"
                   }`}
                 >
-                  <span
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition-colors ${
-                      state === "active" || state === "done"
-                        ? "bg-forest-600 text-white"
-                        : canClick
-                          ? "border border-gray-300 bg-white text-gray-400 group-hover:border-gray-400"
-                          : "border border-gray-200 bg-gray-50 text-gray-300"
-                    }`}
-                  >
-                    {state === "done" ? (
-                      <Check className="h-4 w-4" />
-                    ) : Icon ? (
-                      <Icon className="h-4 w-4" />
-                    ) : (
-                      index + 1
-                    )}
-                  </span>
-
-                  <span className="min-h-[2.5rem] max-w-[150px]">
-                    <span
-                      className={`block truncate text-sm ${
-                        state === "active"
-                          ? "font-semibold text-forest-700"
-                          : state === "done"
-                            ? "font-medium text-gray-700"
-                            : canClick
-                              ? "font-medium text-gray-400"
-                              : "font-medium text-gray-300"
-                      }`}
-                    >
-                      {step.label}
-                    </span>
-                    {state === "active" && (
-                      <span className="block text-[11px] font-medium text-forest-600/70">
-                        Paso {index + 1} de {steps.length}
-                      </span>
-                    )}
-                  </span>
+                  {state === "done" ? (
+                    <Check className="h-5 w-5" strokeWidth={2.5} />
+                  ) : Icon ? (
+                    <Icon className="h-5 w-5" />
+                  ) : (
+                    <span className="text-sm font-semibold">{index + 1}</span>
+                  )}
                 </button>
 
-                {!isLast && (
+                {/* Label */}
+                <span className="mt-3 text-center">
                   <span
-                    aria-hidden="true"
-                    className={`h-0.5 w-8 shrink-0 rounded-full sm:w-14 ${
-                      state === "done" ? "bg-forest-500" : "bg-gray-200"
+                    className={`block text-xs font-medium ${
+                      state === "active"
+                        ? "text-[#0A4174]"
+                        : state === "done"
+                          ? "text-[#0A4174]"
+                          : canClick
+                            ? "text-gray-500"
+                            : "text-gray-400"
+                    }`}
+                  >
+                    {step.label}
+                  </span>
+                </span>
+              </div>
+
+              {/* Connector line */}
+              {!isLast && (
+                <div className="mx-2 flex-1 sm:mx-4">
+                  <div
+                    className={`h-0.5 w-full rounded-full ${
+                      state === "done" ? "bg-[#0A4174]" : "bg-gray-200"
                     }`}
                   />
-                )}
-              </li>
-            );
-          })}
-        </ol>
-      </div>
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ol>
     </div>
   );
 }

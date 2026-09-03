@@ -1,39 +1,34 @@
 import { Wheat, Ruler, CalendarDays, BadgeCheck } from "lucide-react";
 import { Card } from "../ui";
-import type { Cultivo } from "../../services/cultivos";
+import type { CultivoGlobalStats } from "../../services/cultivos";
 
 interface CultivoKPIProps {
-  cultivos: Cultivo[];
-  total?: number;
+  stats: CultivoGlobalStats;
 }
 
-export default function CultivoKPI({ cultivos, total }: CultivoKPIProps) {
-  const areaSembrada = cultivos.reduce((acc, c) => acc + (c.areaSembrada ?? 0), 0);
-  const campaniasActivas = new Set(cultivos.map((c) => c.campaniaId)).size;
-  const cultivosActivos = cultivos.filter((c) => c.estado === "ACTIVO").length;
-
+export default function CultivoKPI({ stats }: CultivoKPIProps) {
   const kpis = [
     {
       label: "Total Cultivos",
-      value: String(total ?? cultivos.length),
+      value: String(stats.total),
       icon: Wheat,
       iconClass: "bg-forest-600/10 text-forest-600",
     },
     {
       label: "Área Sembrada",
-      value: `${areaSembrada.toFixed(2)} ha`,
+      value: `${stats.areaSembrada.toFixed(2)} ha`,
       icon: Ruler,
       iconClass: "bg-sun-100 text-sun-700",
     },
     {
       label: "Campañas Activas",
-      value: String(campaniasActivas),
+      value: String(stats.campaniasActivas),
       icon: CalendarDays,
       iconClass: "bg-forest-600/10 text-forest-600",
     },
     {
       label: "Cultivos Activos",
-      value: String(cultivosActivos),
+      value: String(stats.estados.ACTIVO ?? 0),
       icon: BadgeCheck,
       iconClass: "bg-sun-100 text-sun-700",
     },

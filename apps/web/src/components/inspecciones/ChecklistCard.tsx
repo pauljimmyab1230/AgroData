@@ -1,16 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CheckCircle2, ClipboardCheck, MinusCircle, XCircle, type LucideIcon } from "lucide-react";
 import { Input, Select } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import { CumplimientoBadge, RiesgoBadge } from "./badges";
 import {
   crearChecklist,
-  riesgosOpciones,
   type CriterioChecklist,
   type Cumplimiento,
   type Inspeccion,
   type Riesgo,
 } from "../../services/inspecciones";
+import { fetchCatalogoActivos } from "../../services/catalogos";
 
 type ChecklistCardProps = {
   mode: FormMode;
@@ -38,7 +38,13 @@ const opciones: { value: Cumplimiento; label: string; active: string; icon: Luci
   },
 ];
 
-const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: item }));
+const riesgoLabels: Record<string, string> = {
+  BAJO: "Bajo",
+  MEDIO: "Medio",
+  ALTO: "Alto",
+};
+
+const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: riesgoLabels[item] ?? item }));
 
 function contarCumplimiento(criterios: CriterioChecklist[]) {
   return {
@@ -94,9 +100,26 @@ function DetalleCriterio({ criterio }: { criterio: CriterioChecklist }) {
 
 export function ChecklistCard({ mode, values }: ChecklistCardProps) {
   const editable = mode !== "view";
+  const [criteriosCatalogo, setCriteriosCatalogo] = useState<string[]>([]);
   const [criterios, setCriterios] = useState<CriterioChecklist[]>(() =>
-    editable ? values?.checklist ?? crearChecklist() : [],
+    editable ? values?.checklist ?? [] : [],
   );
+
+  useEffect(() => {
+    fetchCatalogoActivos("criterios-checklist")
+      .then((items) => {
+        const nombres = items.map((i) => i.nombre);
+        setCriteriosCatalogo(nombres);
+        if (editable && !values?.checklist) {
+          setCriterios(crearChecklist(nombres));
+        }
+      })
+      .catch(() => {
+        if (editable && !values?.checklist) {
+          setCriterios(crearChecklist());
+        }
+      });
+  }, []);
 
   const list = editable ? criterios : (values?.checklist ?? []);
 
@@ -178,9 +201,13 @@ export function ChecklistCard({ mode, values }: ChecklistCardProps) {
                     onChange={(e) => setCampo(index, "evidencia", e.target.value)}
                   />
                 </Field>
-                <Field label="Nivel de riesgo" mode={mode} value={criterio.riesgo}>
+                <Field label="Nivel de riesgo" mode={mode} value={riesgoLabels[criterio.riesgo] ?? criterio.riesgo}>
                   <Select
-                    options={toOptions(riesgosOpciones)}
+                    options={[
+                      { value: "BAJO", label: "Bajo" },
+                      { value: "MEDIO", label: "Medio" },
+                      { value: "ALTO", label: "Alto" },
+                    ]}
                     placeholder="Seleccione"
                     value={criterio.riesgo}
                     onChange={(val) => setCampo(index, "riesgo", val as Riesgo)}

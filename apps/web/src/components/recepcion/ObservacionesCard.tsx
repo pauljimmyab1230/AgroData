@@ -6,9 +6,10 @@ import type { Recepcion } from "../../services/recepciones";
 type ObservacionesCardProps = {
   mode: FormMode;
   values?: Partial<Recepcion>;
+  onChange?: <K extends keyof Recepcion>(field: K, value: Recepcion[K]) => void;
 };
 
-export function ObservacionesCard({ mode, values }: ObservacionesCardProps) {
+export function ObservacionesCard({ mode, values, onChange }: ObservacionesCardProps) {
   return (
     <CardShell>
       <CardHeader
@@ -27,7 +28,8 @@ export function ObservacionesCard({ mode, values }: ObservacionesCardProps) {
         <Textarea
           rows={8}
           placeholder="Escribe aquí las observaciones generales de la recepción..."
-          defaultValue={values?.observaciones}
+          value={values?.observaciones ?? ""}
+          onChange={(e) => onChange?.("observaciones", e.target.value)}
         />
       )}
     </CardShell>

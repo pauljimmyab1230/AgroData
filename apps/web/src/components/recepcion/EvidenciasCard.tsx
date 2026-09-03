@@ -7,6 +7,7 @@ import type { Recepcion } from "../../services/recepciones";
 type EvidenciasCardProps = {
   mode: FormMode;
   values?: Partial<Recepcion>;
+  onChange?: <K extends keyof Recepcion>(field: K, value: Recepcion[K]) => void;
 };
 
 function MockFirma({ nombre }: { nombre: string }) {
@@ -131,7 +132,7 @@ function RegistroTile({
   );
 }
 
-export function EvidenciasCard({ mode, values }: EvidenciasCardProps) {
+export function EvidenciasCard({ mode, values, onChange }: EvidenciasCardProps) {
   const editable = mode !== "view";
   const [fotos, setFotos] = useState<EvidenciaLocal[]>(
     (values?.evidencias ?? []).map((e) => ({
@@ -147,17 +148,22 @@ export function EvidenciasCard({ mode, values }: EvidenciasCardProps) {
 
   const addFoto = () => {
     const n = fotoCounterRef.current++;
-    setFotos((prev) => [
-      ...prev,
-      { id: String(n), nombre: `Fotografía ${n} - Recepción`, tipo: "foto", ruta_archivo: "" },
-    ]);
+    const newFoto: EvidenciaLocal = { id: String(n), nombre: `Fotografía ${n} - Recepción`, tipo: "foto", ruta_archivo: "" };
+    setFotos((prev) => [...prev, newFoto]);
+    onChange?.("evidencias", [...(values?.evidencias ?? []), { nombre: newFoto.nombre, tipo: newFoto.tipo, ruta_archivo: newFoto.ruta_archivo }]);
   };
 
   const handleFotoChange = (id: string, _file: File | null, preview: string) => {
     setFotos((prev) => prev.map((foto) => (foto.id === id ? { ...foto, preview: preview || undefined } : foto)));
   };
 
-  const removeFoto = (id: string) => setFotos((prev) => prev.filter((foto) => foto.id !== id));
+  const removeFoto = (id: string) => {
+    setFotos((prev) => {
+      const next = prev.filter((foto) => foto.id !== id);
+      onChange?.("evidencias", next.map((f) => ({ nombre: f.nombre, tipo: f.tipo, ruta_archivo: f.ruta_archivo })));
+      return next;
+    });
+  };
 
   return (
     <CardShell>

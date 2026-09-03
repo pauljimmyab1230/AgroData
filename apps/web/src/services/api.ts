@@ -7,16 +7,8 @@ function getApiBaseUrl(): string {
     return "http://localhost:5000/api";
   }
 
-  // Detect devtunnels: s79msm32-5173.brs.devtunnels.ms -> s79msm32-5000.brs.devtunnels.ms
-  const tunnelMatch = hostname.match(/^([a-z0-9]+)-\d+\.(.+\.devtunnels\.ms)$/i);
-  if (tunnelMatch) {
-    const prefix = tunnelMatch[1];
-    const domain = tunnelMatch[2];
-    return `${protocol}//${prefix}-5000.${domain}/api`;
-  }
-
-  // Red local: usar la misma IP pero puerto 5000
-  return `${protocol}//${hostname}:5000/api`;
+  // Devtunnels or any non-localhost: use Vite proxy (same origin /api)
+  return `${protocol}//${hostname}/api`;
 }
 
 const API_BASE_URL = getApiBaseUrl();

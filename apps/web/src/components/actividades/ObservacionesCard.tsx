@@ -20,11 +20,11 @@ export function ObservacionesCard({ mode, value, onChange }: ObservacionesCardPr
         description="Observaciones técnicas y recomendaciones de la actividad"
       />
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <div>
           <Field label="Observaciones Técnicas" mode={mode} value={value.observacionesTecnicas}>
             <Textarea
-              rows={5}
+              rows={3}
               value={value.observacionesTecnicas}
               onChange={(e) => onChange?.({ observacionesTecnicas: e.target.value })}
               placeholder="Escribe aquí las observaciones técnicas de la actividad..."
@@ -35,7 +35,7 @@ export function ObservacionesCard({ mode, value, onChange }: ObservacionesCardPr
         <div>
           <Field label="Recomendaciones" mode={mode} value={value.recomendaciones}>
             <Textarea
-              rows={5}
+              rows={3}
               value={value.recomendaciones}
               onChange={(e) => onChange?.({ recomendaciones: e.target.value })}
               placeholder="Escribe aquí las recomendaciones para próximas labores..."

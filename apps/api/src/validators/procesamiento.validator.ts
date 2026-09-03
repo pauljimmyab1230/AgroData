@@ -26,16 +26,6 @@ const operacionSchema = Joi.object({
   observaciones: Joi.string().allow('', null),
 });
 
-const evidenciaSchema = Joi.object({
-  id: Joi.string().max(36).allow('', null),
-  nombre: Joi.string().max(255).required().messages({
-    'any.required': 'El nombre de la evidencia es obligatorio',
-  }),
-  descripcion: Joi.string().max(500).allow('', null),
-  tipo: Joi.string().max(50).allow('', null),
-  ruta_archivo: Joi.string().max(500).allow('', null),
-});
-
 export const createProcesamientoSchema = Joi.object({
   campania_id: Joi.string().max(36).required().messages({
     'any.required': 'La campaña es obligatoria',
@@ -49,6 +39,7 @@ export const createProcesamientoSchema = Joi.object({
   responsable: Joi.string().max(150).required().messages({
     'any.required': 'El responsable es obligatorio',
   }),
+  responsable_id: Joi.string().uuid().allow(null),
   planta: Joi.string().max(100).required().messages({
     'any.required': 'La planta es obligatoria',
   }),
@@ -67,7 +58,6 @@ export const createProcesamientoSchema = Joi.object({
   humedad_final: Joi.number().precision(2).min(0).max(100).allow(null),
   lotes: Joi.array().items(loteSchema).default([]),
   operaciones: Joi.array().items(operacionSchema).default([]),
-  evidencias: Joi.array().items(evidenciaSchema).default([]),
 });
 
 export const updateProcesamientoSchema = Joi.object({
@@ -75,6 +65,7 @@ export const updateProcesamientoSchema = Joi.object({
   fecha: Joi.date().iso(),
   producto: Joi.string().max(100),
   responsable: Joi.string().max(150),
+  responsable_id: Joi.string().uuid().allow(null),
   planta: Joi.string().max(100),
   linea_procesamiento: Joi.string().valid(...lineaProcesamientoEnum),
   estado: Joi.string().valid(...estadoProcesamientoEnum),

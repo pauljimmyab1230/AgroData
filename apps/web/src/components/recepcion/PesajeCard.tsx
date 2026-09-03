@@ -5,14 +5,10 @@ import { CardHeader, CardShell, Field, type FormMode } from "../shared/formContr
 import { formatearPeso } from "../../services/recepciones";
 import type { Recepcion } from "../../services/recepciones";
 
-function formatPct(valor: number | undefined): string {
-  if (valor === undefined) return "—";
-  return `${Intl.NumberFormat("es-PE", { maximumFractionDigits: 2 }).format(valor)}%`;
-}
-
 type PesajeCardProps = {
   mode: FormMode;
   values?: Partial<Recepcion>;
+  onChange?: <K extends keyof Recepcion>(field: K, value: Recepcion[K]) => void;
 };
 
 type ComparacionItem = {
@@ -22,7 +18,7 @@ type ComparacionItem = {
   iconClass: string;
 };
 
-export function PesajeCard({ mode, values }: PesajeCardProps) {
+export function PesajeCard({ mode, values, onChange }: PesajeCardProps) {
   const editable = mode !== "view";
 
   const comparacion: ComparacionItem[] = [
@@ -46,7 +42,7 @@ export function PesajeCard({ mode, values }: PesajeCardProps) {
     },
     {
       label: "Merma",
-      value: formatPct(values?.merma),
+      value: values?.merma != null ? `${Intl.NumberFormat("es-PE", { maximumFractionDigits: 2 }).format(values.merma)}%` : "—",
       icon: TrendingDown,
       iconClass: "bg-purple-50 text-purple-600",
     },
@@ -71,7 +67,8 @@ export function PesajeCard({ mode, values }: PesajeCardProps) {
             step="0.1"
             min="0"
             placeholder="0.0"
-            defaultValue={editable ? values?.pesoBruto : undefined}
+            value={values?.pesoBruto ?? ""}
+            onChange={(e) => onChange?.("pesoBruto", parseFloat(e.target.value) || 0)}
           />
         </Field>
 
@@ -85,7 +82,8 @@ export function PesajeCard({ mode, values }: PesajeCardProps) {
             step="0.1"
             min="0"
             placeholder="0.0"
-            defaultValue={editable ? values?.tara : undefined}
+            value={values?.tara ?? ""}
+            onChange={(e) => onChange?.("tara", parseFloat(e.target.value) || 0)}
           />
         </Field>
 
@@ -99,7 +97,8 @@ export function PesajeCard({ mode, values }: PesajeCardProps) {
             step="0.1"
             min="0"
             placeholder="0.0"
-            defaultValue={editable ? values?.pesoNeto : undefined}
+            value={values?.pesoNeto ?? ""}
+            onChange={(e) => onChange?.("pesoNeto", parseFloat(e.target.value) || 0)}
           />
         </Field>
       </div>

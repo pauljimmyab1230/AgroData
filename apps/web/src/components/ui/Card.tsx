@@ -25,7 +25,7 @@ export default function Card({
   return (
     <div
       onClick={onClick}
-      className={`overflow-hidden rounded-2xl border border-gray-200 bg-white transition-shadow ${
+      className={`rounded-2xl border border-gray-200 bg-white transition-shadow ${
         hover ? "hover:shadow-lg hover:shadow-gray-200/60" : ""
       } ${onClick ? "cursor-pointer" : ""} ${className}`}
     >

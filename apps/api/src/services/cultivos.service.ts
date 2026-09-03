@@ -26,8 +26,10 @@ const ensureUniqueCodigo = async (codigo: string): Promise<string> => {
   throw createError('No se pudo generar un código único', 500);
 };
 
-const ensureRelationExists = async (model: string, id: string) => {
-  const exists = await (prisma as any)[model].findUnique({ where: { id }, select: { id: true } });
+const ensureRelationExists = async (model: string, id: string | number) => {
+  const numId = Number(id);
+  const lookupId = !isNaN(numId) && String(numId) === String(id) ? numId : id;
+  const exists = await (prisma as any)[model].findUnique({ where: { id: lookupId }, select: { id: true } });
   if (!exists) throw createError(`${model} no encontrado`, 404);
 };
 
@@ -46,8 +48,8 @@ export const getAll = async (filters: {
 
   if (filters.estado) where.estado = filters.estado;
   if (filters.campania_id) where.campania_id = filters.campania_id;
-  if (filters.productor_id) where.productor_id = filters.productor_id;
-  if (filters.parcela_id) where.parcela_id = filters.parcela_id;
+  if (filters.productor_id) where.productor_id = Number(filters.productor_id);
+  if (filters.parcela_id) where.parcela_id = Number(filters.parcela_id);
 
   if (filters.search) {
     where.OR = [
@@ -114,8 +116,8 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
     data: {
       codigo,
       campania_id: data.campania_id as string,
-      productor_id: data.productor_id as string,
-      parcela_id: data.parcela_id as string,
+      productor_id: Number(data.productor_id),
+      parcela_id: Number(data.parcela_id),
       cultivo: data.cultivo as string,
       variedad: (data.variedad as string) || null,
       area_sembrada: data.area_sembrada ? Number(data.area_sembrada) : null,
@@ -127,12 +129,9 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
       procedencia_semilla: (data.procedencia_semilla as any) || null,
       cantidad_semilla: data.cantidad_semilla ? Number(data.cantidad_semilla) : null,
       unidad_semilla: (data.unidad_semilla as string) || null,
-      fecha_emergencia: data.fecha_emergencia ? new Date(data.fecha_emergencia as string) : null,
-      fecha_floracion: data.fecha_floracion ? new Date(data.fecha_floracion as string) : null,
       fecha_cosecha: data.fecha_cosecha ? new Date(data.fecha_cosecha as string) : null,
       estado: (data.estado as any) || 'ACTIVO',
       observaciones: (data.observaciones as string) || null,
-      estado_fenologico: (data.estado_fenologico as string) || null,
       rendimiento_esperado: data.rendimiento_esperado ? Number(data.rendimiento_esperado) : null,
       produccion_estimada: data.produccion_estimada ? Number(data.produccion_estimada) : null,
       destino_produccion: (data.destino_produccion as any) || null,
@@ -161,15 +160,21 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
 
   const updateData: Record<string, unknown> = {};
 
-  const stringFields = ['codigo', 'cultivo', 'variedad', 'unidad_semilla', 'observaciones', 'estado_fenologico', 'distanciamiento_surcos', 'distanciamiento_plantas', 'densidad_siembra', 'tipo_semilla', 'lote_semilla', 'proveedor_semilla'];
+  const stringFields = ['codigo', 'cultivo', 'variedad', 'unidad_semilla', 'observaciones', 'distanciamiento_surcos', 'distanciamiento_plantas', 'densidad_siembra', 'tipo_semilla', 'lote_semilla', 'proveedor_semilla'];
   for (const field of stringFields) {
     if (data[field] !== undefined) updateData[field] = (data[field] as string) || null;
   }
 
   const uuidFields = ['campania_id', 'productor_id', 'parcela_id'];
+  const uuidModelMap: Record<string, string> = {
+    campania_id: 'campanias',
+    productor_id: 'productores',
+    parcela_id: 'parcelas_productor',
+  };
   for (const field of uuidFields) {
     if (data[field] !== undefined) {
-      await ensureRelationExists(field.replace('_id', '').replace('parcela', 'parcelas_productor').replace('productor', 'productores').replace('campania', 'campanias'), data[field] as string);
+      const model = uuidModelMap[field];
+      if (model) await ensureRelationExists(model, data[field] as string);
       updateData[field] = data[field];
     }
   }
@@ -179,7 +184,7 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
     if (data[field] !== undefined) updateData[field] = data[field];
   }
 
-  const dateFields = ['fecha_siembra', 'fecha_emergencia', 'fecha_floracion', 'fecha_cosecha'];
+  const dateFields = ['fecha_siembra', 'fecha_cosecha'];
   for (const field of dateFields) {
     if (data[field] !== undefined) updateData[field] = data[field] ? new Date(data[field] as string) : null;
   }
@@ -215,4 +220,60 @@ export const remove = async (id: string) => {
   });
 
   return { message: 'Cultivo eliminado exitosamente' };
+};
+
+// ─── Global Stats ─────────────────────────────────────────
+
+export const getGlobalStats = async (filters?: {
+  search?: string;
+  estado?: string;
+  campania_id?: string;
+}) => {
+  const where: Record<string, unknown> = { activo: true };
+
+  if (filters?.estado) where.estado = filters.estado;
+  if (filters?.campania_id) where.campania_id = filters.campania_id;
+
+  if (filters?.search) {
+    where.OR = [
+      { codigo: { contains: filters.search } },
+      { cultivo: { contains: filters.search } },
+      { variedad: { contains: filters.search } },
+    ];
+  }
+
+  const [total, porEstado, areaResult, campaniasResult] = await Promise.all([
+    prisma.cultivos.count({ where }),
+    prisma.cultivos.groupBy({
+      by: ['estado'],
+      where,
+      _count: { id: true },
+    }),
+    prisma.cultivos.aggregate({
+      where,
+      _sum: { area_sembrada: true },
+    }),
+    prisma.cultivos.findMany({
+      where,
+      select: { campania_id: true },
+      distinct: ['campania_id'],
+    }),
+  ]);
+
+  const estados: Record<string, number> = {
+    ACTIVO: 0,
+    EN_DESARROLLO: 0,
+    COSECHADO: 0,
+    FINALIZADO: 0,
+  };
+  for (const item of porEstado) {
+    estados[item.estado] = item._count.id;
+  }
+
+  return {
+    total,
+    estados,
+    areaSembrada: Math.round((Number(areaResult._sum.area_sembrada) || 0) * 100) / 100,
+    campaniasActivas: campaniasResult.length,
+  };
 };

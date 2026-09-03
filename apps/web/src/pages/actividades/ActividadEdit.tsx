@@ -5,8 +5,15 @@ import { ActividadHeader } from "../../components/actividades/ActividadHeader";
 import { ActividadForm } from "../../components/actividades/ActividadForm";
 import { fetchActividad, tipoActividadLabels, type Actividad } from "../../services/actividades";
 
-export default function ActividadEdit() {
-  const { id } = useParams();
+interface ActividadEditProps {
+  inModal?: boolean;
+  actividadId?: string;
+  onSave?: () => void;
+}
+
+export default function ActividadEdit({ inModal, actividadId: propId, onSave }: ActividadEditProps) {
+  const { id: paramId } = useParams();
+  const id = propId || paramId;
   const [actividad, setActividad] = useState<Actividad | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -15,7 +22,7 @@ export default function ActividadEdit() {
     setLoading(true);
     fetchActividad(id)
       .then(setActividad)
-      .catch(console.error)
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -31,21 +38,25 @@ export default function ActividadEdit() {
 
   return (
     <div>
-      <Breadcrumb
-        items={[
-          { label: "Actividades Agrícolas", to: "/actividades" },
-          { label: actividad.codigo, to: `/actividades/${actividad.id}` },
-          { label: "Editar Actividad" },
-        ]}
-      />
+      {!inModal && (
+        <>
+          <Breadcrumb
+            items={[
+              { label: "Actividades Agrícolas", to: "/actividades" },
+              { label: actividad.codigo, to: `/actividades/${actividad.id}` },
+              { label: "Editar Actividad" },
+            ]}
+          />
 
-      <ActividadHeader
-        title="Editar Actividad"
-        description={`Actualizando la información de ${actividad.codigo} (${tipoLabel})`}
-        backTo={`/actividades/${actividad.id}`}
-      />
+          <ActividadHeader
+            title="Editar Actividad"
+            description={`Actualizando la información de ${actividad.codigo} (${tipoLabel})`}
+            backTo={`/actividades/${actividad.id}`}
+          />
+        </>
+      )}
 
-      <ActividadForm mode="edit" values={actividad} />
+      <ActividadForm mode="edit" values={actividad} inModal={inModal} onSave={onSave} />
     </div>
   );
 }

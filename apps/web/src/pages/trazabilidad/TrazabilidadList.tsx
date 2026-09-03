@@ -69,9 +69,11 @@ export default function TrazabilidadList() {
 
   const [items, setItems] = useState<Trazabilidad[]>([]);
   const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0, conCert: 0, enProceso: 0, completados: 0 });
 
   useEffect(() => {
+    setLoading(true);
     const params: Record<string, string | number> = { page, limit: pageSize };
     if (search) params.search = search;
     if (filtroEstado) params.estado = filtroEstado;
@@ -88,7 +90,8 @@ export default function TrazabilidadList() {
           completados: res.data.filter((t) => t.estado === "COMPLETADO").length,
         });
       })
-      .catch(() => setItems([]));
+      .catch(() => setItems([]))
+      .finally(() => setLoading(false));
   }, [search, filtroEstado, filtroCert, page]);
 
   const hasFilters = Boolean(search) || Boolean(filtroEstado) || Boolean(filtroCert);

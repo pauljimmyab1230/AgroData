@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { Plus, X } from "lucide-react";
 import { Button, ConfirmDialog, LoadingSpinner, SearchInput, Select } from "../../components/ui";
 import CultivoHeader from "../../components/cultivos/CultivoHeader";
 import CultivoKPI from "../../components/cultivos/CultivoKPI";
 import CultivoTable from "../../components/cultivos/CultivoTable";
-import { fetchCultivos, deleteCultivo, type Cultivo, estadosCultivo } from "../../services/cultivos";
+import { fetchCultivos, deleteCultivo, fetchCultivoGlobalStats, type Cultivo, type CultivoGlobalStats, estadosCultivoValues } from "../../services/cultivos";
+import CultivoModal from "../../components/cultivos/CultivoModal";
 
 const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: item }));
 
@@ -31,8 +31,8 @@ function FilterSelect({
 }
 
 export default function CultivoList() {
-  const navigate = useNavigate();
   const [cultivos, setCultivos] = useState<Cultivo[]>([]);
+  const [globalStats, setGlobalStats] = useState<CultivoGlobalStats>({ total: 0, estados: {}, areaSembrada: 0, campaniasActivas: 0 });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
@@ -40,21 +40,27 @@ export default function CultivoList() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [viewId, setViewId] = useState<string | null>(null);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const result = await fetchCultivos({
+      const filters = {
         search: search || undefined,
         estado: filtroEstado || undefined,
-        page,
-        limit: 10,
-      });
+      };
+      const [result, stats] = await Promise.all([
+        fetchCultivos({ ...filters, page, limit: 10 }),
+        fetchCultivoGlobalStats(filters),
+      ]);
       setCultivos(result.data);
+      setGlobalStats(stats);
       setTotalPages(result.totalPages);
       setTotal(result.total);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // handled silently
     } finally {
       setLoading(false);
     }
@@ -62,7 +68,7 @@ export default function CultivoList() {
 
   useEffect(() => {
     loadData();
-  }, [page, filtroEstado]);
+  }, [page, filtroEstado, search]);
 
   const hasFilters = Boolean(search) || Boolean(filtroEstado);
 
@@ -72,11 +78,14 @@ export default function CultivoList() {
     setPage(1);
   };
 
-  const cultivoAEliminar = cultivos.find((c) => c.id === deleteId);
+  const handleModalClose = () => {
+    setShowCreateModal(false);
+    setEditId(null);
+    setViewId(null);
+    loadData();
+  };
 
-  const handleView = (id: string) => navigate(`/cultivos/${id}`);
-  const handleEdit = (id: string) => navigate(`/cultivos/${id}/editar`);
-  const handleDelete = (id: string) => setDeleteId(id);
+  const cultivoAEliminar = cultivos.find((c) => c.id === deleteId);
 
   if (loading && cultivos.length === 0) {
     return (
@@ -90,30 +99,30 @@ export default function CultivoList() {
     <div>
       <CultivoHeader
         title="Cultivos"
-        description="Gestión y seguimiento de cultivos de la cooperativa"
-        crumbs={[{ label: "Cultivos" }]}
+        description="Gestión y seguimiento de cultivos"
+        crumbs={[]}
         actions={
-          <Button as="link" to="/cultivos/nuevo" iconLeft={<Plus className="h-4 w-4" />}>
+          <Button onClick={() => setShowCreateModal(true)} iconLeft={<Plus className="h-4 w-4" />}>
             Nuevo Cultivo
           </Button>
         }
       />
 
-      <CultivoKPI cultivos={cultivos} total={total} />
+      <CultivoKPI stats={globalStats} />
 
       <div className="mb-6 flex flex-wrap items-end gap-3">
         <div className="max-w-md min-w-[200px] flex-1">
           <SearchInput
             placeholder="Buscar por código, cultivo o variedad..."
             value={search}
-            onChange={(val) => setSearch(val)}
+            onChange={(val) => { setSearch(val); setPage(1); }}
           />
         </div>
 
         <FilterSelect
           label="Estado"
           placeholder="Todos"
-          options={toOptions(estadosCultivo)}
+          options={toOptions(estadosCultivoValues)}
           value={filtroEstado}
           onChange={(val) => {
             setFiltroEstado(val);
@@ -130,9 +139,9 @@ export default function CultivoList() {
 
       <CultivoTable
         data={cultivos}
-        onView={handleView}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
+        onView={(id) => setViewId(id)}
+        onEdit={(id) => setEditId(id)}
+        onDelete={(id) => setDeleteId(id)}
         currentPage={page}
         totalPages={totalPages}
         onPageChange={setPage}
@@ -145,10 +154,10 @@ export default function CultivoList() {
           if (!deleteId) return;
           try {
             await deleteCultivo(deleteId);
-            setCultivos((prev) => prev.filter((c) => c.id !== deleteId));
             setDeleteId(null);
-          } catch (err) {
-            console.error(err);
+            loadData();
+          } catch {
+            // handled silently
           }
         }}
         title="Eliminar Cultivo"
@@ -159,6 +168,28 @@ export default function CultivoList() {
         }
         confirmText="Eliminar"
         variant="danger"
+      />
+
+      <CultivoModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSave={handleModalClose}
+        mode="create"
+      />
+
+      <CultivoModal
+        open={editId !== null}
+        onClose={() => setEditId(null)}
+        onSave={handleModalClose}
+        mode="edit"
+        cultivoId={editId || undefined}
+      />
+
+      <CultivoModal
+        open={viewId !== null}
+        onClose={() => setViewId(null)}
+        mode="view"
+        cultivoId={viewId || undefined}
       />
     </div>
   );

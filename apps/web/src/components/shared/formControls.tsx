@@ -42,7 +42,7 @@ export function CardHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 pb-5">
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 pb-4">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-forest-50 text-forest-700">
           {icon}
@@ -59,8 +59,7 @@ export function CardHeader({
 
 export function CardShell({ children }: { children: ReactNode }) {
   return (
-    <Card padding="lg" hover={false} className="relative shadow-sm">
-      <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1 bg-forest-600" />
+    <Card padding="md" hover={false} className="relative w-full max-w-full overflow-hidden shadow-sm">
       {children}
     </Card>
   );

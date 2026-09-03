@@ -1,4 +1,4 @@
-import prisma from '../config/database';
+import prisma, { type PrismaTransaction } from '../config/database';
 import { createError } from '../middleware/error.middleware';
 
 const generateCodigo = async (): Promise<string> => {
@@ -137,25 +137,28 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
   const sacosData = (data.sacos as Array<Record<string, unknown>>) || [];
   const fotosData = (data.fotos as Array<Record<string, unknown>>) || [];
 
+  if (data.acopiador_id) {
+    const usuario = await prisma.usuarios.findFirst({ where: { id: data.acopiador_id as string, activo: true } });
+    if (!usuario) throw createError('Usuario acopiador no encontrado', 404);
+  }
+
   const resumen = calcularResumenSacos(sacosData.map(s => ({ peso: Number(s.peso) })));
 
   return prisma.acopios.create({
     data: {
       codigo,
       campania_id: data.campania_id as string,
-      productor_id: data.productor_id as string,
-      parcela_id: data.parcela_id as string,
+      productor_id: Number(data.productor_id),
+      parcela_id: Number(data.parcela_id),
       cultivo_id: (data.cultivo_id as string) || null,
       fecha: new Date(data.fecha as string),
       acopiador: data.acopiador as string,
+      acopiador_id: (data.acopiador_id as string) || null,
       vehiculo: (data.vehiculo as string) || null,
       ruta_acopio: (data.ruta_acopio as string) || null,
       lote_productor: (data.lote_productor as string) || null,
       total_sacos: resumen.total_sacos,
       peso_total: resumen.peso_total,
-      peso_promedio: resumen.peso_promedio,
-      peso_maximo: resumen.peso_maximo,
-      peso_minimo: resumen.peso_minimo,
       estado: (data.estado as 'EN_PROCESO' | 'COMPLETADO' | 'EN_PLANTA') || 'EN_PROCESO',
       estado_producto: (data.estado_producto as 'EXCELENTE' | 'BUENO' | 'REGULAR' | 'RECHAZADO') || null,
       humedad: data.humedad != null ? Number(data.humedad) : null,
@@ -201,6 +204,8 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
     if (data[field] !== undefined) updateData[field] = data[field];
   }
 
+  if (data.acopiador_id !== undefined) updateData.acopiador_id = (data.acopiador_id as string) || null;
+
   const nullableFields = ['cultivo_id', 'observaciones_calidad', 'firma_productor_url', 'firma_acopiador_url', 'observaciones'];
   for (const field of nullableFields) {
     if (data[field] !== undefined) updateData[field] = (data[field] as string) || null;
@@ -217,53 +222,49 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
 
   if (userId) updateData.updated_by = userId;
 
-  // Si vienen sacos, recalcular resumen
-  if (data.sacos !== undefined) {
-    const sacosData = data.sacos as Array<Record<string, unknown>>;
-    const resumen = calcularResumenSacos(sacosData.map(s => ({ peso: Number(s.peso) })));
-    updateData.total_sacos = resumen.total_sacos;
-    updateData.peso_total = resumen.peso_total;
-    updateData.peso_promedio = resumen.peso_promedio;
-    updateData.peso_maximo = resumen.peso_maximo;
-    updateData.peso_minimo = resumen.peso_minimo;
+  return prisma.$transaction(async (tx: PrismaTransaction) => {
+    if (data.sacos !== undefined) {
+      const sacosData = data.sacos as Array<Record<string, unknown>>;
+      const resumen = calcularResumenSacos(sacosData.map(s => ({ peso: Number(s.peso) })));
+      updateData.total_sacos = resumen.total_sacos;
+      updateData.peso_total = resumen.peso_total;
 
-    // Eliminar sacos existentes y crear nuevos
-    await prisma.acopio_sacos.deleteMany({ where: { acopio_id: id } });
-    if (sacosData.length > 0) {
-      await prisma.acopio_sacos.createMany({
-        data: sacosData.map(s => ({
-          acopio_id: id,
-          codigo: s.codigo as string,
-          peso: Number(s.peso),
-          observaciones: (s.observaciones as string) || null,
-        })),
-      });
+      await tx.acopio_sacos.deleteMany({ where: { acopio_id: id } });
+      if (sacosData.length > 0) {
+        await tx.acopio_sacos.createMany({
+          data: sacosData.map(s => ({
+            acopio_id: id,
+            codigo: s.codigo as string,
+            peso: Number(s.peso),
+            observaciones: (s.observaciones as string) || null,
+          })),
+        });
+      }
     }
-  }
 
-  // Si vienen fotos, reemplazar
-  if (data.fotos !== undefined) {
-    const fotosData = data.fotos as Array<Record<string, unknown>>;
-    await prisma.acopio_fotos.deleteMany({ where: { acopio_id: id } });
-    if (fotosData.length > 0) {
-      await prisma.acopio_fotos.createMany({
-        data: fotosData.map(f => ({
-          acopio_id: id,
-          nombre: f.nombre as string,
-          descripcion: (f.descripcion as string) || null,
-          ruta_archivo: (f.ruta_archivo as string) || null,
-        })),
-      });
+    if (data.fotos !== undefined) {
+      const fotosData = data.fotos as Array<Record<string, unknown>>;
+      await tx.acopio_fotos.deleteMany({ where: { acopio_id: id } });
+      if (fotosData.length > 0) {
+        await tx.acopio_fotos.createMany({
+          data: fotosData.map(f => ({
+            acopio_id: id,
+            nombre: f.nombre as string,
+            descripcion: (f.descripcion as string) || null,
+            ruta_archivo: (f.ruta_archivo as string) || null,
+          })),
+        });
+      }
     }
-  }
 
-  return prisma.acopios.update({
-    where: { id },
-    data: updateData,
-    include: {
-      sacos: true,
-      fotos: true,
-    },
+    return tx.acopios.update({
+      where: { id },
+      data: updateData,
+      include: {
+        sacos: true,
+        fotos: true,
+      },
+    });
   });
 };
 

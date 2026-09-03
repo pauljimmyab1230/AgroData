@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import {
@@ -21,19 +21,42 @@ import {
   type LoteFormData,
 } from "../../services/lotes";
 
+import { fetchCampanias } from "../../services/campanias";
+import { fetchCultivos } from "../../services/cultivos";
+
 const toOptions = (items: readonly string[]) => items.map((item) => ({ value: item, label: item }));
-
-const campaniaOpciones = [
-  { value: "", label: "Seleccionar campaña" },
-];
-
-const cultivoOpciones = [
-  { value: "", label: "Seleccionar cultivo" },
-];
 
 export default function LoteCreate() {
   const navigate = useNavigate();
   const [form, setForm] = useState<LoteFormData>({ ...emptyLoteForm });
+  const [campaniaOpciones, setCampaniaOpciones] = useState<{ value: string; label: string }[]>([
+    { value: "", label: "Seleccionar campaña" },
+  ]);
+  const [cultivoOpciones, setCultivoOpciones] = useState<{ value: string; label: string }[]>([
+    { value: "", label: "Seleccionar cultivo" },
+  ]);
+
+  useEffect(() => {
+    Promise.all([
+      fetchCampanias({ limit: 100 }).catch(() => ({ data: [] })),
+      fetchCultivos({ limit: 100 }).catch(() => ({ data: [] })),
+    ]).then(([campaniasRes, cultivosRes]) => {
+      setCampaniaOpciones([
+        { value: "", label: "Seleccionar campaña" },
+        ...campaniasRes.data.map((c: { id: string; nombre: string }) => ({
+          value: c.id,
+          label: c.nombre,
+        })),
+      ]);
+      setCultivoOpciones([
+        { value: "", label: "Seleccionar cultivo" },
+        ...cultivosRes.data.map((c: { id: string; cultivo: string }) => ({
+          value: c.id,
+          label: c.cultivo,
+        })),
+      ]);
+    });
+  }, []);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof LoteFormData, string>>>({});
 

@@ -1,0 +1,10 @@
+{
+  "name": "@agrodata/config",
+  "version": "1.0.0",
+  "description": "Shared configurations for AgroData",
+  "private": true,
+  "exports": {
+    "./typescript": "./typescript.json",
+    "./eslint": "./eslint.config.js"
+  }
+}

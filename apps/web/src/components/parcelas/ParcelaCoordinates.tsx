@@ -7,16 +7,20 @@ interface ParcelaCoordinatesProps {
   latitud?: string;
   longitud?: string;
   precisionGps?: string;
-  onChange?: (field: "latitud" | "longitud" | "precisionGps", value: string) => void;
+  altitud?: string;
+  utmEste?: string;
+  utmNorte?: string;
+  utmZona?: string;
+  onChange?: (field: "latitud" | "longitud" | "precisionGps" | "altitud" | "utmEste" | "utmNorte" | "utmZona", value: string) => void;
 }
 
-export function ParcelaCoordinates({ mode, latitud, longitud, precisionGps, onChange }: ParcelaCoordinatesProps) {
+export function ParcelaCoordinates({ mode, latitud, longitud, precisionGps, altitud, utmEste, utmNorte, utmZona, onChange }: ParcelaCoordinatesProps) {
   const editable = mode !== "view";
 
   return (
     <div>
       <div className="mb-4 flex items-center gap-2">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-forest-600/10 text-forest-600">
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#0A4174]/10 text-[#0A4174]">
           <Crosshair size={14} />
         </span>
         <h4 className="text-sm font-semibold text-[#111827]">Coordenadas Geográficas</h4>
@@ -64,6 +68,55 @@ export function ParcelaCoordinates({ mode, latitud, longitud, precisionGps, onCh
             placeholder="Ej. ± 3 m"
             value={editable ? precisionGps ?? "" : undefined}
             onChange={editable && onChange ? (e) => onChange("precisionGps", e.target.value) : undefined}
+            disabled={!editable}
+          />
+        </Field>
+
+        <Field label="Altitud" mode={mode} value={altitud}>
+          <Input
+            type="text"
+            placeholder="Ej. 3,450 m.s.n.m."
+            value={editable ? altitud ?? "" : undefined}
+            onChange={editable && onChange ? (e) => onChange("altitud", e.target.value) : undefined}
+            disabled={!editable}
+          />
+        </Field>
+      </div>
+
+      <div className="mt-6 mb-2 flex items-center gap-2">
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#0A4174]/10 text-[#0A4174]">
+          <Crosshair size={14} />
+        </span>
+        <h4 className="text-sm font-semibold text-[#111827]">Georreferenciación UTM</h4>
+      </div>
+
+      <div className="grid gap-6 sm:grid-cols-3">
+        <Field label="Este (X)" mode={mode} value={utmEste}>
+          <Input
+            type="text"
+            placeholder="Ej. 215,432"
+            value={editable ? utmEste ?? "" : undefined}
+            onChange={editable && onChange ? (e) => onChange("utmEste", e.target.value) : undefined}
+            disabled={!editable}
+          />
+        </Field>
+
+        <Field label="Norte (Y)" mode={mode} value={utmNorte}>
+          <Input
+            type="text"
+            placeholder="Ej. 8,487,654"
+            value={editable ? utmNorte ?? "" : undefined}
+            onChange={editable && onChange ? (e) => onChange("utmNorte", e.target.value) : undefined}
+            disabled={!editable}
+          />
+        </Field>
+
+        <Field label="Zona UTM" mode={mode} value={utmZona}>
+          <Input
+            type="text"
+            placeholder="Ej. 18S"
+            value={editable ? utmZona ?? "" : undefined}
+            onChange={editable && onChange ? (e) => onChange("utmZona", e.target.value) : undefined}
             disabled={!editable}
           />
         </Field>

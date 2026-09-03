@@ -12,7 +12,7 @@ import { DatosGeneralesCard } from "../../components/campanias/DatosGeneralesCar
 import { CampaniaStatusCard } from "../../components/campanias/CampaniaStatusCard";
 import { ConfiguracionCard } from "../../components/campanias/ConfiguracionCard";
 import { ObservacionesCard } from "../../components/campanias/ObservacionesCard";
-import { fetchCampania, type Campania } from "../../services/campanias";
+import { fetchCampania, fetchCampaniaStats, type Campania, type CampaniaStats } from "../../services/campanias";
 
 const formatFecha = (fecha: string) => {
   if (!fecha) return "—";
@@ -21,16 +21,29 @@ const formatFecha = (fecha: string) => {
   return `${d} ${meses[m - 1]} ${y}`;
 };
 
-export default function CampaniaView() {
-  const { id } = useParams();
+interface CampaniaViewProps {
+  inModal?: boolean;
+  campaniaId?: string;
+}
+
+export default function CampaniaView({ inModal, campaniaId: propId }: CampaniaViewProps) {
+  const { id: paramId } = useParams();
+  const id = propId || paramId;
   const [campania, setCampania] = useState<Campania | null>(null);
+  const [stats, setStats] = useState<CampaniaStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!id) return;
-    fetchCampania(id)
-      .then(setCampania)
-      .catch(console.error)
+    Promise.all([
+      fetchCampania(id),
+      fetchCampaniaStats(id).catch(() => null),
+    ])
+      .then(([c, s]) => {
+        setCampania(c);
+        setStats(s);
+      })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -52,22 +65,26 @@ export default function CampaniaView() {
 
   return (
     <div>
-      <Breadcrumb items={[{ label: "Campañas", to: "/campanias" }, { label: campania.codigo }]} />
+      {!inModal && (
+        <>
+          <Breadcrumb items={[{ label: "Campañas", to: "/campanias" }, { label: campania.codigo }]} />
 
-      <CampaniaHeader
-        title={campania.nombre}
-        backTo="/campanias"
-        actions={
-          <Button
-            variant="secondary"
-            as="link"
-            to={`/campanias/${campania.id}/editar`}
-            iconLeft={<Pencil className="h-4 w-4" />}
-          >
-            Editar
-          </Button>
-        }
-      />
+          <CampaniaHeader
+            title={campania.nombre}
+            backTo="/campanias"
+            actions={
+              <Button
+                variant="secondary"
+                as="link"
+                to={`/campanias/${campania.id}/editar`}
+                iconLeft={<Pencil className="h-4 w-4" />}
+              >
+                Editar
+              </Button>
+            }
+          />
+        </>
+      )}
 
       <Card padding="lg" hover={false} className="mb-6 shadow-sm">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
@@ -99,15 +116,15 @@ export default function CampaniaView() {
         </div>
       </Card>
 
-      <CampaniaKPIResumen />
+      <CampaniaKPIResumen campaniaId={campania.id} />
 
       <div className="mb-6 grid gap-6 lg:grid-cols-2">
-        <ResumenProductivoCard />
-        <CalendarioAgricolaCard />
+        <ResumenProductivoCard stats={stats} />
+        <CalendarioAgricolaCard fechaInicio={campania.fechaInicio} fechaFin={campania.fechaFin} />
       </div>
 
       <div className="mb-6">
-        <CampaniaTimeline />
+        <CampaniaTimeline campaniaId={campania.id} />
       </div>
 
       <div className="grid gap-6">

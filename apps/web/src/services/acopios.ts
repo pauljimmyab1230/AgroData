@@ -33,9 +33,6 @@ export interface Acopio {
   loteProductor: string;
   totalSacos: number;
   pesoTotal: number;
-  pesoPromedio: number;
-  pesoMaximo: number;
-  pesoMinimo: number;
   estado: string;
   estadoProducto: string;
   humedad: number;
@@ -68,9 +65,6 @@ interface AcopioDTO {
   lote_productor: string | null;
   total_sacos: number;
   peso_total: number;
-  peso_promedio: number | null;
-  peso_maximo: number | null;
-  peso_minimo: number | null;
   estado: string;
   estado_producto: string | null;
   humedad: number | null;
@@ -107,9 +101,6 @@ function toFrontend(dto: AcopioDTO): Acopio {
     loteProductor: dto.lote_productor ?? "",
     totalSacos: Number(dto.total_sacos) || 0,
     pesoTotal: Number(dto.peso_total) || 0,
-    pesoPromedio: Number(dto.peso_promedio) || 0,
-    pesoMaximo: Number(dto.peso_maximo) || 0,
-    pesoMinimo: Number(dto.peso_minimo) || 0,
     estado: dto.estado,
     estadoProducto: dto.estado_producto ?? "",
     humedad: Number(dto.humedad) || 0,
@@ -149,9 +140,6 @@ function toBackend(data: Partial<Acopio>): Record<string, unknown> {
   if (data.loteProductor !== undefined) out.lote_productor = data.loteProductor || null;
   if (data.totalSacos !== undefined) out.total_sacos = data.totalSacos;
   if (data.pesoTotal !== undefined) out.peso_total = data.pesoTotal;
-  if (data.pesoPromedio !== undefined) out.peso_promedio = data.pesoPromedio;
-  if (data.pesoMaximo !== undefined) out.peso_maximo = data.pesoMaximo;
-  if (data.pesoMinimo !== undefined) out.peso_minimo = data.pesoMinimo;
   if (data.estado !== undefined) out.estado = data.estado;
   if (data.estadoProducto !== undefined) out.estado_producto = data.estadoProducto || null;
   if (data.humedad !== undefined) out.humedad = data.humedad;
@@ -180,9 +168,6 @@ export interface AcopioFormData {
   loteProductor: string;
   totalSacos: number;
   pesoTotal: number;
-  pesoPromedio: number;
-  pesoMaximo: number;
-  pesoMinimo: number;
   estado: string;
   estadoProducto: string;
   humedad: number;
@@ -208,9 +193,6 @@ export const emptyAcopioForm: AcopioFormData = {
   loteProductor: "",
   totalSacos: 0,
   pesoTotal: 0,
-  pesoPromedio: 0,
-  pesoMaximo: 0,
-  pesoMinimo: 0,
   estado: "EN_PROCESO",
   estadoProducto: "",
   humedad: 0,
@@ -325,9 +307,6 @@ export type AcopioView = {
   loteProductor: string;
   totalSacos: number;
   pesoTotal: number;
-  pesoPromedio: number;
-  pesoMaximo: number;
-  pesoMinimo: number;
   estado: string;
   sacos: Array<{ id: number; codigo: string; peso: number; observaciones: string }>;
   estadoProducto: string;
@@ -369,9 +348,6 @@ export function toAcopioView(a: Acopio): AcopioView {
     loteProductor: a.loteProductor,
     totalSacos: a.totalSacos,
     pesoTotal: a.pesoTotal,
-    pesoPromedio: a.pesoPromedio,
-    pesoMaximo: a.pesoMaximo,
-    pesoMinimo: a.pesoMinimo,
     estado: displayEstado[a.estado] ?? a.estado,
     sacos: a.sacos.map((s) => ({
       id: parseInt(s.id, 10) || 0,

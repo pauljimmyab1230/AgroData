@@ -54,8 +54,7 @@ export default function UsuarioCreate() {
         rolSic: form.rolSic || null,
       });
       navigate("/usuarios");
-    } catch (err) {
-      console.error(err);
+    } catch {
       alert("Error al crear el usuario");
     } finally {
       setSaving(false);

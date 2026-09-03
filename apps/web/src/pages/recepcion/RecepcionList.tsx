@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Hash, PackageCheck, Plus, Scale, Timer, X } from "lucide-react";
-import { Breadcrumb, Button, ConfirmDialog, SearchInput, SectionHeader, Select } from "../../components/ui";
+import { Button, ConfirmDialog, LoadingSpinner, SearchInput, SectionHeader, Select } from "../../components/ui";
 import RecepcionKPI from "../../components/recepcion/RecepcionKPI";
 import RecepcionTable from "../../components/recepcion/RecepcionTable";
 import {
@@ -10,11 +10,9 @@ import {
   formatearPeso,
   recepcionEstados,
 } from "../../services/recepciones";
+import RecepcionModal from "../../components/recepcion/RecepcionModal";
 
 const pageSize = 20;
-
-const toOptions = (items: readonly string[]) =>
-  items.map((item) => ({ value: item, label: item }));
 
 const estadoLabels: Record<string, string> = {
   PENDIENTE_PESAJE: "Pendiente de Pesaje",
@@ -55,38 +53,34 @@ export default function RecepcionList() {
   const [page, setPage] = useState(1);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [viewId, setViewId] = useState<string | null>(null);
 
   const [recepciones, setRecepciones] = useState<Recepcion[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
 
+  const loadData = () => {
+    setLoading(true);
+    fetchRecepciones({
+      search: search || undefined,
+      estado: filtroEstado || undefined,
+      page,
+      limit: pageSize,
+    })
+      .then((result) => {
+        setRecepciones(result.data);
+        setTotal(result.total);
+        setTotalPages(result.totalPages);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  };
+
   useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      setLoading(true);
-      try {
-        const result = await fetchRecepciones({
-          search: search || undefined,
-          estado: filtroEstado || undefined,
-          page,
-          limit: pageSize,
-        });
-        if (!cancelled) {
-          setRecepciones(result.data);
-          setTotal(result.total);
-          setTotalPages(result.totalPages);
-        }
-      } catch (err) {
-        console.error("Error fetching recepciones:", err);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    load();
-    return () => {
-      cancelled = true;
-    };
+    loadData();
   }, [search, filtroEstado, page]);
 
   const hasFilters = Boolean(search) || Boolean(filtroEstado);
@@ -97,23 +91,22 @@ export default function RecepcionList() {
     setPage(1);
   };
 
+  const handleModalClose = () => {
+    setShowCreateModal(false);
+    setEditId(null);
+    setViewId(null);
+    loadData();
+  };
+
   const handleDelete = async () => {
     if (!deleteId) return;
     setDeleting(true);
     try {
       await deleteRecepcion(deleteId);
       setDeleteId(null);
-      const result = await fetchRecepciones({
-        search: search || undefined,
-        estado: filtroEstado || undefined,
-        page,
-        limit: pageSize,
-      });
-      setRecepciones(result.data);
-      setTotal(result.total);
-      setTotalPages(result.totalPages);
-    } catch (err) {
-      console.error("Error deleting recepcion:", err);
+      loadData();
+    } catch {
+      // handled silently
     } finally {
       setDeleting(false);
     }
@@ -148,15 +141,13 @@ export default function RecepcionList() {
 
   return (
     <div>
-      <Breadcrumb items={[{ label: "Recepción" }]} />
-
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <SectionHeader
           title="Recepción de Materia Prima"
-          description="Registro y verificación de la materia prima que ingresa del Acopio hacia la planta."
+          description="Registro y verificación de materia prima"
         />
         <div className="flex items-center gap-2">
-          <Button as="link" to="/recepcion/nuevo" iconLeft={<Plus className="h-4 w-4" />}>
+          <Button onClick={() => setShowCreateModal(true)} iconLeft={<Plus className="h-4 w-4" />}>
             Nueva Recepción
           </Button>
         </div>
@@ -194,13 +185,21 @@ export default function RecepcionList() {
         )}
       </div>
 
-      <RecepcionTable
-        data={recepciones}
-        currentPage={page}
-        totalPages={totalPages}
-        onPageChange={setPage}
-        onDelete={(recepcion) => setDeleteId(recepcion.id)}
-      />
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <LoadingSpinner />
+        </div>
+      ) : (
+        <RecepcionTable
+          data={recepciones}
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          onView={(recepcion) => setViewId(recepcion.id)}
+          onEdit={(recepcion) => setEditId(recepcion.id)}
+          onDelete={(recepcion) => setDeleteId(recepcion.id)}
+        />
+      )}
 
       <ConfirmDialog
         open={deleteId !== null}
@@ -210,6 +209,28 @@ export default function RecepcionList() {
         message="¿Estás seguro de eliminar esta recepción? Esta acción no se puede deshacer."
         confirmText={deleting ? "Eliminando..." : "Eliminar"}
         variant="danger"
+      />
+
+      <RecepcionModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSave={handleModalClose}
+        mode="create"
+      />
+
+      <RecepcionModal
+        open={editId !== null}
+        onClose={() => setEditId(null)}
+        onSave={handleModalClose}
+        mode="edit"
+        recepcionId={editId || undefined}
+      />
+
+      <RecepcionModal
+        open={viewId !== null}
+        onClose={() => setViewId(null)}
+        mode="view"
+        recepcionId={viewId || undefined}
       />
     </div>
   );

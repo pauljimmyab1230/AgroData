@@ -55,8 +55,8 @@ export default function CapacitacionList() {
       setCapacitaciones(result.data);
       setTotalPages(result.totalPages);
       setTotal(result.total);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // handled silently
     } finally {
       setLoading(false);
     }
@@ -280,8 +280,8 @@ export default function CapacitacionList() {
             await deleteCapacitacion(deleteId);
             setCapacitaciones(prev => prev.filter(c => c.id !== deleteId));
             setDeleteId(null);
-          } catch (err) {
-            console.error(err);
+          } catch {
+            // handled silently
           }
         }}
         title="Eliminar Capacitación"

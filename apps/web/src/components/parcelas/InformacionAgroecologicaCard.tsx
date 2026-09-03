@@ -2,14 +2,11 @@ import { Leaf } from "lucide-react";
 import { Select, Textarea } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import { useParcelaForm } from "../../contexts/ParcelaFormContext";
+import { useCatalogoOptions } from "../../hooks/useCatalogoOptions";
 import {
   disponibilidadAguaOpciones,
-  fuenteAguaOpciones,
   pendienteOpciones,
-  sistemaRiegoOpciones,
   texturaOpciones,
-  tipoSueloOpciones,
-  zonaAgroecologicaOpciones,
   toOptions,
 } from "../../constants/parcelaOpciones";
 import type { Parcela } from "../../services/parcelas";
@@ -22,6 +19,11 @@ type InformacionAgroecologicaCardProps = {
 export function InformacionAgroecologicaCard({ mode, values }: InformacionAgroecologicaCardProps) {
   const editable = mode !== "view";
   const { data, updateData } = useParcelaForm();
+
+  const tipoSuelo = useCatalogoOptions("tipos-suelo");
+  const fuentesAgua = useCatalogoOptions("fuentes-agua");
+  const sistemasRiego = useCatalogoOptions("sistemas-riego");
+  const zonasAgroecologicas = useCatalogoOptions("zonas-agroecologicas");
 
   const str = (val: unknown): string => (typeof val === "string" ? val : "");
   const display = (field: keyof Parcela) => {
@@ -40,8 +42,8 @@ export function InformacionAgroecologicaCard({ mode, values }: InformacionAgroec
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <Field label="Tipo de Suelo" mode={mode} value={values?.tipoSuelo}>
           <Select
-            options={toOptions(tipoSueloOpciones)}
-            placeholder="Seleccione"
+            options={tipoSuelo.options}
+            placeholder={tipoSuelo.loading ? "Cargando..." : "Seleccione"}
             value={display("tipoSuelo")}
             onChange={(val) => updateData({ tipoSuelo: val })}
             disabled={!editable}
@@ -70,8 +72,8 @@ export function InformacionAgroecologicaCard({ mode, values }: InformacionAgroec
 
         <Field label="Fuente de Agua" mode={mode} value={values?.fuenteAgua}>
           <Select
-            options={toOptions(fuenteAguaOpciones)}
-            placeholder="Seleccione"
+            options={fuentesAgua.options}
+            placeholder={fuentesAgua.loading ? "Cargando..." : "Seleccione"}
             value={display("fuenteAgua")}
             onChange={(val) => updateData({ fuenteAgua: val })}
             disabled={!editable}
@@ -80,8 +82,8 @@ export function InformacionAgroecologicaCard({ mode, values }: InformacionAgroec
 
         <Field label="Sistema de Riego" mode={mode} value={values?.sistemaRiego}>
           <Select
-            options={toOptions(sistemaRiegoOpciones)}
-            placeholder="Seleccione"
+            options={sistemasRiego.options}
+            placeholder={sistemasRiego.loading ? "Cargando..." : "Seleccione"}
             value={display("sistemaRiego")}
             onChange={(val) => updateData({ sistemaRiego: val })}
             disabled={!editable}
@@ -90,8 +92,8 @@ export function InformacionAgroecologicaCard({ mode, values }: InformacionAgroec
 
         <Field label="Zona Agroecológica" mode={mode} value={values?.zonaAgroecologica}>
           <Select
-            options={toOptions(zonaAgroecologicaOpciones)}
-            placeholder="Seleccione"
+            options={zonasAgroecologicas.options}
+            placeholder={zonasAgroecologicas.loading ? "Cargando..." : "Seleccione"}
             value={display("zonaAgroecologica")}
             onChange={(val) => updateData({ zonaAgroecologica: val })}
             disabled={!editable}

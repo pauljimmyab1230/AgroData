@@ -68,12 +68,19 @@ async function main() {
       direccion: 'Jr. Los Andes 456',
       nivel_educativo: 'SECUNDARIA' as const,
       idioma_principal: 'QUECHUA' as const,
-      idioma_secundario: 'ESPANOL' as const,
+      idioma_secundario: 'NINGUNO' as const,
+      material_vivienda: 'Adobe',
+      acceso_agua: 'SI',
+      acceso_energia: 'NO',
+      acceso_internet: 'NO',
+      seguro_salud: 'ESSALUD',
+      acceso_credito: 'SI',
+      servicio_sanitario: 'LETRINA',
       estado: 'ACTIVO' as const,
       activo: true,
       fecha_ingreso: new Date('2020-01-15'),
       organizacion: 'Cooperativa Agraria San Juan',
-      cargo: 'PRESIDENTE' as const,
+      cargo: 'SOCIO' as const,
       created_by: admin.id,
     },
     {
@@ -986,7 +993,7 @@ async function main() {
   // ─── CAMPAÑAS ──────────────────────────────────────────────
   const campaniasData = [
     {
-      codigo: 'CMP-2025-001',
+      codigo: 'CAM-2025-001',
       nombre: 'Campaña Quinua Orgánica 2024-2025',
       anio_agricola: '2024-2025',
       fecha_inicio: new Date('2024-10-01'),
@@ -1008,7 +1015,7 @@ async function main() {
       created_by: admin.id,
     },
     {
-      codigo: 'CMP-2025-002',
+      codigo: 'CAM-2025-002',
       nombre: 'Campaña Papa Nativa 2024-2025',
       anio_agricola: '2024-2025',
       fecha_inicio: new Date('2024-11-15'),
@@ -1413,7 +1420,11 @@ async function main() {
 
   const cultivos = [];
   for (const data of cultivosData) {
-    const c = await prisma.cultivos.create({ data });
+    const c = await prisma.cultivos.upsert({
+      where: { codigo: data.codigo },
+      update: {},
+      create: data,
+    });
     cultivos.push(c);
   }
   console.log(`✅ ${cultivos.length} cultivos creados`);
@@ -1583,7 +1594,11 @@ async function main() {
 
   const actividades = [];
   for (const data of actividadesData) {
-    const a = await prisma.actividades.create({ data });
+    const a = await prisma.actividades.upsert({
+      where: { codigo: data.codigo },
+      update: {},
+      create: data,
+    });
     actividades.push(a);
   }
   console.log(`✅ ${actividades.length} actividades creadas`);
@@ -1663,7 +1678,11 @@ async function main() {
 
   const inspecciones = [];
   for (const data of inspeccionesData) {
-    const i = await prisma.inspecciones.create({ data });
+    const i = await prisma.inspecciones.upsert({
+      where: { codigo: data.codigo },
+      update: {},
+      create: data,
+    });
     inspecciones.push(i);
   }
   console.log(`✅ ${inspecciones.length} inspecciones creadas`);
@@ -1793,7 +1812,11 @@ async function main() {
 
   const acopios = [];
   for (const data of acopiosData) {
-    const a = await prisma.acopios.create({ data });
+    const a = await prisma.acopios.upsert({
+      where: { codigo: data.codigo },
+      update: {},
+      create: data,
+    });
     acopios.push(a);
   }
   console.log(`✅ ${acopios.length} acopios creados`);
@@ -1896,7 +1919,11 @@ async function main() {
 
   const recepciones = [];
   for (const data of recepcionesData) {
-    const r = await prisma.recepciones.create({ data });
+    const r = await prisma.recepciones.upsert({
+      where: { codigo: data.codigo },
+      update: {},
+      create: data,
+    });
     recepciones.push(r);
   }
   console.log(`✅ ${recepciones.length} recepciones creadas`);
@@ -1964,10 +1991,187 @@ async function main() {
 
   const procesamientos = [];
   for (const data of procesamientosData) {
-    const p = await prisma.procesamientos.create({ data });
+    const p = await prisma.procesamientos.upsert({
+      where: { codigo: data.codigo },
+      update: {},
+      create: data,
+    });
     procesamientos.push(p);
   }
   console.log(`✅ ${procesamientos.length} procesamientos creados`);
+
+  // ─── CATÁLOGOS ─────────────────────────────────────────────
+  const catalogosData = [
+    // Departamentos
+    { tipo: 'departamentos', nombre: 'Amazonas', descripcion: 'Región Amazonas', orden: 1 },
+    { tipo: 'departamentos', nombre: 'Áncash', descripcion: 'Región Áncash', orden: 2 },
+    { tipo: 'departamentos', nombre: 'Apurímac', descripcion: 'Región Apurímac', orden: 3 },
+    { tipo: 'departamentos', nombre: 'Arequipa', descripcion: 'Región Arequipa', orden: 4 },
+    { tipo: 'departamentos', nombre: 'Ayacucho', descripcion: 'Región Ayacucho', orden: 5 },
+    { tipo: 'departamentos', nombre: 'Cajamarca', descripcion: 'Región Cajamarca', orden: 6 },
+    { tipo: 'departamentos', nombre: 'Callao', descripcion: 'Constitución del Callao', orden: 7 },
+    { tipo: 'departamentos', nombre: 'Cusco', descripcion: 'Región Cusco', orden: 8 },
+    { tipo: 'departamentos', nombre: 'Huancavelica', descripcion: 'Región Huancavelica', orden: 9 },
+    { tipo: 'departamentos', nombre: 'Huánuco', descripcion: 'Región Huánuco', orden: 10 },
+    { tipo: 'departamentos', nombre: 'Ica', descripcion: 'Región Ica', orden: 11 },
+    { tipo: 'departamentos', nombre: 'Junín', descripcion: 'Región Junín', orden: 12 },
+    { tipo: 'departamentos', nombre: 'La Libertad', descripcion: 'Región La Libertad', orden: 13 },
+    { tipo: 'departamentos', nombre: 'Lambayeque', descripcion: 'Región Lambayeque', orden: 14 },
+    { tipo: 'departamentos', nombre: 'Lima', descripcion: 'Región Lima', orden: 15 },
+    { tipo: 'departamentos', nombre: 'Loreto', descripcion: 'Región Loreto', orden: 16 },
+    { tipo: 'departamentos', nombre: 'Madre de Dios', descripcion: 'Región Madre de Dios', orden: 17 },
+    { tipo: 'departamentos', nombre: 'Moquegua', descripcion: 'Región Moquegua', orden: 18 },
+    { tipo: 'departamentos', nombre: 'Pasco', descripcion: 'Región Pasco', orden: 19 },
+    { tipo: 'departamentos', nombre: 'Piura', descripcion: 'Región Piura', orden: 20 },
+    { tipo: 'departamentos', nombre: 'Puno', descripcion: 'Región Puno', orden: 21 },
+    { tipo: 'departamentos', nombre: 'San Martín', descripcion: 'Región San Martín', orden: 22 },
+    { tipo: 'departamentos', nombre: 'Tacna', descripcion: 'Región Tacna', orden: 23 },
+    { tipo: 'departamentos', nombre: 'Tumbes', descripcion: 'Región Tumbes', orden: 24 },
+    { tipo: 'departamentos', nombre: 'Ucayali', descripcion: 'Región Ucayali', orden: 25 },
+    // Tipos de Cultivo
+    { tipo: 'tipos-cultivo', nombre: 'Quinua', descripcion: 'Chenopodium quinoa - Cultivo andino principal', orden: 1 },
+    { tipo: 'tipos-cultivo', nombre: 'Papa Nativa', descripcion: 'Solanum tuberosum - Variedades nativas andinas', orden: 2 },
+    { tipo: 'tipos-cultivo', nombre: 'Cebada', descripcion: 'Hordeum vulgare - Cereal adaptado a altitud', orden: 3 },
+    { tipo: 'tipos-cultivo', nombre: 'Maíz', descripcion: 'Zea mays - Cultivo de valles', orden: 4 },
+    { tipo: 'tipos-cultivo', nombre: 'Frijol', descripcion: 'Phaseolus vulgaris - Leguminosa proteinica', orden: 5 },
+    { tipo: 'tipos-cultivo', nombre: 'Tarwi', descripcion: 'Lupinus mutabilis - Leguminosa andina', orden: 6 },
+    { tipo: 'tipos-cultivo', nombre: 'Oca', descripcion: 'Oxalis tuberosa - Tubérculo andino', activo: false, orden: 7 },
+    { tipo: 'tipos-cultivo', nombre: 'Mashua', descripcion: 'Tropaeolum tuberosum - Tubérculo andino', activo: false, orden: 8 },
+    // Tipos de Suelo
+    { tipo: 'tipos-suelo', nombre: 'Franco arcilloso', descripcion: 'Mezcla equilibrada con predominio de arcilla', orden: 1 },
+    { tipo: 'tipos-suelo', nombre: 'Franco arenoso', descripcion: 'Mezcla equilibrada con predominio de arena', orden: 2 },
+    { tipo: 'tipos-suelo', nombre: 'Franco limoso', descripcion: 'Mezcla equilibrada con predominio de limo', orden: 3 },
+    { tipo: 'tipos-suelo', nombre: 'Arcilloso', descripcion: 'Predominio de partículas de arcilla', orden: 4 },
+    { tipo: 'tipos-suelo', nombre: 'Arenoso', descripcion: 'Predominio de partículas de arena', orden: 5 },
+    { tipo: 'tipos-suelo', nombre: 'Limoso', descripcion: 'Predominio de partículas de limo', orden: 6 },
+    // Fuentes de Agua
+    { tipo: 'fuentes-agua', nombre: 'Río', descripcion: 'Fuente de agua superficial continua', orden: 1 },
+    { tipo: 'fuentes-agua', nombre: 'Manantial', descripcion: 'Fuente de agua subterránea natural', orden: 2 },
+    { tipo: 'fuentes-agua', nombre: 'Lluvia', descripcion: 'Precipitación directa sobre el cultivo', orden: 3 },
+    { tipo: 'fuentes-agua', nombre: 'Laguna', descripcion: 'Cuerpo de agua estancada natural', orden: 4 },
+    { tipo: 'fuentes-agua', nombre: 'Naciente', descripcion: 'Punto de surgencia de agua subterránea', activo: false, orden: 5 },
+    // Sistemas de Riego
+    { tipo: 'sistemas-riego', nombre: 'A gravedad', descripcion: 'Riego por canal con pendiente natural', orden: 1 },
+    { tipo: 'sistemas-riego', nombre: 'A presión', descripcion: 'Riego por aspersión o goteo con bomba', orden: 2 },
+    { tipo: 'sistemas-riego', nombre: 'Sequía', descripcion: 'Cultivo de panasco sin riego artificial', orden: 3 },
+    { tipo: 'sistemas-riego', nombre: 'Minga', descripcion: 'Riego comunitario por turnos', orden: 4 },
+    { tipo: 'sistemas-riego', nombre: 'A gota a gota', descripcion: 'Riego por goteo con tuberías', activo: false, orden: 5 },
+    // Zonas Agroecológicas
+    { tipo: 'zonas-agroecologicas', nombre: 'Yunga', descripcion: '3,500 - 3,800 msnm - Zona templada', orden: 1 },
+    { tipo: 'zonas-agroecologicas', nombre: 'Quechua', descripcion: '3,300 - 3,500 msnm - Zona templada fría', orden: 2 },
+    { tipo: 'zonas-agroecologicas', nombre: 'Suní', descripcion: '3,800 - 4,000 msnm - Zona fría', orden: 3 },
+    { tipo: 'zonas-agroecologicas', nombre: 'Puna', descripcion: '4,000 - 4,500 msnm - Zona muy fría', orden: 4 },
+    { tipo: 'zonas-agroecologicas', nombre: 'Janca', descripcion: 'Más de 4,500 msnm - Zona de nieves perpetuas', activo: false, orden: 5 },
+    // Tipos de Actividad
+    { tipo: 'tipos-actividad', nombre: 'Fertilización', descripcion: 'Aplicación de fertilizantes orgánicos o minerales', orden: 1 },
+    { tipo: 'tipos-actividad', nombre: 'Compostaje', descripcion: 'Producción de compost orgánico', orden: 2 },
+    { tipo: 'tipos-actividad', nombre: 'Control Biológico', descripcion: 'Control de plagas con organismos benéficos', orden: 3 },
+    { tipo: 'tipos-actividad', nombre: 'Manejo de Plagas', descripcion: 'Monitoreo y control integrado de plagas', orden: 4 },
+    { tipo: 'tipos-actividad', nombre: 'Siembra', descripcion: 'Plantación y establecimiento del cultivo', orden: 5 },
+    { tipo: 'tipos-actividad', nombre: 'Cosecha', descripcion: 'Recolección del producto maduro', orden: 6 },
+    { tipo: 'tipos-actividad', nombre: 'Aplicación de Bioles', descripcion: 'Aplicación de preparados biológicos líquidos', orden: 7 },
+    { tipo: 'tipos-actividad', nombre: 'Control de Malezas', descripcion: 'Manejo de plantas adventicias', orden: 8 },
+    { tipo: 'tipos-actividad', nombre: 'Rastreo', descripcion: 'Preparación mecánica del suelo', activo: false, orden: 9 },
+    // Tipos de Documento
+    { tipo: 'tipos-documento', nombre: 'DNI', descripcion: 'Documento Nacional de Identidad', orden: 1 },
+    { tipo: 'tipos-documento', nombre: 'Certificado de Nacimiento', descripcion: 'Partida de nacimiento', orden: 2 },
+    { tipo: 'tipos-documento', nombre: 'Certificado Orgánico', descripcion: 'Certificación de producción orgánica', orden: 3 },
+    { tipo: 'tipos-documento', nombre: 'Contrato', descripcion: 'Contrato de asociación con la cooperativa', orden: 4 },
+    { tipo: 'tipos-documento', nombre: 'Acta de Asamblea', descripcion: 'Acta de reunión de socios', orden: 5 },
+    { tipo: 'tipos-documento', nombre: 'Plano de Parcela', descripcion: 'Mapa de ubicación y límites de la parcela', orden: 6 },
+    { tipo: 'tipos-documento', nombre: 'Foto', descripcion: 'Registro fotográfico', orden: 7 },
+    { tipo: 'tipos-documento', nombre: 'Otro', descripcion: 'Documentos varios no clasificados', orden: 8 },
+    // Parentescos
+    { tipo: 'parentescos', nombre: 'Esposo/a', descripcion: 'Cónyuge o pareja', orden: 1 },
+    { tipo: 'parentescos', nombre: 'Hijo/a', descripcion: 'Descendiente directo', orden: 2 },
+    { tipo: 'parentescos', nombre: 'Padre', descripcion: 'Padre del productor', orden: 3 },
+    { tipo: 'parentescos', nombre: 'Madre', descripcion: 'Madre del productor', orden: 4 },
+    { tipo: 'parentescos', nombre: 'Hermano/a', descripcion: 'Hermano o hermana', orden: 5 },
+    { tipo: 'parentescos', nombre: 'Sobrino/a', descripcion: 'Hijo/a de hermano/a', orden: 6 },
+    { tipo: 'parentescos', nombre: 'Nieto/a', descripcion: 'Descendiente de segundo grado', activo: false, orden: 7 },
+    { tipo: 'parentescos', nombre: 'Otro', descripcion: 'Otra relación familiar', orden: 8 },
+    // ─── Criterios de Checklist de Inspección (51 criterios) ───
+    // Semillas y Material Vegetal (1-2)
+    { tipo: 'criterios-checklist', nombre: '¿Las semillas utilizadas para la siembra son de origen permitido para la producción orgánica?', orden: 1 },
+    { tipo: 'criterios-checklist', nombre: '¿Las semillas utilizadas para la siembra fueron sometidas únicamente a tratamientos permitidos para la producción orgánica?', orden: 2 },
+    // Insumos y Fertilización (3-4)
+    { tipo: 'criterios-checklist', nombre: '¿Los abonos y fertilizantes utilizados en la unidad productiva son de origen permitido para la producción orgánica?', orden: 3 },
+    { tipo: 'criterios-checklist', nombre: '¿El productor utiliza únicamente insumos permitidos por el SIC para el manejo del cultivo?', orden: 4 },
+    // Control de Plagas, Enfermedades y Malezas (5-8)
+    { tipo: 'criterios-checklist', nombre: '¿El productor realiza el control de plagas mediante prácticas permitidas para la producción orgánica?', orden: 5 },
+    { tipo: 'criterios-checklist', nombre: '¿El productor realiza el control de enfermedades mediante prácticas permitidas para la producción orgánica?', orden: 6 },
+    { tipo: 'criterios-checklist', nombre: '¿El productor realiza el control de malezas mediante prácticas permitidas para la producción orgánica?', orden: 7 },
+    { tipo: 'criterios-checklist', nombre: '¿El productor evita el uso de productos no permitidos para el control de plagas, enfermedades y malezas?', orden: 8 },
+    // Fertilidad y Condiciones del Suelo (9-14)
+    { tipo: 'criterios-checklist', nombre: '¿El productor aplica prácticas destinadas a conservar y mejorar la fertilidad del suelo?', orden: 9 },
+    { tipo: 'criterios-checklist', nombre: '¿El productor aplica prácticas para mantener o mejorar las condiciones físicas del suelo?', orden: 10 },
+    { tipo: 'criterios-checklist', nombre: '¿El productor realiza rotación de cultivos en la unidad productiva?', orden: 11 },
+    { tipo: 'criterios-checklist', nombre: '¿El productor cuenta con un historial de rotación de cultivos de la unidad productiva?', orden: 12 },
+    { tipo: 'criterios-checklist', nombre: '¿La unidad productiva se encuentra libre de evidencias significativas de erosión del suelo?', orden: 13 },
+    { tipo: 'criterios-checklist', nombre: '¿El productor aplica medidas para prevenir o reducir la erosión del suelo cuando esta se presenta?', orden: 14 },
+    // Colindancia y Barreras de Protección (15-19)
+    { tipo: 'criterios-checklist', nombre: '¿La unidad productiva presenta colindancia con áreas de producción convencional?', orden: 15 },
+    { tipo: 'criterios-checklist', nombre: '¿La unidad productiva cuenta con medidas de protección frente a posibles riesgos provenientes de áreas de producción convencional colindantes?', orden: 16 },
+    { tipo: 'criterios-checklist', nombre: '¿La unidad productiva cuenta con barreras físicas o vegetales para reducir el riesgo de contaminación proveniente de áreas colindantes?', orden: 17 },
+    { tipo: 'criterios-checklist', nombre: '¿Las barreras de protección de la unidad productiva se encuentran en condiciones adecuadas para cumplir su función?', orden: 18 },
+    { tipo: 'criterios-checklist', nombre: '¿Cuando corresponde, la unidad productiva cuenta con zonas de amortiguamiento frente a áreas de producción convencional?', orden: 19 },
+    // Diversidad y Cobertura (20-22)
+    { tipo: 'criterios-checklist', nombre: '¿La unidad productiva presenta diversidad de cultivos como parte de su manejo agrícola?', orden: 20 },
+    { tipo: 'criterios-checklist', nombre: '¿La unidad productiva presenta una cobertura vegetal adecuada que proteja el suelo?', orden: 21 },
+    { tipo: 'criterios-checklist', nombre: '¿La cobertura del suelo observada contribuye a reducir la erosión y pérdida de suelo?', orden: 22 },
+    // Propiedades Físicas del Suelo (23-29)
+    { tipo: 'criterios-checklist', nombre: '¿El suelo de la unidad productiva presenta condiciones adecuadas de compactación?', orden: 23 },
+    { tipo: 'criterios-checklist', nombre: '¿El suelo presenta características físicas favorables para el desarrollo del cultivo?', orden: 24 },
+    { tipo: 'criterios-checklist', nombre: '¿El suelo presenta una estructura adecuada para favorecer la infiltración de agua y el desarrollo de las raíces?', orden: 25 },
+    { tipo: 'criterios-checklist', nombre: '¿El suelo presenta características de color compatibles con condiciones adecuadas de manejo y conservación?', orden: 26 },
+    { tipo: 'criterios-checklist', nombre: '¿El suelo presenta un olor característico de un suelo con condiciones adecuadas?', orden: 27 },
+    { tipo: 'criterios-checklist', nombre: '¿Los agregados del suelo presentan una estabilidad adecuada?', orden: 28 },
+    { tipo: 'criterios-checklist', nombre: '¿El suelo se encuentra libre de costras superficiales o capas endurecidas que afecten significativamente la infiltración de agua?', orden: 29 },
+    // Cuaderno de Registros (30-36)
+    { tipo: 'criterios-checklist', nombre: '¿El productor cuenta con su cuaderno de registros de producción?', orden: 30 },
+    { tipo: 'criterios-checklist', nombre: '¿El cuaderno de registros del productor se encuentra actualizado?', orden: 31 },
+    { tipo: 'criterios-checklist', nombre: '¿El productor registra las ventas realizadas en su cuaderno?', orden: 32 },
+    { tipo: 'criterios-checklist', nombre: '¿El productor registra las compras de insumos y materiales utilizados para la producción?', orden: 33 },
+    { tipo: 'criterios-checklist', nombre: '¿El productor registra las actividades realizadas durante el proceso de producción?', orden: 34 },
+    { tipo: 'criterios-checklist', nombre: '¿El productor registra los costos asociados a las actividades de producción?', orden: 35 },
+    { tipo: 'criterios-checklist', nombre: '¿El productor registra las cantidades cosechadas en su cuaderno?', orden: 36 },
+    // Documentación y Comprobantes (37-41)
+    { tipo: 'criterios-checklist', nombre: '¿El productor conserva los comprobantes de compra de los insumos utilizados en la producción?', orden: 37 },
+    { tipo: 'criterios-checklist', nombre: '¿El productor cuenta con una copia del contrato suscrito con la COOPAFA?', orden: 38 },
+    { tipo: 'criterios-checklist', nombre: '¿El productor cuenta con una copia o resumen del Reglamento del SIC?', orden: 39 },
+    { tipo: 'criterios-checklist', nombre: '¿El productor cuenta con la lista de insumos permitidos para la producción orgánica?', orden: 40 },
+    { tipo: 'criterios-checklist', nombre: '¿El productor comercializó la cosecha anterior de acuerdo con los procedimientos establecidos por la COOPAFA?', orden: 41 },
+    // Almacenamiento (42-49)
+    { tipo: 'criterios-checklist', nombre: '¿El productor dispone de un espacio adecuado para el almacenamiento de productos orgánicos?', orden: 42 },
+    { tipo: 'criterios-checklist', nombre: '¿El espacio destinado al almacenamiento de productos orgánicos se encuentra en condiciones adecuadas de limpieza y orden?', orden: 43 },
+    { tipo: 'criterios-checklist', nombre: '¿Los productos orgánicos se encuentran almacenados sobre pallets, madera, estantes u otra superficie que evite el contacto directo con el suelo?', orden: 44 },
+    { tipo: 'criterios-checklist', nombre: '¿El área destinada al almacenamiento de productos orgánicos se encuentra claramente identificada?', orden: 45 },
+    { tipo: 'criterios-checklist', nombre: '¿Los productos orgánicos se encuentran separados de los productos no orgánicos?', orden: 46 },
+    { tipo: 'criterios-checklist', nombre: '¿El almacenamiento de los productos orgánicos evita el riesgo de contaminación cruzada?', orden: 47 },
+    { tipo: 'criterios-checklist', nombre: '¿El almacén se encuentra protegido de fuentes potenciales de contaminación?', orden: 48 },
+    { tipo: 'criterios-checklist', nombre: '¿Los productos orgánicos se encuentran almacenados de manera que se preserve su integridad y condición?', orden: 49 },
+    // Costos de Producción (50-51)
+    { tipo: 'criterios-checklist', nombre: '¿El productor conoce los costos asociados a la producción de su cultivo?', orden: 50 },
+    { tipo: 'criterios-checklist', nombre: '¿El productor registra los costos de producción en su cuaderno de registros?', orden: 51 },
+  ];
+
+  const catalogos = [];
+  for (const data of catalogosData) {
+    const c = await prisma.catalogos.upsert({
+      where: { tipo_nombre: { tipo: data.tipo, nombre: data.nombre } },
+      update: {},
+      create: {
+        tipo: data.tipo,
+        nombre: data.nombre,
+        descripcion: data.descripcion,
+        activo: (data as any).activo ?? true,
+        orden: data.orden,
+        created_by: admin.id,
+      },
+    });
+    catalogos.push(c);
+  }
+  console.log(`✅ ${catalogos.length} elementos de catálogo creados`);
 
   // ─── RESUMEN ────────────────────────────────────────────────
   console.log('\n📊 Resumen del seed:');
@@ -1985,6 +2189,7 @@ async function main() {
   console.log(`   📦 Lotes:         ${lotes.length}`);
   console.log(`   🏪 Inventario:    ${inventarioItems.length}`);
   console.log(`   🔗 Trazabilidad:  ${trazabilidades.length}`);
+  console.log(`   📚 Catálogos:     ${catalogos.length}`);
 
   const org = parcelas.filter(p => p.certificacion === 'ORGANICA').length;
   const trans = parcelas.filter(p => p.certificacion === 'EN_TRANSICION').length;

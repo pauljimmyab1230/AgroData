@@ -5,16 +5,25 @@ import CultivoHeader from "../../components/cultivos/CultivoHeader";
 import CultivoForm from "../../components/cultivos/CultivoForm";
 import { fetchCultivo, type Cultivo } from "../../services/cultivos";
 
-export default function CultivoEdit() {
-  const { id } = useParams();
+interface CultivoEditProps {
+  inModal?: boolean;
+  cultivoId?: string;
+  onSave?: () => void;
+}
+
+export default function CultivoEdit({ inModal, cultivoId: propId, onSave }: CultivoEditProps) {
+  const { id: paramId } = useParams();
+  const id = propId || paramId;
   const [cultivo, setCultivo] = useState<Cultivo | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!id) return;
+    setLoading(true);
+    setCultivo(null);
     fetchCultivo(id)
       .then(setCultivo)
-      .catch(console.error)
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -36,14 +45,16 @@ export default function CultivoEdit() {
 
   return (
     <div>
-      <CultivoHeader
-        title="Editar Cultivo"
-        description={`Actualizando información de ${cultivo.cultivo} (${cultivo.codigo})`}
-        crumbs={[{ label: "Cultivos", to: "/cultivos" }, { label: cultivo.codigo, to: `/cultivos/${cultivo.id}` }, { label: "Editar" }]}
-        backTo={`/cultivos/${cultivo.id}`}
-      />
+      {!inModal && (
+        <CultivoHeader
+          title="Editar Cultivo"
+          description={`Actualizando información de ${cultivo.cultivo} (${cultivo.codigo})`}
+          crumbs={[{ label: "Cultivos", to: "/cultivos" }, { label: cultivo.codigo, to: `/cultivos/${cultivo.id}` }, { label: "Editar" }]}
+          backTo={`/cultivos/${cultivo.id}`}
+        />
+      )}
 
-      <CultivoForm mode="edit" values={cultivo} />
+      <CultivoForm key={id} mode="edit" values={cultivo} inModal={inModal} onSave={onSave} />
     </div>
   );
 }

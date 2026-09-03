@@ -1,7 +1,7 @@
 import api from "./api";
 
 export interface Productor {
-  id: string;
+  id: number;
   codigo: string;
   dni: string;
   nombres: string;
@@ -20,6 +20,13 @@ export interface Productor {
   nivelEducativo: string;
   idiomaPrincipal: string;
   idiomaSecundario: string;
+  materialVivienda: string;
+  accesoAgua: string;
+  accesoEnergia: string;
+  accesoInternet: string;
+  seguroSalud: string;
+  accesoCredito: string;
+  servicioSanitario: string;
   estado: string;
   fechaIngreso: string;
   organizacion: string;
@@ -32,7 +39,7 @@ export interface Productor {
 }
 
 interface ProductorDTO {
-  id: string;
+  id: number;
   codigo: string;
   dni: string;
   nombres: string;
@@ -51,6 +58,13 @@ interface ProductorDTO {
   nivel_educativo: string;
   idioma_principal: string;
   idioma_secundario: string;
+  material_vivienda: string;
+  acceso_agua: string;
+  acceso_energia: string;
+  acceso_internet: string;
+  seguro_salud: string;
+  acceso_credito: string;
+  servicio_sanitario: string;
   estado: string;
   fecha_ingreso: string;
   organizacion: string;
@@ -83,6 +97,13 @@ function toFrontend(dto: ProductorDTO): Productor {
     nivelEducativo: dto.nivel_educativo,
     idiomaPrincipal: dto.idioma_principal,
     idiomaSecundario: dto.idioma_secundario,
+    materialVivienda: dto.material_vivienda ?? "",
+    accesoAgua: dto.acceso_agua ?? "",
+    accesoEnergia: dto.acceso_energia ?? "",
+    accesoInternet: dto.acceso_internet ?? "",
+    seguroSalud: dto.seguro_salud ?? "",
+    accesoCredito: dto.acceso_credito ?? "",
+    servicioSanitario: dto.servicio_sanitario ?? "",
     estado: dto.estado,
     fechaIngreso: dto.fecha_ingreso?.split("T")[0] ?? "",
     organizacion: dto.organizacion,
@@ -114,6 +135,13 @@ function toBackend(data: Partial<Productor>): Record<string, unknown> {
   if (data.nivelEducativo !== undefined) out.nivel_educativo = data.nivelEducativo;
   if (data.idiomaPrincipal !== undefined) out.idioma_principal = data.idiomaPrincipal;
   if (data.idiomaSecundario !== undefined) out.idioma_secundario = data.idiomaSecundario;
+  if (data.materialVivienda !== undefined) out.material_vivienda = data.materialVivienda;
+  if (data.accesoAgua !== undefined) out.acceso_agua = data.accesoAgua;
+  if (data.accesoEnergia !== undefined) out.acceso_energia = data.accesoEnergia;
+  if (data.accesoInternet !== undefined) out.acceso_internet = data.accesoInternet;
+  if (data.seguroSalud !== undefined) out.seguro_salud = data.seguroSalud;
+  if (data.accesoCredito !== undefined) out.acceso_credito = data.accesoCredito;
+  if (data.servicioSanitario !== undefined) out.servicio_sanitario = data.servicioSanitario;
   if (data.estado !== undefined) out.estado = data.estado;
   if (data.fechaIngreso !== undefined) out.fecha_ingreso = data.fechaIngreso;
   if (data.organizacion !== undefined) out.organizacion = data.organizacion;
@@ -150,7 +178,7 @@ export async function fetchProductores(params?: {
   };
 }
 
-export async function fetchProductor(id: string): Promise<Productor> {
+export async function fetchProductor(id: number): Promise<Productor> {
   const res = await api.get(`/productores/${id}`);
   return toFrontend(res.data.data);
 }
@@ -160,19 +188,19 @@ export async function createProductor(data: Partial<Productor>): Promise<Product
   return toFrontend(res.data.data);
 }
 
-export async function updateProductor(id: string, data: Partial<Productor>): Promise<Productor> {
+export async function updateProductor(id: number, data: Partial<Productor>): Promise<Productor> {
   const res = await api.put(`/productores/${id}`, toBackend(data));
   return toFrontend(res.data.data);
 }
 
-export async function deleteProductor(id: string): Promise<void> {
+export async function deleteProductor(id: number): Promise<void> {
   await api.delete(`/productores/${id}`);
 }
 
 // ─── Familiares ─────────────────────────────────────────────
 
 export interface Familiar {
-  id: string;
+  id: number;
   nombres: string;
   parentesco: string;
   dni: string | null;
@@ -186,7 +214,7 @@ export interface Familiar {
 }
 
 interface FamiliarDTO {
-  id: string;
+  id: number;
   nombres: string;
   parentesco: string;
   dni: string | null;
@@ -230,37 +258,37 @@ function familiarToBackend(data: Partial<Familiar>): Record<string, unknown> {
   return out;
 }
 
-export async function fetchFamiliares(productorId: string): Promise<Familiar[]> {
+export async function fetchFamiliares(productorId: number): Promise<Familiar[]> {
   const res = await api.get(`/productores/${productorId}/familiares`);
   return (res.data.data ?? []).map(familiarToFrontend);
 }
 
-export async function createFamiliar(productorId: string, data: Partial<Familiar>): Promise<Familiar> {
+export async function createFamiliar(productorId: number, data: Partial<Familiar>): Promise<Familiar> {
   const res = await api.post(`/productores/${productorId}/familiares`, familiarToBackend(data));
   return familiarToFrontend(res.data.data);
 }
 
 export async function updateFamiliar(
-  productorId: string,
-  familiarId: string,
+  productorId: number,
+  familiarId: number,
   data: Partial<Familiar>,
 ): Promise<Familiar> {
   const res = await api.put(`/productores/${productorId}/familiares/${familiarId}`, familiarToBackend(data));
   return familiarToFrontend(res.data.data);
 }
 
-export async function deleteFamiliar(productorId: string, familiarId: string): Promise<void> {
+export async function deleteFamiliar(productorId: number, familiarId: number): Promise<void> {
   await api.delete(`/productores/${productorId}/familiares/${familiarId}`);
 }
 
 // ─── Parcelas ───────────────────────────────────────────────
 
 export interface Parcela {
-  id: string;
+  id: number;
   codigo: string;
   nombre: string;
   cultivo: string;
-  area: string;
+  area: number;
   areaUnidad: string;
   ubicacion: string;
   certificacion: string;
@@ -269,7 +297,7 @@ export interface Parcela {
 }
 
 interface ParcelaDTO {
-  id: string;
+  id: number;
   codigo: string;
   nombre: string;
   cultivo: string;
@@ -310,33 +338,33 @@ function parcelaToBackend(data: Partial<Parcela>): Record<string, unknown> {
   return out;
 }
 
-export async function fetchParcelas(productorId: string): Promise<Parcela[]> {
+export async function fetchParcelas(productorId: number): Promise<Parcela[]> {
   const res = await api.get(`/parcelas?productor_id=${productorId}`);
   return (res.data.data ?? []).map(parcelaToFrontend);
 }
 
-export async function createParcela(productorId: string, data: Partial<Parcela>): Promise<Parcela> {
+export async function createParcela(productorId: number, data: Partial<Parcela>): Promise<Parcela> {
   const payload = { ...parcelaToBackend(data), productor_id: productorId };
   const res = await api.post("/parcelas", payload);
   return parcelaToFrontend(res.data.data);
 }
 
 export async function updateParcela(
-  parcelaId: string,
+  parcelaId: number,
   data: Partial<Parcela>,
 ): Promise<Parcela> {
   const res = await api.put(`/parcelas/${parcelaId}`, parcelaToBackend(data));
   return parcelaToFrontend(res.data.data);
 }
 
-export async function deleteParcela(parcelaId: string): Promise<void> {
+export async function deleteParcela(parcelaId: number): Promise<void> {
   await api.delete(`/parcelas/${parcelaId}`);
 }
 
 // ─── Documentos ─────────────────────────────────────────────
 
 export interface Documento {
-  id: string;
+  id: number;
   tipo: string;
   categoria: string;
   nombre_archivo: string;
@@ -347,20 +375,20 @@ export interface Documento {
   created_at: string;
 }
 
-export async function fetchDocumentos(productorId: string): Promise<Documento[]> {
+export async function fetchDocumentos(productorId: number): Promise<Documento[]> {
   const res = await api.get(`/productores/${productorId}/documentos`);
   return res.data.data ?? [];
 }
 
 export async function createDocumento(
-  productorId: string,
+  productorId: number,
   data: { tipo: string; categoria: string; nombre_archivo: string; ruta_archivo: string; tamano_bytes: number; mime_type: string }
 ): Promise<Documento> {
   const res = await api.post(`/productores/${productorId}/documentos`, data);
   return res.data.data;
 }
 
-export async function deleteDocumento(productorId: string, documentoId: string): Promise<void> {
+export async function deleteDocumento(productorId: number, documentoId: number): Promise<void> {
   await api.delete(`/productores/${productorId}/documentos/${documentoId}`);
 }
 

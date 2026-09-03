@@ -7,7 +7,7 @@ export type ParcelaFormData = {
   codigo: string;
   nombre: string;
   cultivo: string;
-  area: string;
+  area: number;
   areaUnidad: string;
   ubicacion: string;
   certificacion: string;
@@ -18,7 +18,7 @@ const emptyForm: ParcelaFormData = {
   codigo: "",
   nombre: "",
   cultivo: "",
-  area: "",
+  area: 0,
   areaUnidad: "ha",
   ubicacion: "",
   certificacion: "CONVENCIONAL",
@@ -83,7 +83,7 @@ export function ParcelaModal({ open, onClose, onSave, parcela, saving }: Parcela
     if (!form.codigo.trim()) next.codigo = "El código es obligatorio";
     if (!form.nombre.trim()) next.nombre = "El nombre es obligatorio";
     if (!form.cultivo.trim()) next.cultivo = "El cultivo es obligatorio";
-    if (!form.area || isNaN(parseFloat(form.area)) || parseFloat(form.area) <= 0) {
+    if (!form.area || form.area <= 0) {
       next.area = "El área debe ser un número mayor a 0";
     }
     if (!form.ubicacion.trim()) next.ubicacion = "La ubicación es obligatoria";
@@ -135,8 +135,8 @@ export function ParcelaModal({ open, onClose, onSave, parcela, saving }: Parcela
               step="0.01"
               min="0"
               placeholder="Ej. 2.40"
-              value={form.area}
-              onChange={(e) => setField({ area: e.target.value })}
+              value={form.area || ""}
+              onChange={(e) => setField({ area: parseFloat(e.target.value) || 0 })}
             />
           </FormField>
 

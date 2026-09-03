@@ -1,4 +1,4 @@
-import prisma from '../config/database';
+import prisma, { type PrismaTransaction } from '../config/database';
 import { createError } from '../middleware/error.middleware';
 
 const generateCodigo = async (): Promise<string> => {
@@ -53,6 +53,7 @@ export const getAll = async (filters: {
       { origen: { contains: filters.search } },
       { productor: { contains: filters.search } },
       { observaciones: { contains: filters.search } },
+      { productor_ref: { nombres: { contains: filters.search } } },
     ];
   }
 
@@ -67,6 +68,10 @@ export const getAll = async (filters: {
       take: limit,
       include: {
         eventos: { orderBy: { fecha: 'desc' } },
+        productor_ref: { select: { id: true, nombres: true, apellido_paterno: true, apellido_materno: true } },
+        parcela_ref: { select: { id: true, nombre: true, codigo: true } },
+        cultivo_ref: { select: { id: true, cultivo: true, codigo: true } },
+        lote: { select: { id: true, codigo: true } },
       },
     }),
     prisma.trazabilidad.count({ where }),
@@ -80,6 +85,10 @@ export const getById = async (id: string) => {
     where: { id, activo: true },
     include: {
       eventos: { orderBy: { fecha: 'desc' } },
+      productor_ref: { select: { id: true, nombres: true, apellido_paterno: true, apellido_materno: true } },
+      parcela_ref: { select: { id: true, nombre: true, codigo: true } },
+      cultivo_ref: { select: { id: true, cultivo: true, codigo: true } },
+      lote: { select: { id: true, codigo: true } },
     },
   });
 
@@ -107,6 +116,9 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
     data: {
       codigo,
       lote_id: (data.lote_id as string) || null,
+      productor_id: data.productor_id ? Number(data.productor_id) : null,
+      parcela_id: data.parcela_id ? Number(data.parcela_id) : null,
+      cultivo_id: (data.cultivo_id as string) || null,
       producto: data.producto as string,
       cultivo: data.cultivo as string,
       origen: data.origen as string,
@@ -156,6 +168,9 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
   }
 
   if (data.lote_id !== undefined) updateData.lote_id = (data.lote_id as string) || null;
+  if (data.productor_id !== undefined) updateData.productor_id = data.productor_id ? Number(data.productor_id) : null;
+  if (data.parcela_id !== undefined) updateData.parcela_id = data.parcela_id ? Number(data.parcela_id) : null;
+  if (data.cultivo_id !== undefined) updateData.cultivo_id = (data.cultivo_id as string) || null;
   if (data.unidad !== undefined) updateData.unidad = (data.unidad as string) || null;
   if (data.fecha_siembra !== undefined) updateData.fecha_siembra = data.fecha_siembra ? new Date(data.fecha_siembra as string) : null;
   if (data.fecha_cosecha !== undefined) updateData.fecha_cosecha = data.fecha_cosecha ? new Date(data.fecha_cosecha as string) : null;
@@ -164,30 +179,32 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
 
   if (userId) updateData.updated_by = userId;
 
-  if (data.eventos !== undefined) {
-    const eventosData = data.eventos as Array<Record<string, unknown>>;
-    await prisma.trazabilidad_eventos.deleteMany({ where: { trazabilidad_id: id } });
-    if (eventosData.length > 0) {
-      await prisma.trazabilidad_eventos.createMany({
-        data: eventosData.map(e => ({
-          trazabilidad_id: id,
-          fecha: new Date(e.fecha as string),
-          titulo: e.titulo as string,
-          descripcion: (e.descripcion as string) || null,
-          tipo: e.tipo as string,
-          ubicacion: (e.ubicacion as string) || null,
-          responsable: (e.responsable as string) || null,
-        })),
-      });
+  return prisma.$transaction(async (tx: PrismaTransaction) => {
+    if (data.eventos !== undefined) {
+      const eventosData = data.eventos as Array<Record<string, unknown>>;
+      await tx.trazabilidad_eventos.deleteMany({ where: { trazabilidad_id: id } });
+      if (eventosData.length > 0) {
+        await tx.trazabilidad_eventos.createMany({
+          data: eventosData.map(e => ({
+            trazabilidad_id: id,
+            fecha: new Date(e.fecha as string),
+            titulo: e.titulo as string,
+            descripcion: (e.descripcion as string) || null,
+            tipo: e.tipo as string,
+            ubicacion: (e.ubicacion as string) || null,
+            responsable: (e.responsable as string) || null,
+          })),
+        });
+      }
     }
-  }
 
-  return prisma.trazabilidad.update({
-    where: { id },
-    data: updateData,
-    include: {
-      eventos: true,
-    },
+    return tx.trazabilidad.update({
+      where: { id },
+      data: updateData,
+      include: {
+        eventos: true,
+      },
+    });
   });
 };
 

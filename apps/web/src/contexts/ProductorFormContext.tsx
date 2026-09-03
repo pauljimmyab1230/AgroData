@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback } from "react";
 import type { ReactNode } from "react";
 import type { Productor, Familiar, Parcela } from "../services/productores";
+import { toast } from "../utils/toast";
 
 type ProductorFormData = Partial<Productor>;
 
@@ -55,6 +56,13 @@ const LABELS: Record<keyof Productor, string> = {
   nivelEducativo: "Nivel Educativo",
   idiomaPrincipal: "Idioma Principal",
   idiomaSecundario: "Idioma Secundario",
+  materialVivienda: "Material de Vivienda",
+  accesoAgua: "Acceso a Agua Potable",
+  accesoEnergia: "Acceso a Energía Eléctrica",
+  accesoInternet: "Acceso a Internet",
+  seguroSalud: "Seguro de Salud",
+  accesoCredito: "Acceso a Crédito Financiero",
+  servicioSanitario: "Servicio Sanitario",
   fechaIngreso: "Fecha de Ingreso",
   organizacion: "Organización",
   cargo: "Cargo",
@@ -134,9 +142,16 @@ export function ProductorFormProvider({
       setErrors(nextErrors);
       return Object.keys(nextErrors).length === 0;
     }
+    if (step === 2) {
+      if (familiares.length === 0) {
+        toast.info("Se recomienda agregar al menos un familiar");
+      }
+      setErrors({});
+      return true;
+    }
     setErrors({});
     return true;
-  }, [data]);
+  }, [data, familiares]);
 
   const clearFieldError = useCallback((field: keyof Productor) => {
     setErrors((prev) => {

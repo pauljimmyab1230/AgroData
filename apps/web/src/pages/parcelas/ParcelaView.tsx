@@ -10,7 +10,6 @@ import {
   Layers,
   History,
   FileText,
-  Camera,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Badge, Breadcrumb, Button, Card, LoadingSpinner } from "../../components/ui";
@@ -18,8 +17,6 @@ import { DatosGeneralesCard } from "../../components/parcelas/DatosGeneralesCard
 import { InformacionAgroecologicaCard } from "../../components/parcelas/InformacionAgroecologicaCard";
 import { UbicacionCard } from "../../components/parcelas/UbicacionCard";
 import { PoligonoCard } from "../../components/parcelas/PoligonoCard";
-import { FotografiaCard } from "../../components/parcelas/FotografiaCard";
-import { DocumentoCard } from "../../components/parcelas/DocumentoCard";
 import { fetchParcela, type Parcela } from "../../services/parcelas";
 import { ParcelaFormProvider } from "../../contexts/ParcelaFormContext";
 
@@ -43,8 +40,14 @@ const historialIcons: Record<HistorialItem["tipo"], LucideIcon> = {
   documento: FileText,
 };
 
-export default function ParcelaView() {
-  const { id } = useParams();
+interface ParcelaViewProps {
+  inModal?: boolean;
+  parcelaId?: string;
+}
+
+export default function ParcelaView({ inModal, parcelaId: propId }: ParcelaViewProps) {
+  const { id: paramId } = useParams();
+  const id = propId || paramId;
   const [parcela, setParcela] = useState<Parcela | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -52,7 +55,7 @@ export default function ParcelaView() {
     if (!id) return;
     fetchParcela(id)
       .then(setParcela)
-      .catch(console.error)
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -71,9 +74,6 @@ export default function ParcelaView() {
       </div>
     );
   }
-
-  const documentos = parcela.documentos ?? [];
-  const fotos = parcela.fotos ?? [];
 
   const estadoBadge =
     parcela.estado === "ACTIVA" ? <Badge variant="forest">Activa</Badge> : <Badge variant="gray">Inactiva</Badge>;
@@ -104,18 +104,6 @@ export default function ParcelaView() {
       iconClass: "bg-emerald-100 text-emerald-700",
     },
     {
-      label: "Documentos",
-      value: String(documentos.length),
-      icon: FileText,
-      iconClass: "bg-sun-100 text-sun-700",
-    },
-    {
-      label: "Fotografías",
-      value: String(fotos.length),
-      icon: Camera,
-      iconClass: "bg-forest-600/10 text-forest-600",
-    },
-    {
       label: "Cultivo Principal",
       value: parcela.cultivo || "—",
       icon: Sprout,
@@ -143,22 +131,26 @@ export default function ParcelaView() {
   return (
     <ParcelaFormProvider initial={parcela}>
       <div>
-      <Breadcrumb items={[{ label: "Parcelas", to: "/parcelas" }, { label: parcela.codigo }]} />
+      {!inModal && (
+        <>
+          <Breadcrumb items={[{ label: "Parcelas", to: "/parcelas" }, { label: parcela.codigo }]} />
 
-      <div className="mb-8 flex items-center gap-4">
-        <Button variant="ghost" as="link" to="/parcelas" iconLeft={<ArrowLeft className="h-4 w-4" />}>
-          Parcelas
-        </Button>
-        <div className="flex-1" />
-        <Button
-          variant="secondary"
-          as="link"
-          to={`/parcelas/${parcela.id}/editar`}
-          iconLeft={<Pencil className="h-4 w-4" />}
-        >
-          Editar
-        </Button>
-      </div>
+          <div className="mb-8 flex items-center gap-4">
+            <Button variant="ghost" as="link" to="/parcelas" iconLeft={<ArrowLeft className="h-4 w-4" />}>
+              Parcelas
+            </Button>
+            <div className="flex-1" />
+            <Button
+              variant="secondary"
+              as="link"
+              to={`/parcelas/${parcela.id}/editar`}
+              iconLeft={<Pencil className="h-4 w-4" />}
+            >
+              Editar
+            </Button>
+          </div>
+        </>
+      )}
 
       <Card padding="lg" hover={false} className="mb-6 shadow-sm">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
@@ -190,7 +182,7 @@ export default function ParcelaView() {
         </div>
       </Card>
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {kpis.map((kpi) => (
           <Card key={kpi.label} padding="md" hover={false} className="shadow-sm">
             <div className="flex items-center justify-between gap-3">
@@ -213,8 +205,6 @@ export default function ParcelaView() {
         <InformacionAgroecologicaCard mode="view" values={parcela} />
         <UbicacionCard mode="view" values={parcela} />
         <PoligonoCard mode="view" values={parcela} />
-        <FotografiaCard mode="view" fotos={fotos} />
-        <DocumentoCard mode="view" documentos={documentos} />
       </div>
 
       <div className="mt-6">

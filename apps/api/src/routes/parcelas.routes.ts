@@ -11,6 +11,7 @@ import {
   updateParcelaFotoSchema,
   getAllParcelasSchema,
 } from '../validators/parcelas.validator';
+import { idParamSchema } from '../validators/common.validator';
 
 const router = Router();
 
@@ -19,23 +20,23 @@ router.use(authMiddleware);
 // ─── Parcelas ───────────────────────────────────────────────
 
 router.get('/', validate(getAllParcelasSchema), parcelasController.getAll);
-router.get('/:id', parcelasController.getById);
+router.get('/:id', validate(idParamSchema, 'params'), parcelasController.getById);
 router.post('/', validate(createParcelaSchema), parcelasController.create);
-router.put('/:id', validate(updateParcelaSchema), parcelasController.update);
-router.delete('/:id', parcelasController.remove);
+router.put('/:id', validate(idParamSchema, 'params'), validate(updateParcelaSchema), parcelasController.update);
+router.delete('/:id', validate(idParamSchema, 'params'), parcelasController.remove);
 
 // ─── Documentos ─────────────────────────────────────────────
 
-router.get('/:id/documentos', parcelasController.getDocumentos);
-router.post('/:id/documentos', validate(createParcelaDocumentoSchema), parcelasController.createDocumento);
-router.put('/:id/documentos/:documentoId', validate(updateParcelaDocumentoSchema), parcelasController.updateDocumento);
-router.delete('/:id/documentos/:documentoId', parcelasController.removeDocumento);
+router.get('/:id/documentos', validate(idParamSchema, 'params'), parcelasController.getDocumentos);
+router.post('/:id/documentos', validate(idParamSchema, 'params'), validate(createParcelaDocumentoSchema), parcelasController.createDocumento);
+router.put('/:id/documentos/:documentoId', validate(idParamSchema, 'params'), validate(updateParcelaDocumentoSchema), parcelasController.updateDocumento);
+router.delete('/:id/documentos/:documentoId', validate(idParamSchema, 'params'), parcelasController.removeDocumento);
 
 // ─── Fotos ──────────────────────────────────────────────────
 
-router.get('/:id/fotos', parcelasController.getFotos);
-router.post('/:id/fotos', validate(createParcelaFotoSchema), parcelasController.createFoto);
-router.put('/:id/fotos/:fotoId', validate(updateParcelaFotoSchema), parcelasController.updateFoto);
-router.delete('/:id/fotos/:fotoId', parcelasController.removeFoto);
+router.get('/:id/fotos', validate(idParamSchema, 'params'), parcelasController.getFotos);
+router.post('/:id/fotos', validate(idParamSchema, 'params'), validate(createParcelaFotoSchema), parcelasController.createFoto);
+router.put('/:id/fotos/:fotoId', validate(idParamSchema, 'params'), validate(updateParcelaFotoSchema), parcelasController.updateFoto);
+router.delete('/:id/fotos/:fotoId', validate(idParamSchema, 'params'), parcelasController.removeFoto);
 
 export default router;

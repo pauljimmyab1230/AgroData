@@ -140,7 +140,26 @@ export const remove = async (id: string) => {
     throw createError('Usuario no encontrado', 404);
   }
 
-  await prisma.usuarios.delete({ where: { id } });
+  await prisma.usuarios.update({
+    where: { id },
+    data: { activo: false },
+  });
 
   return { message: 'Usuario eliminado exitosamente' };
+};
+
+export const getBasic = async (rol_sic?: string) => {
+  const where: Record<string, unknown> = { activo: true };
+  if (rol_sic) where.rol_sic = rol_sic;
+
+  return prisma.usuarios.findMany({
+    where,
+    select: {
+      id: true,
+      nombre: true,
+      email: true,
+      rol_sic: true,
+    },
+    orderBy: { nombre: 'asc' },
+  });
 };

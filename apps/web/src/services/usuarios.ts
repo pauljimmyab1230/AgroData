@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import api from "./api";
 
 export interface Usuario {
@@ -103,4 +104,41 @@ export async function updateUsuario(id: string, data: Partial<Usuario> & { passw
 
 export async function deleteUsuario(id: string): Promise<void> {
   await api.delete(`/usuarios/${id}`);
+}
+
+// ─── Basic (para dropdowns) ─────────────────────────────────
+
+export interface UsuarioBasico {
+  id: string;
+  nombre: string;
+  email: string;
+  rol_sic: string | null;
+}
+
+export async function fetchUsuariosBasic(rol_sic?: string): Promise<UsuarioBasico[]> {
+  const params: Record<string, string> = {};
+  if (rol_sic) params.rol_sic = rol_sic;
+  const res = await api.get("/usuarios/basic", { params });
+  return res.data.data ?? [];
+}
+
+export function useUsuariosBasic(rol_sic?: string) {
+  const [usuarios, setUsuarios] = useState<UsuarioBasico[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetchUsuariosBasic(rol_sic)
+      .then((data) => {
+        if (!cancelled) setUsuarios(data);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [rol_sic]);
+
+  return { usuarios, loading };
 }

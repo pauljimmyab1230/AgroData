@@ -22,6 +22,7 @@ interface DataTableProps<T> {
   emptyDescription?: string;
   emptyActionLabel?: string;
   emptyActionTo?: string;
+  emptyActionOnClick?: () => void;
   currentPage?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
@@ -37,6 +38,7 @@ export default function DataTable<T>({
   emptyDescription = "No hay datos disponibles",
   emptyActionLabel,
   emptyActionTo,
+  emptyActionOnClick,
   currentPage,
   totalPages,
   onPageChange,
@@ -78,6 +80,7 @@ export default function DataTable<T>({
         description={emptyDescription}
         actionLabel={emptyActionLabel}
         actionTo={emptyActionTo}
+        onAction={emptyActionOnClick}
       />
     );
   }

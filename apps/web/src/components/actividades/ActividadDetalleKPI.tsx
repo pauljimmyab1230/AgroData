@@ -1,4 +1,4 @@
-import { UserCheck, Package, Camera, Timer, ClipboardCheck } from "lucide-react";
+import { UserCheck, Package, Wrench, Timer, ClipboardCheck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Card } from "../ui";
 import { ActividadEstadoBadge } from "./ActividadBadges";
@@ -31,14 +31,14 @@ export function ActividadDetalleKPI({ actividad }: ActividadDetalleKPIProps) {
       iconClass: "bg-forest-600/10 text-forest-600",
     },
     {
-      label: "Fotografías Registradas",
-      value: String(actividad.fotos.length),
-      icon: Camera,
+      label: "Maquinaria en Uso",
+      value: String(actividad.maquinaria.length),
+      icon: Wrench,
       iconClass: "bg-sun-100 text-sun-700",
     },
     {
       label: "Duración de la Actividad",
-      value: actividad.duracionEstimada,
+      value: actividad.duracionEstimada || "—",
       icon: Timer,
       iconClass: "bg-sun-100 text-sun-700",
     },

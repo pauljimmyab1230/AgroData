@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
-import { Plus, Pencil, Trash2, CheckCircle, XCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import {
   Badge,
   Breadcrumb,
@@ -8,52 +8,83 @@ import {
   Card,
   ConfirmDialog,
   DataTable,
-  Input,
   Modal,
   SearchInput,
   SectionHeader,
   Textarea,
+  Input,
 } from "../../components/ui";
-import { catalogoConfigs, type CatalogoItem } from "./catalogoMock";
+import {
+  catalogoConfigs,
+  fetchCatalogoItems,
+  fetchCatalogoActivos,
+  createCatalogoItem,
+  updateCatalogoItem,
+  toggleCatalogoItem,
+  deleteCatalogoItem,
+  type CatalogoItem,
+} from "../../services/catalogos";
 
 export default function CatalogPage() {
   const { catalogoId } = useParams<{ catalogoId: string }>();
-  const config = catalogoConfigs[catalogoId || ""];
+  const config = catalogoId ? catalogoConfigs[catalogoId] : undefined;
 
   const [items, setItems] = useState<CatalogoItem[]>([]);
+  const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<CatalogoItem | null>(null);
   const [formNombre, setFormNombre] = useState("");
   const [formDescripcion, setFormDescripcion] = useState("");
-
-  useEffect(() => {
-    setItems(config?.items || []);
-    setSearch("");
-    setPage(1);
-    setDeleteId(null);
-    setModalOpen(false);
-    setEditingItem(null);
-  }, [catalogoId, config]);
+  const [formOrden, setFormOrden] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [totalActivos, setTotalActivos] = useState(0);
+  const [totalInactivos, setTotalInactivos] = useState(0);
 
   const limit = 10;
 
-  const filtered = useMemo(() => {
-    if (!search) return items;
-    const q = search.toLowerCase();
-    return items.filter(
-      (item) =>
-        item.nombre.toLowerCase().includes(q) ||
-        item.descripcion.toLowerCase().includes(q)
-    );
-  }, [items, search]);
+  const loadItems = useCallback(async () => {
+    if (!catalogoId) return;
+    setLoading(true);
+    try {
+      const [result, activos] = await Promise.all([
+        fetchCatalogoItems(catalogoId, { search, page, limit }),
+        fetchCatalogoActivos(catalogoId),
+      ]);
+      setItems(result.data);
+      setTotal(result.total);
+      setTotalActivos(activos.length);
+      setTotalInactivos(result.total - activos.length);
+    } catch {
+      setItems([]);
+      setTotal(0);
+      setTotalActivos(0);
+      setTotalInactivos(0);
+    } finally {
+      setLoading(false);
+    }
+  }, [catalogoId, search, page]);
 
-  const totalPages = Math.ceil(filtered.length / limit);
-  const paginated = filtered.slice((page - 1) * limit, page * limit);
+  useEffect(() => {
+    setSearch("");
+    setPage(1);
+  }, [catalogoId]);
 
-  if (!config) {
+  useEffect(() => {
+    loadItems();
+  }, [loadItems]);
+
+  useEffect(() => {
+    setDeleteId(null);
+    setModalOpen(false);
+    setEditingItem(null);
+  }, [catalogoId]);
+
+  if (!config || !catalogoId) {
     return (
       <div className="py-20 text-center text-gray-500">
         <p>Catálogo no encontrado.</p>
@@ -61,60 +92,73 @@ export default function CatalogPage() {
     );
   }
 
+  const totalPages = Math.ceil(total / limit);
+
   const handleOpenCreate = () => {
     setEditingItem(null);
     setFormNombre("");
     setFormDescripcion("");
+    setFormOrden(0);
+    setError("");
     setModalOpen(true);
   };
 
   const handleOpenEdit = (item: CatalogoItem) => {
     setEditingItem(item);
     setFormNombre(item.nombre);
-    setFormDescripcion(item.descripcion);
+    setFormDescripcion(item.descripcion ?? "");
+    setFormOrden(item.orden);
+    setError("");
     setModalOpen(true);
   };
 
-  const handleSave = () => {
-    if (!formNombre.trim()) return;
-
-    if (editingItem) {
-      setItems((prev) =>
-        prev.map((item) =>
-          item.id === editingItem.id
-            ? { ...item, nombre: formNombre.trim(), descripcion: formDescripcion.trim() }
-            : item
-        )
-      );
-    } else {
-      const newItem: CatalogoItem = {
-        id: `new-${Date.now()}`,
-        nombre: formNombre.trim(),
-        descripcion: formDescripcion.trim(),
-        activo: true,
-        created_at: new Date().toISOString().split("T")[0],
-      };
-      setItems((prev) => [newItem, ...prev]);
+  const handleSave = async () => {
+    if (!formNombre.trim() || saving) return;
+    setSaving(true);
+    setError("");
+    try {
+      if (editingItem) {
+        await updateCatalogoItem(editingItem.id, {
+          nombre: formNombre.trim(),
+          descripcion: formDescripcion.trim() || null,
+          orden: formOrden,
+        });
+      } else {
+        await createCatalogoItem(catalogoId, {
+          nombre: formNombre.trim(),
+          descripcion: formDescripcion.trim() || undefined,
+          orden: formOrden,
+        });
+      }
+      setModalOpen(false);
+      loadItems();
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "Error al guardar. Verifica que el nombre no esté duplicado.");
+    } finally {
+      setSaving(false);
     }
-    setModalOpen(false);
   };
 
-  const handleToggleActivo = (id: string) => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, activo: !item.activo } : item
-      )
-    );
+  const handleToggleActivo = async (id: number) => {
+    try {
+      await toggleCatalogoItem(id);
+      loadItems();
+    } catch {
+      // silent - toggle is low risk
+    }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteId) return;
-    setItems((prev) => prev.filter((item) => item.id !== deleteId));
-    setDeleteId(null);
+    try {
+      await deleteCatalogoItem(deleteId);
+      setDeleteId(null);
+      loadItems();
+    } catch (err: any) {
+      setDeleteId(null);
+      setError(err?.response?.data?.message || "Error al eliminar el registro.");
+    }
   };
-
-  const totalActivos = items.filter((i) => i.activo).length;
-  const totalInactivos = items.filter((i) => !i.activo).length;
 
   const columns = [
     {
@@ -124,7 +168,7 @@ export default function CatalogPage() {
       render: (item: CatalogoItem) => (
         <div>
           <p className="font-medium text-[#111827]">{item.nombre}</p>
-          <p className="text-xs text-gray-500">{item.descripcion}</p>
+          {item.descripcion && <p className="text-xs text-gray-500">{item.descripcion}</p>}
         </div>
       ),
     },
@@ -202,7 +246,7 @@ export default function CatalogPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Total</p>
-              <p className="mt-1.5 text-2xl font-bold text-[#111827]">{items.length}</p>
+              <p className="mt-1.5 text-2xl font-bold text-[#111827]">{total}</p>
               <p className="mt-1 text-xs text-gray-400">registros</p>
             </div>
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-forest-100 text-forest-700">
@@ -248,8 +292,9 @@ export default function CatalogPage() {
 
       <DataTable
         columns={columns}
-        data={paginated}
+        data={items}
         keyField="id"
+        loading={loading}
         emptyTitle={`No hay ${config.titulo.toLowerCase()}`}
         emptyDescription={`Comienza registrando el primer elemento del catálogo.`}
         emptyActionLabel="Registrar"
@@ -266,6 +311,12 @@ export default function CatalogPage() {
         title={editingItem ? `Editar ${config.titulo}` : `Nuevo ${config.titulo}`}
       >
         <div className="space-y-4">
+          {error && (
+            <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
           <Input
             label="Nombre"
             value={formNombre}
@@ -279,12 +330,19 @@ export default function CatalogPage() {
             placeholder="Descripción breve del elemento"
             rows={3}
           />
+          <Input
+            label="Orden"
+            type="number"
+            value={String(formOrden)}
+            onChange={(e) => setFormOrden(Number(e.target.value) || 0)}
+            placeholder="0"
+          />
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" onClick={() => setModalOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleSave}>
-              {editingItem ? "Guardar Cambios" : "Crear"}
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? "Guardando..." : editingItem ? "Guardar Cambios" : "Crear"}
             </Button>
           </div>
         </div>

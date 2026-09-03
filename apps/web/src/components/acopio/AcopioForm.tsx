@@ -13,14 +13,20 @@ import type { AcopioView } from "../../services/acopios";
 interface AcopioFormProps {
   mode: Extract<FormMode, "create" | "edit">;
   values?: AcopioView;
+  inModal?: boolean;
+  onSave?: () => void;
 }
 
-export default function AcopioForm({ mode, values }: AcopioFormProps) {
+export default function AcopioForm({ mode, values, inModal, onSave }: AcopioFormProps) {
   const navigate = useNavigate();
   const detailTo = `/acopio/${values?.id ?? 1}`;
 
   const handleSave = () => {
-    navigate(mode === "create" ? "/acopio" : detailTo);
+    if (!inModal) {
+      navigate(mode === "create" ? "/acopio" : detailTo);
+    } else {
+      onSave?.();
+    }
   };
 
   return (

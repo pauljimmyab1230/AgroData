@@ -17,69 +17,71 @@ import { createRecepcion, updateRecepcion } from "../../services/recepciones";
 interface RecepcionFormProps {
   mode: Extract<FormMode, "create" | "edit">;
   values?: Recepcion;
+  inModal?: boolean;
+  onSave?: () => void;
 }
 
-export default function RecepcionForm({ mode, values }: RecepcionFormProps) {
+export default function RecepcionForm({ mode, values, inModal, onSave }: RecepcionFormProps) {
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const collectFormData = (): Partial<Recepcion> => {
-    const getVal = (selector: string) => {
-      const el = document.querySelector(selector) as HTMLInputElement | HTMLSelectElement | null;
-      return el?.value ?? "";
-    };
-    const getNum = (selector: string) => {
-      const v = getVal(selector);
-      return v === "" ? 0 : Number(v);
-    };
+  const [form, setForm] = useState<Partial<Recepcion>>({
+    codigo: values?.codigo ?? "",
+    campaniaId: values?.campaniaId ?? "",
+    acopioId: values?.acopioId ?? "",
+    loteProductor: values?.loteProductor ?? "",
+    fecha: values?.fecha ?? new Date().toISOString().split("T")[0],
+    responsable: values?.responsable ?? "",
+    planta: values?.planta ?? "",
+    sacos: values?.sacos ?? 0,
+    pesoCampo: values?.pesoCampo ?? 0,
+    pesoBruto: values?.pesoBruto ?? 0,
+    tara: values?.tara ?? 0,
+    pesoNeto: values?.pesoNeto ?? 0,
+    diferencia: values?.diferencia ?? 0,
+    merma: values?.merma ?? 0,
+    humedad: values?.humedad ?? 0,
+    impurezas: values?.impurezas ?? 0,
+    materiaExtrana: values?.materiaExtrana ?? 0,
+    color: values?.color ?? "",
+    olor: values?.olor ?? "",
+    presenciaInsectos: values?.presenciaInsectos ?? "",
+    estadoProducto: values?.estadoProducto ?? "",
+    categoria: values?.categoria ?? "",
+    destino: values?.destino ?? "",
+    resultado: values?.resultado ?? "",
+    motivo: values?.motivo ?? "",
+    estado: values?.estado ?? "PENDIENTE_PESAJE",
+    observaciones: values?.observaciones ?? "",
+    documentoFirmado: values?.documentoFirmado ?? false,
+    firmaResponsableUrl: values?.firmaResponsableUrl ?? "",
+    activo: values?.activo ?? true,
+    evidencias: values?.evidencias ?? [],
+  });
 
-    return {
-      codigo: values?.codigo ?? "",
-      campaniaId: values?.campaniaId ?? "",
-      acopioId: values?.acopioId ?? "",
-      loteProductor: getVal('[name="loteProductor"]') || (values?.loteProductor ?? ""),
-      fecha: values?.fecha ?? "",
-      responsable: getVal('[name="responsable"]') || (values?.responsable ?? ""),
-      planta: getVal('[name="planta"]') || (values?.planta ?? ""),
-      sacos: values?.sacos ?? 0,
-      pesoCampo: values?.pesoCampo ?? 0,
-      pesoBruto: values?.pesoBruto ?? 0,
-      tara: values?.tara ?? 0,
-      pesoNeto: values?.pesoNeto ?? 0,
-      diferencia: values?.diferencia ?? 0,
-      merma: values?.merma ?? 0,
-      humedad: getNum('[name="humedad"]') || (values?.humedad ?? 0),
-      impurezas: getNum('[name="impurezas"]') || (values?.impurezas ?? 0),
-      materiaExtrana: getNum('[name="materiaExtrana"]') || (values?.materiaExtrana ?? 0),
-      color: getVal('[name="color"]') || (values?.color ?? ""),
-      olor: getVal('[name="olor"]') || (values?.olor ?? ""),
-      presenciaInsectos: getVal('[name="presenciaInsectos"]') || (values?.presenciaInsectos ?? ""),
-      estadoProducto: getVal('[name="estadoProducto"]') || (values?.estadoProducto ?? ""),
-      categoria: getVal('[name="categoria"]') || (values?.categoria ?? ""),
-      destino: getVal('[name="destino"]') || (values?.destino ?? ""),
-      resultado: getVal('[name="resultado"]') || (values?.resultado ?? ""),
-      motivo: getVal('[name="motivo"]') || (values?.motivo ?? ""),
-      estado: values?.estado ?? "PENDIENTE_PESAJE",
-      observaciones: getVal('[name="observaciones"]') || (values?.observaciones ?? ""),
-      documentoFirmado: values?.documentoFirmado ?? false,
-      firmaResponsableUrl: values?.firmaResponsableUrl ?? "",
-      activo: values?.activo ?? true,
-      evidencias: values?.evidencias ?? [],
-    };
+  const updateField = <K extends keyof Recepcion>(field: K, value: Recepcion[K]) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSave = async () => {
     setSaving(true);
     setError(null);
     try {
-      const data = collectFormData();
       if (mode === "create") {
-        const created = await createRecepcion(data);
-        navigate(`/recepcion/${created.id}`);
+        await createRecepcion(form);
+        if (!inModal) {
+          navigate("/recepcion");
+        } else {
+          onSave?.();
+        }
       } else {
-        await updateRecepcion(values!.id, data);
-        navigate(`/recepcion/${values!.id}`);
+        await updateRecepcion(values!.id, form);
+        if (!inModal) {
+          navigate(`/recepcion/${values!.id}`);
+        } else {
+          onSave?.();
+        }
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Error al guardar la recepción";
@@ -89,7 +91,7 @@ export default function RecepcionForm({ mode, values }: RecepcionFormProps) {
     }
   };
 
-  const detailTo = `/recepcion/${values?.id ?? "1"}`;
+  const detailTo = `/recepcion/${values?.id ?? ""}`;
 
   return (
     <div className="space-y-6">
@@ -98,15 +100,15 @@ export default function RecepcionForm({ mode, values }: RecepcionFormProps) {
           {error}
         </div>
       )}
-      <InformacionGeneralCard mode={mode} values={values} />
-      <LoteProductorCard mode={mode} values={values} />
-      <PesajeCard mode={mode} values={values} />
-      <ResumenRecepcionCard mode={mode} values={values} />
-      <CalidadCard mode={mode} values={values} />
-      <ClasificacionCard mode={mode} values={values} />
-      <ResultadoCard mode={mode} values={values} />
-      <EvidenciasCard mode={mode} values={values} />
-      <ObservacionesCard mode={mode} values={values} />
+      <InformacionGeneralCard mode={mode} values={form} onChange={updateField} />
+      <LoteProductorCard mode={mode} values={form} onChange={updateField} />
+      <PesajeCard mode={mode} values={form} onChange={updateField} />
+      <ResumenRecepcionCard mode={mode} values={form} />
+      <CalidadCard mode={mode} values={form} onChange={updateField} />
+      <ClasificacionCard mode={mode} values={form} onChange={updateField} />
+      <ResultadoCard mode={mode} values={form} onChange={updateField} />
+      <EvidenciasCard mode={mode} values={form} onChange={updateField} />
+      <ObservacionesCard mode={mode} values={form} onChange={updateField} />
 
       <ActionButtons
         cancelTo={mode === "create" ? "/recepcion" : detailTo}

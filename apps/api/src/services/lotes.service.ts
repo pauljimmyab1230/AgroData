@@ -1,4 +1,4 @@
-import prisma from '../config/database';
+import prisma, { type PrismaTransaction } from '../config/database';
 import { createError } from '../middleware/error.middleware';
 
 const generateCodigo = async (): Promise<string> => {
@@ -164,32 +164,34 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
 
   if (userId) updateData.updated_by = userId;
 
-  if (data.movimientos !== undefined) {
-    const movimientosData = data.movimientos as Array<Record<string, unknown>>;
-    await prisma.lote_movimientos.deleteMany({ where: { lote_id: id } });
-    if (movimientosData.length > 0) {
-      await prisma.lote_movimientos.createMany({
-        data: movimientosData.map(m => ({
-          lote_id: id,
-          tipo: m.tipo as 'ENTRADA' | 'SALIDA' | 'TRANSFERENCIA' | 'AJUSTE',
-          cantidad: Number(m.cantidad),
-          destino: (m.destino as string) || null,
-          referencia: (m.referencia as string) || null,
-          responsable: (m.responsable as string) || null,
-          observaciones: (m.observaciones as string) || null,
-          fecha: m.fecha ? new Date(m.fecha as string) : new Date(),
-        })),
-      });
+  return prisma.$transaction(async (tx: PrismaTransaction) => {
+    if (data.movimientos !== undefined) {
+      const movimientosData = data.movimientos as Array<Record<string, unknown>>;
+      await tx.lote_movimientos.deleteMany({ where: { lote_id: id } });
+      if (movimientosData.length > 0) {
+        await tx.lote_movimientos.createMany({
+          data: movimientosData.map(m => ({
+            lote_id: id,
+            tipo: m.tipo as 'ENTRADA' | 'SALIDA' | 'TRANSFERENCIA' | 'AJUSTE',
+            cantidad: Number(m.cantidad),
+            destino: (m.destino as string) || null,
+            referencia: (m.referencia as string) || null,
+            responsable: (m.responsable as string) || null,
+            observaciones: (m.observaciones as string) || null,
+            fecha: m.fecha ? new Date(m.fecha as string) : new Date(),
+          })),
+        });
+      }
     }
-  }
 
-  return prisma.lotes.update({
-    where: { id },
-    data: updateData,
-    include: {
-      campania: { select: { id: true, codigo: true, nombre: true } },
-      movimientos: true,
-    },
+    return tx.lotes.update({
+      where: { id },
+      data: updateData,
+      include: {
+        campania: { select: { id: true, codigo: true, nombre: true } },
+        movimientos: true,
+      },
+    });
   });
 };
 
@@ -226,7 +228,7 @@ export const addMovimiento = async (loteId: string, data: Record<string, unknown
     }
   }
 
-  const movimiento = await prisma.$transaction(async (tx) => {
+  const movimiento = await prisma.$transaction(async (tx: PrismaTransaction) => {
     const mov = await tx.lote_movimientos.create({
       data: {
         lote_id: loteId,
@@ -275,7 +277,7 @@ export const removeMovimiento = async (loteId: string, movimientoId: string) => 
     throw createError('Movimiento no encontrado', 404);
   }
 
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: PrismaTransaction) => {
     const pesoActual = Number(lote.peso_disponible);
     const cantidad = Number(movimiento.cantidad);
     let nuevoPeso = pesoActual;

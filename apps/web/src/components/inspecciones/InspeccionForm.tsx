@@ -16,14 +16,20 @@ import type { Inspeccion } from "../../services/inspecciones";
 interface InspeccionFormProps {
   mode: Extract<FormMode, "create" | "edit">;
   values?: Inspeccion;
+  inModal?: boolean;
+  onSave?: () => void;
 }
 
-export default function InspeccionForm({ mode, values }: InspeccionFormProps) {
+export default function InspeccionForm({ mode, values, inModal, onSave }: InspeccionFormProps) {
   const navigate = useNavigate();
   const detailTo = `/inspecciones/${values?.id ?? ""}`;
 
   const handleSave = () => {
-    navigate(mode === "create" ? "/inspecciones" : detailTo);
+    if (!inModal) {
+      navigate(mode === "create" ? "/inspecciones" : detailTo);
+    } else {
+      onSave?.();
+    }
   };
 
   return (
