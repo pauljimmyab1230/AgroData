@@ -35,8 +35,8 @@ export function ActividadKPI({ actividades }: ActividadKPIProps) {
       iconClass: "bg-forest-600/10 text-forest-600",
     },
     {
-      label: "Parcelas Atendidas",
-      value: String(new Set(actividades.map((a) => a.parcelaNombre)).size),
+      label: "Cultivos Atendidos",
+      value: String(new Set(actividades.map((a) => a.cultivoNombre).filter(Boolean)).size),
       icon: MapPin,
       iconClass: "bg-sun-100 text-sun-700",
     },

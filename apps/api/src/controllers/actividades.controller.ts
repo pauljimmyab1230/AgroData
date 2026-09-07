@@ -8,9 +8,7 @@ export const getAll = async (req: AuthRequest, res: Response, next: NextFunction
       search: req.query.search as string | undefined,
       estado: req.query.estado as string | undefined,
       tipo_actividad: req.query.tipo_actividad as string | undefined,
-      campania_id: req.query.campania_id as string | undefined,
-      productor_id: req.query.productor_id as string | undefined,
-      parcela_id: req.query.parcela_id as string | undefined,
+      cultivo_id: req.query.cultivo_id as string | undefined,
       page: parseInt(req.query.page as string) || 1,
       limit: parseInt(req.query.limit as string) || 20,
     });

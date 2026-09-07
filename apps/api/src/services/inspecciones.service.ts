@@ -26,21 +26,19 @@ const ensureUniqueCodigo = async (codigo: string): Promise<string> => {
   throw createError('No se pudo generar un código único', 500);
 };
 
-const ensureRelationExists = async (model: string, id: string) => {
-  const exists = await (prisma as any)[model].findUnique({ where: { id }, select: { id: true } });
+const ensureRelationExists = async (model: string, id: string | number) => {
+  const numId = Number(id);
+  const lookupId = !isNaN(numId) && String(numId) === String(id) ? numId : id;
+  const exists = await (prisma as any)[model].findUnique({ where: { id: lookupId }, select: { id: true } });
   if (!exists) throw createError(`${model} no encontrado`, 404);
 };
 
 const selectIncludes = {
-  campania: { select: { id: true, nombre: true, codigo: true } },
-  productor: { select: { id: true, nombres: true, apellido_paterno: true, apellido_materno: true } },
-  parcela: { select: { id: true, nombre: true, codigo: true } },
   cultivo: { select: { id: true, cultivo: true, codigo: true } },
   checklist: true,
   no_conformidades: true,
   acciones_correctivas: true,
   evidencias: true,
-  historial: { orderBy: { fecha: 'asc' as const } },
 };
 
 // ─── CRUD ──────────────────────────────────────────────────
@@ -48,18 +46,14 @@ const selectIncludes = {
 export const getAll = async (filters: {
   search?: string;
   estado?: string;
-  campania_id?: string;
-  productor_id?: string;
-  parcela_id?: string;
+  cultivo_id?: string;
   page?: number;
   limit?: number;
 }) => {
   const where: Record<string, unknown> = { activo: true };
 
   if (filters.estado) where.estado = filters.estado;
-  if (filters.campania_id) where.campania_id = filters.campania_id;
-  if (filters.productor_id) where.productor_id = filters.productor_id;
-  if (filters.parcela_id) where.parcela_id = filters.parcela_id;
+  if (filters.cultivo_id) where.cultivo_id = Number(filters.cultivo_id);
 
   if (filters.search) {
     where.OR = [
@@ -76,9 +70,6 @@ export const getAll = async (filters: {
     prisma.inspecciones.findMany({
       where,
       include: {
-        campania: { select: { id: true, nombre: true, codigo: true } },
-        productor: { select: { id: true, nombres: true, apellido_paterno: true, apellido_materno: true } },
-        parcela: { select: { id: true, nombre: true, codigo: true } },
         cultivo: { select: { id: true, cultivo: true, codigo: true } },
         _count: { select: { checklist: true, no_conformidades: true, evidencias: true } },
       },
@@ -94,7 +85,7 @@ export const getAll = async (filters: {
 
 export const getById = async (id: string) => {
   const inspeccion = await prisma.inspecciones.findFirst({
-    where: { id, activo: true },
+    where: { id: Number(id), activo: true },
     include: selectIncludes,
   });
 
@@ -114,28 +105,18 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
     if (exists) throw createError(`El código ${codigo} ya está en uso`, 409);
   }
 
-  await ensureRelationExists('campanias', data.campania_id as string);
-  await ensureRelationExists('productores', data.productor_id as string);
-  await ensureRelationExists('parcelas_productor', data.parcela_id as string);
-  if (data.cultivo_id) await ensureRelationExists('cultivos', data.cultivo_id as string);
-  if (data.inspector_id) await ensureRelationExists('usuarios', data.inspector_id as string);
+  if (data.cultivo_id) await ensureRelationExists('cultivo', data.cultivo_id as string);
 
   const checklist = (data.checklist as any[]) || [];
   const noConformidades = (data.no_conformidades as any[]) || [];
-  const accionesCorrectivas = (data.acciones_correctivas as any[]) || [];
   const evidencias = (data.evidencias as any[]) || [];
-  const historial = (data.historial as any[]) || [];
 
   return prisma.inspecciones.create({
     data: {
       codigo,
-      campania_id: data.campania_id as string,
-      productor_id: Number(data.productor_id),
-      parcela_id: Number(data.parcela_id),
-      cultivo_id: (data.cultivo_id as string) || null,
+      cultivo_id: data.cultivo_id ? Number(data.cultivo_id) : 0,
       fecha: new Date(data.fecha as string),
       inspector: data.inspector as string,
-      inspector_id: (data.inspector_id as string) || null,
       estado: (data.estado as 'PENDIENTE' | 'APROBADA' | 'NO_CONFORME') || 'PENDIENTE',
       resultado: (data.resultado as 'CONFORME' | 'CONFORME_CON_OBSERVACIONES' | 'NO_CONFORME') || null,
       latitud: (data.latitud as string) || null,
@@ -171,14 +152,6 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
         estado: nc.estado || 'PENDIENTE',
         accion_correctiva: nc.accion_correctiva || null,
       }))} : undefined,
-      acciones_correctivas: accionesCorrectivas.length ? { create: accionesCorrectivas.map((ac) => ({
-        accion: ac.accion,
-        responsable: ac.responsable,
-        fecha_inicio: ac.fecha_inicio ? new Date(ac.fecha_inicio) : null,
-        fecha_limite: ac.fecha_limite ? new Date(ac.fecha_limite) : null,
-        estado: ac.estado || 'PENDIENTE',
-        observaciones: ac.observaciones || null,
-      }))} : undefined,
       evidencias: evidencias.length ? { create: evidencias.map((e) => ({
         nombre: e.nombre,
         descripcion: e.descripcion || null,
@@ -187,19 +160,13 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
         fecha: e.fecha ? new Date(e.fecha) : null,
         responsable: e.responsable || null,
       }))} : undefined,
-      historial: historial.length ? { create: historial.map((h) => ({
-        fecha: new Date(h.fecha),
-        titulo: h.titulo,
-        descripcion: h.descripcion || null,
-        tipo: h.tipo,
-      }))} : undefined,
     },
     include: selectIncludes,
   });
 };
 
 export const update = async (id: string, data: Record<string, unknown>, userId?: string) => {
-  const existing = await prisma.inspecciones.findFirst({ where: { id, activo: true } });
+  const existing = await prisma.inspecciones.findFirst({ where: { id: Number(id), activo: true } });
   if (!existing) throw createError('Inspección no encontrada', 404);
 
   const updateData: Record<string, unknown> = {};
@@ -211,10 +178,7 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
 
   if (data.inspector_id !== undefined) updateData.inspector_id = (data.inspector_id as string) || null;
 
-  const uuidFields = ['campania_id', 'productor_id', 'parcela_id', 'cultivo_id'];
-  for (const field of uuidFields) {
-    if (data[field] !== undefined) updateData[field] = data[field] || null;
-  }
+  if (data.cultivo_id !== undefined) updateData.cultivo_id = data.cultivo_id ? Number(data.cultivo_id) : null;
 
   const enumFields = ['estado', 'resultado', 'riesgo_general'];
   for (const field of enumFields) {
@@ -231,22 +195,21 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
   const hasNoConformidadesUpdate = data.no_conformidades !== undefined;
   const hasAccionesCorrectivasUpdate = data.acciones_correctivas !== undefined;
   const hasEvidenciasUpdate = data.evidencias !== undefined;
-  const hasHistorialUpdate = data.historial !== undefined;
 
   return prisma.$transaction(async (tx: PrismaTransaction) => {
     const updated = await tx.inspecciones.update({
-      where: { id },
+      where: { id: Number(id) },
       data: updateData,
     });
 
     // Replace checklist if provided
     if (hasChecklistUpdate) {
-      await tx.inspeccion_checklist.deleteMany({ where: { inspeccion_id: id } });
+      await tx.inspeccion_checklist.deleteMany({ where: { inspeccion_id: Number(id) } });
       const checklist = (data.checklist as any[]) || [];
       if (checklist.length) {
         await tx.inspeccion_checklist.createMany({
           data: checklist.map((c) => ({
-            inspeccion_id: id,
+            inspeccion_id: Number(id),
             criterio: c.criterio,
             cumplimiento: c.cumplimiento || null,
             riesgo: c.riesgo || 'BAJO',
@@ -259,12 +222,12 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
 
     // Replace no_conformidades if provided
     if (hasNoConformidadesUpdate) {
-      await tx.inspeccion_no_conformidades.deleteMany({ where: { inspeccion_id: id } });
+      await tx.no_conformidades.deleteMany({ where: { inspeccion_id: Number(id) } });
       const noConformidades = (data.no_conformidades as any[]) || [];
       if (noConformidades.length) {
-        await tx.inspeccion_no_conformidades.createMany({
+        await tx.no_conformidades.createMany({
           data: noConformidades.map((nc) => ({
-            inspeccion_id: id,
+            inspeccion_id: Number(id),
             codigo: nc.codigo || null,
             tipo: nc.tipo,
             categoria: nc.categoria,
@@ -281,31 +244,33 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
 
     // Replace acciones_correctivas if provided
     if (hasAccionesCorrectivasUpdate) {
-      await tx.inspeccion_acciones_correctivas.deleteMany({ where: { inspeccion_id: id } });
+      await tx.acciones_correctivas.deleteMany({ where: { no_conformidad: { inspeccion_id: Number(id) } } });
       const accionesCorrectivas = (data.acciones_correctivas as any[]) || [];
       if (accionesCorrectivas.length) {
-        await tx.inspeccion_acciones_correctivas.createMany({
-          data: accionesCorrectivas.map((ac) => ({
-            inspeccion_id: id,
-            accion: ac.accion,
-            responsable: ac.responsable,
-            fecha_inicio: ac.fecha_inicio ? new Date(ac.fecha_inicio) : null,
-            fecha_limite: ac.fecha_limite ? new Date(ac.fecha_limite) : null,
-            estado: ac.estado || 'PENDIENTE',
-            observaciones: ac.observaciones || null,
-          })),
-        });
+        for (const ac of accionesCorrectivas) {
+          await tx.acciones_correctivas.create({
+            data: {
+              accion: ac.accion,
+              responsable: ac.responsable,
+              fecha_inicio: ac.fecha_inicio ? new Date(ac.fecha_inicio) : null,
+              fecha_limite: ac.fecha_limite ? new Date(ac.fecha_limite) : null,
+              estado: ac.estado || 'PENDIENTE',
+              observaciones: ac.observaciones || null,
+              no_conformidad: { connect: { id: Number(id) } },
+            },
+          });
+        }
       }
     }
 
     // Replace evidencias if provided
     if (hasEvidenciasUpdate) {
-      await tx.inspeccion_evidencias.deleteMany({ where: { inspeccion_id: id } });
+      await tx.evidencia.deleteMany({ where: { inspeccion_id: Number(id) } });
       const evidencias = (data.evidencias as any[]) || [];
       if (evidencias.length) {
-        await tx.inspeccion_evidencias.createMany({
+        await tx.evidencia.createMany({
           data: evidencias.map((e) => ({
-            inspeccion_id: id,
+            inspeccion_id: Number(id),
             nombre: e.nombre,
             descripcion: e.descripcion || null,
             tipo: e.tipo || null,
@@ -317,36 +282,19 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
       }
     }
 
-    // Replace historial if provided
-    if (hasHistorialUpdate) {
-      await tx.inspeccion_historial.deleteMany({ where: { inspeccion_id: id } });
-      const historial = (data.historial as any[]) || [];
-      if (historial.length) {
-        await tx.inspeccion_historial.createMany({
-          data: historial.map((h) => ({
-            inspeccion_id: id,
-            fecha: new Date(h.fecha),
-            titulo: h.titulo,
-            descripcion: h.descripcion || null,
-            tipo: h.tipo,
-          })),
-        });
-      }
-    }
-
     return tx.inspecciones.findFirst({
-      where: { id },
+      where: { id: Number(id) },
       include: selectIncludes,
     });
   });
 };
 
 export const remove = async (id: string) => {
-  const existing = await prisma.inspecciones.findFirst({ where: { id, activo: true } });
+  const existing = await prisma.inspecciones.findFirst({ where: { id: Number(id), activo: true } });
   if (!existing) throw createError('Inspección no encontrada', 404);
 
   await prisma.inspecciones.update({
-    where: { id },
+    where: { id: Number(id) },
     data: { activo: false },
   });
 

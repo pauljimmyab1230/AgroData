@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MapPin, Plus, Pencil, Trash2, Ruler, ShieldCheck, Sprout, Layers, Loader2 } from "lucide-react";
 import { Badge, Button, Card, ConfirmDialog, DataTable } from "../ui";
 import { CardHeader, CardShell, type FormMode } from "../shared/formControls";
 import { useProductorForm } from "../../contexts/ProductorFormContext";
+import { useParcelasByProductor } from "../../hooks/queries";
 import {
-  fetchParcelas,
   createParcela,
   updateParcela,
   deleteParcela,
@@ -29,29 +29,42 @@ const areaUnidadLabel: Record<string, string> = {
   m2: "m²",
 };
 
+const convertToHectareas = (area: number, unidad: string): number => {
+  if (unidad === "m2") return area / 10000;
+  return area;
+};
+
+let tempIdCounter = 0;
+
 export function ParcelaTable({ mode, productorId }: ParcelaTableProps) {
   const readOnly = mode === "view";
   const { parcelas, setParcelas } = useProductorForm();
+  const { data: fetchedParcelas, isLoading: loadingParcelas } = useParcelasByProductor(
+    mode !== "create" && productorId ? productorId : null
+  );
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Parcela | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Parcela | null>(null);
   const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState<boolean>(mode !== "create" && !!productorId);
 
   useEffect(() => {
-    if (mode === "create" || !productorId) return;
-    fetchParcelas(productorId)
-      .then(setParcelas)
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [mode, productorId, setParcelas]);
+    if (mode !== "create" && fetchedParcelas) {
+      setParcelas(fetchedParcelas);
+    }
+  }, [mode, fetchedParcelas, setParcelas]);
 
   const totalParcelas = parcelas.length;
-  const areaTotal = parcelas.reduce((sum, p) => sum + Number(p.area), 0);
-  const areaCertificada = parcelas
+  const areaTotalHa = parcelas.reduce(
+    (sum, p) => sum + convertToHectareas(Number(p.area), p.areaUnidad),
+    0
+  );
+  const areaCertificadaHa = parcelas
     .filter((p) => p.certificacion === "ORGANICA")
-    .reduce((sum, p) => sum + Number(p.area), 0);
+    .reduce(
+      (sum, p) => sum + convertToHectareas(Number(p.area), p.areaUnidad),
+      0
+    );
   const cultivosActivos = new Set(
     parcelas.filter((p) => p.estado === "ACTIVA").map((p) => p.cultivo),
   ).size;
@@ -64,14 +77,14 @@ export function ParcelaTable({ mode, productorId }: ParcelaTableProps) {
       iconClass: "bg-forest-600/10 text-forest-600",
     },
     {
-      label: "Área Total",
-      value: `${areaTotal.toFixed(2)} ha`,
+      label: "Área Total (ha)",
+      value: areaTotalHa.toFixed(2),
       icon: Ruler,
       iconClass: "bg-sun-100 text-sun-700",
     },
     {
-      label: "Área Certificada",
-      value: `${areaCertificada.toFixed(2)} ha`,
+      label: "Área Certificada (ha)",
+      value: areaCertificadaHa.toFixed(2),
       icon: ShieldCheck,
       iconClass: "bg-emerald-100 text-emerald-700",
     },
@@ -95,7 +108,7 @@ export function ParcelaTable({ mode, productorId }: ParcelaTableProps) {
         }
       } else {
         if (mode === "create") {
-          setParcelas([...parcelas, { id: -Date.now(), ...form }]);
+          setParcelas([...parcelas, { id: -(++tempIdCounter), ...form }]);
         } else if (productorId) {
           const created = await createParcela(productorId, form);
           setParcelas([...parcelas, created]);
@@ -103,8 +116,8 @@ export function ParcelaTable({ mode, productorId }: ParcelaTableProps) {
       }
       setModalOpen(false);
       setEditTarget(null);
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error("Error al guardar parcela:", error);
       toast.error("Error al guardar la parcela.");
     } finally {
       setSaving(false);
@@ -121,8 +134,8 @@ export function ParcelaTable({ mode, productorId }: ParcelaTableProps) {
         setParcelas(parcelas.filter((p) => p.id !== deleteTarget.id));
       }
       setDeleteTarget(null);
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error("Error al eliminar parcela:", error);
       toast.error("Error al eliminar la parcela.");
     }
   };
@@ -234,7 +247,7 @@ export function ParcelaTable({ mode, productorId }: ParcelaTableProps) {
         ))}
       </div>
 
-      {loading ? (
+      {loadingParcelas ? (
         <div className="flex items-center justify-center py-10">
           <Loader2 className="h-6 w-6 animate-spin text-forest-600" />
         </div>

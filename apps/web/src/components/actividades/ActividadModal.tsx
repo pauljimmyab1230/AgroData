@@ -9,7 +9,7 @@ interface ActividadModalProps {
   onClose: () => void;
   onSave?: () => void;
   mode: "create" | "edit" | "view";
-  actividadId?: string;
+  actividadId?: number;
 }
 
 export default function ActividadModal({ open, onClose, onSave, mode, actividadId }: ActividadModalProps) {

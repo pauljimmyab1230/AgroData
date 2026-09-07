@@ -13,9 +13,9 @@ const formatFecha = (fecha: string) => {
 
 type CampaniaTableProps = {
   data: Campania[];
-  onView: (id: string) => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onView: (id: number) => void;
+  onEdit: (id: number) => void;
+  onDelete: (id: number) => void;
   currentPage?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;

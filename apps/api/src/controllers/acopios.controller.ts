@@ -7,10 +7,6 @@ export const getAll = async (req: AuthRequest, res: Response, next: NextFunction
     const result = await acopiosService.getAll({
       search: req.query.search as string | undefined,
       estado: req.query.estado as string | undefined,
-      campania_id: req.query.campania_id as string | undefined,
-      productor_id: req.query.productor_id as string | undefined,
-      comunidad: req.query.comunidad as string | undefined,
-      acopiador: req.query.acopiador as string | undefined,
       page: parseInt(req.query.page as string) || 1,
       limit: parseInt(req.query.limit as string) || 20,
     });
@@ -75,10 +71,22 @@ export const remove = async (req: AuthRequest, res: Response, next: NextFunction
 
 export const getStats = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const stats = await acopiosService.getStats(req.query.campania_id as string | undefined);
+    const stats = await acopiosService.getStats();
     res.status(200).json({
       success: true,
       data: stats,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getByCodigo = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const acopio = await acopiosService.getByCodigo(req.params.codigo);
+    res.status(200).json({
+      success: true,
+      data: acopio,
     });
   } catch (error) {
     next(error);

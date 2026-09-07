@@ -11,7 +11,7 @@ export const getAll = async (req: AuthRequest, res: Response, next: NextFunction
       comunidad: req.query.comunidad as string | undefined,
       cultivo: req.query.cultivo as string | undefined,
       estado: req.query.estado as string | undefined,
-      productor_id: req.query.productor_id as string | undefined,
+      productores_id: req.query.productor_id as string | undefined,
       page: parseInt(req.query.page as string) || 1,
       limit: parseInt(req.query.limit as string) || 20,
     });

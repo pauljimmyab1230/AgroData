@@ -1,14 +1,14 @@
 import { MessageSquare } from "lucide-react";
 import { Textarea } from "../ui";
 import { CardHeader, CardShell, type FormMode } from "../shared/formControls";
-import type { OrdenProcesamiento } from "../../services/procesamientos";
 
 type ObservacionesCardProps = {
   mode: FormMode;
-  values?: Partial<OrdenProcesamiento>;
+  observaciones: string;
+  onChange: (v: string) => void;
 };
 
-export function ObservacionesCard({ mode, values }: ObservacionesCardProps) {
+export function ObservacionesCard({ mode, observaciones, onChange }: ObservacionesCardProps) {
   return (
     <CardShell>
       <CardHeader
@@ -20,14 +20,15 @@ export function ObservacionesCard({ mode, values }: ObservacionesCardProps) {
       {mode === "view" ? (
         <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-5">
           <p className="whitespace-pre-wrap text-sm leading-relaxed text-[#111827]">
-            {values?.observaciones || "Sin observaciones registradas."}
+            {observaciones || "Sin observaciones registradas."}
           </p>
         </div>
       ) : (
         <Textarea
           rows={8}
           placeholder="Escribe aquí las observaciones generales del procesamiento..."
-          defaultValue={values?.observaciones}
+          value={observaciones}
+          onChange={(e) => onChange(e.target.value)}
         />
       )}
     </CardShell>

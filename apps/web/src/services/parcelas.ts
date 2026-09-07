@@ -323,58 +323,6 @@ export async function deleteParcela(id: string): Promise<void> {
   await api.delete(`/parcelas/${id}`);
 }
 
-// ─── Documentos ─────────────────────────────────────────────
-
-export async function fetchDocumentos(parcelaId: string): Promise<ParcelaDocumento[]> {
-  const res = await api.get(`/parcelas/${parcelaId}/documentos`);
-  return (res.data.data ?? []).map(documentoToFrontend);
-}
-
-export async function createDocumento(
-  parcelaId: string,
-  data: Pick<ParcelaDocumento, "tipo" | "nombreArchivo" | "rutaArchivo" | "tamanoBytes" | "mimeType" | "estado">,
-): Promise<ParcelaDocumento> {
-  const res = await api.post(`/parcelas/${parcelaId}/documentos`, {
-    tipo: data.tipo,
-    nombre_archivo: data.nombreArchivo,
-    ruta_archivo: data.rutaArchivo,
-    tamano_bytes: data.tamanoBytes,
-    mime_type: data.mimeType,
-    estado: data.estado,
-  });
-  return documentoToFrontend(res.data.data);
-}
-
-export async function deleteDocumento(parcelaId: string, documentoId: string): Promise<void> {
-  await api.delete(`/parcelas/${parcelaId}/documentos/${documentoId}`);
-}
-
-// ─── Fotos ──────────────────────────────────────────────────
-
-export async function fetchFotos(parcelaId: string): Promise<ParcelaFoto[]> {
-  const res = await api.get(`/parcelas/${parcelaId}/fotos`);
-  return (res.data.data ?? []).map(fotoToFrontend);
-}
-
-export async function createFoto(
-  parcelaId: string,
-  data: Partial<Omit<ParcelaFoto, "id">>,
-): Promise<ParcelaFoto> {
-  const res = await api.post(`/parcelas/${parcelaId}/fotos`, {
-    titulo: data.titulo,
-    descripcion: data.descripcion || null,
-    fecha: data.fecha || null,
-    autor: data.autor || null,
-    observaciones: data.observaciones || null,
-    ruta_archivo: data.rutaArchivo || null,
-  });
-  return fotoToFrontend(res.data.data);
-}
-
-export async function deleteFoto(parcelaId: string, fotoId: string): Promise<void> {
-  await api.delete(`/parcelas/${parcelaId}/fotos/${fotoId}`);
-}
-
 // ─── Opciones de productores (para el select del formulario) ─
 
 export async function fetchProductoresOpciones(): Promise<{ value: string; label: string }[]> {

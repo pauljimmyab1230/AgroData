@@ -16,6 +16,7 @@ import { Badge, Button } from "../ui";
 import type { FormMode } from "../shared/formControls";
 import type { ParcelaDocumento } from "../../services/parcelas";
 import { uploadArchivo } from "../../services/productores";
+import { toast } from "../../utils/toast";
 
 type DocType = {
   id: string;
@@ -76,7 +77,7 @@ export function ParcelaDocuments({ mode, documentos = [], onDelete, onUpload }: 
       });
     } catch (err) {
       console.error("Error al subir documento:", err);
-      alert("Error al subir el documento");
+      toast.error("Error al subir el documento");
     } finally {
       setUploading(false);
       setUploadTarget(null);

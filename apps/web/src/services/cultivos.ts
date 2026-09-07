@@ -157,8 +157,6 @@ export interface CultivosQuery {
   search?: string;
   estado?: string;
   campania_id?: string;
-  productor_id?: string;
-  parcela_id?: string;
   page?: number;
   limit?: number;
 }
@@ -168,8 +166,6 @@ export async function fetchCultivos(params?: CultivosQuery): Promise<{ data: Cul
   if (params?.search) query.search = params.search;
   if (params?.estado) query.estado = params.estado;
   if (params?.campania_id) query.campania_id = params.campania_id;
-  if (params?.productor_id) query.productor_id = params.productor_id;
-  if (params?.parcela_id) query.parcela_id = params.parcela_id;
   if (params?.page) query.page = String(params.page);
   if (params?.limit) query.limit = String(params.limit);
 
@@ -236,69 +232,6 @@ export const procedenciasSemillaValues = ["CERTIFICADA", "COMUN", "PRODUCIDA_EN_
 export const unidadesSemillaValues = ["kg", "lb", "qq", "t"];
 export const destinosProduccionValues = ["VENTA_COOPERATIVA", "COMERCIALIZACION_LOCAL", "AUTOCONSUMO", "SEMILLA"];
 export const tiposSemillaValues = ["CERTIFICADA", "COMUN", "CONSERVADA", "HIBRIDA"];
-
-// ─── Display labels (for view mode) ────────────────────────
-
-export const estadosCultivoLabels: Record<string, string> = {
-  ACTIVO: "Activo",
-  EN_DESARROLLO: "En Desarrollo",
-  COSECHADO: "Cosechado",
-  FINALIZADO: "Finalizado",
-};
-
-export const metodosSiembraLabels: Record<string, string> = {
-  DIRECTA: "Directa",
-  TRASPLANTE: "Trasplante",
-  ALMACIGO: "Almácigo",
-  OTRO: "Otro",
-};
-
-export const sistemasProductivosLabels: Record<string, string> = {
-  AGROECOLOGICO: "Agroecológico",
-  ORGANICO: "Orgánico",
-  CONVENCIONAL: "Convencional",
-  EN_TRANSICION: "En Transición",
-};
-
-export const tiposAgriculturaLabels: Record<string, string> = {
-  TRADICIONAL: "Tradicional",
-  TECNIFICADA: "Tecnificada",
-  MIXTA: "Mixta",
-};
-
-export const certificacionesLabels: Record<string, string> = {
-  ORGANICA: "Orgánica",
-  EN_TRANSICION: "En Transición",
-  SIN_CERTIFICAR: "Sin certificar",
-};
-
-export const procedenciasSemillaLabels: Record<string, string> = {
-  CERTIFICADA: "Semilla Certificada",
-  COMUN: "Semilla Común",
-  PRODUCIDA_EN_CAMPO: "Producida en campo",
-  CONSERVADA_POR_AGRICULTOR: "Conservada por el agricultor",
-};
-
-export const unidadesSemillaLabels: Record<string, string> = {
-  kg: "kg",
-  lb: "lb",
-  qq: "qq",
-  t: "t",
-};
-
-export const destinosProduccionLabels: Record<string, string> = {
-  VENTA_COOPERATIVA: "Venta a la cooperativa",
-  COMERCIALIZACION_LOCAL: "Comercialización local",
-  AUTOCONSUMO: "Autoconsumo",
-  SEMILLA: "Semilla",
-};
-
-export const tiposSemillaLabels: Record<string, string> = {
-  CERTIFICADA: "Certificada",
-  COMUN: "Común",
-  CONSERVADA: "Conservada",
-  HIBRIDA: "Híbrida",
-};
 
 // ─── Cultivo options ───────────────────────────────────────
 

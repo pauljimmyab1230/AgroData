@@ -33,7 +33,7 @@ router.post(
 
 router.post(
   '/fotos',
-  upload.single('archivo'),
+  upload.single('foto'),
   (req: AuthRequest, res: Response) => {
     if (!req.file) {
       res.status(400).json({ success: false, message: 'No se envió ningún archivo' });
@@ -57,7 +57,7 @@ router.post(
 
 router.post(
   '/firmas',
-  upload.single('archivo'),
+  upload.single('firma'),
   (req: AuthRequest, res: Response) => {
     if (!req.file) {
       res.status(400).json({ success: false, message: 'No se envió ningún archivo' });

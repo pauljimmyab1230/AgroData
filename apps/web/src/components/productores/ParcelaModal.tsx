@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Save, X } from "lucide-react";
 import { Button, FormField, Input, Modal, Select } from "../ui";
 import type { Parcela } from "../../services/productores";
@@ -65,6 +65,19 @@ type ParcelaModalProps = {
 export function ParcelaModal({ open, onClose, onSave, parcela, saving }: ParcelaModalProps) {
   const [form, setForm] = useState<ParcelaFormData>(parcela ? fromParcela(parcela) : emptyForm);
   const [errors, setErrors] = useState<Partial<Record<keyof ParcelaFormData, string>>>({});
+  const prevParcelaRef = useRef<Parcela | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      if (parcela !== prevParcelaRef.current) {
+        setForm(parcela ? fromParcela(parcela) : emptyForm);
+        setErrors({});
+        prevParcelaRef.current = parcela;
+      }
+    } else {
+      prevParcelaRef.current = null;
+    }
+  }, [open, parcela]);
 
   const setField = (patch: Partial<ParcelaFormData>) => {
     setForm((prev) => ({ ...prev, ...patch }));

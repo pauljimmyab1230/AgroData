@@ -6,6 +6,7 @@ import type { FormMode } from "../shared/formControls";
 import type { Productor } from "../../services/productores";
 import { useProductorForm } from "../../contexts/ProductorFormContext";
 import { useUbigeo } from "../../hooks/useUbigeo";
+import { displayField } from "../../utils/formatters";
 
 type ContactoUbicacionCardProps = {
   mode: FormMode;
@@ -22,10 +23,7 @@ export function ContactoUbicacionCard({ mode, values }: ContactoUbicacionCardPro
     initialDistrito: values?.distrito ?? data?.distrito,
   });
 
-  const display = (field: keyof Productor) => {
-    if (mode === "view") return values?.[field] ?? "";
-    return data?.[field] ?? "";
-  };
+  const display = (field: keyof Productor) => displayField(mode, field, values, data);
 
   const handleDepartamentoChange = (val: string) => {
     clearFieldError("departamento");

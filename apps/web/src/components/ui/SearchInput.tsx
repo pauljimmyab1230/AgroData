@@ -17,13 +17,11 @@ export default function SearchInput({
   className = "",
 }: SearchInputProps) {
   const [localValue, setLocalValue] = useState(value);
-  const [prevValue, setPrevValue] = useState(value);
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  if (prevValue !== value) {
-    setPrevValue(value);
+  useEffect(() => {
     setLocalValue(value);
-  }
+  }, [value]);
 
   const handleChange = (val: string) => {
     setLocalValue(val);

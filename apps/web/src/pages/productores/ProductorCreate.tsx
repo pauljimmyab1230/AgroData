@@ -14,9 +14,9 @@ import { OrganizacionCard } from "../../components/productores/OrganizacionCard"
 import { FamiliarTable } from "../../components/productores/FamiliarTable";
 import { DocumentoUploader } from "../../components/productores/DocumentoUploader";
 import { ProductorFormProvider, useProductorForm } from "../../contexts/ProductorFormContext";
-import { createProductor, createFamiliar } from "../../services/productores";
-
-const totalPasos = 3;
+import { createProductor, updateProductor, createFamiliar, deleteFamiliar } from "../../services/productores";
+import { toast } from "../../utils/toast";
+import { useProductorStepper } from "../../hooks/useProductorStepper";
 
 interface ProductorCreateProps {
   inModal?: boolean;
@@ -26,55 +26,85 @@ interface ProductorCreateProps {
 function ProductorCreateForm({ inModal, onSave }: ProductorCreateProps) {
   const { data, familiares, validateStep } = useProductorForm();
   const navigate = useNavigate();
-  const [pasoActual, setPasoActual] = useState(1);
-  const [pasoMaximoAlcanzado, setPasoMaximoAlcanzado] = useState(1);
+  const { pasoActual, pasoMaximoAlcanzado, totalPasos, isFirstStep, isLastStep, handleNext, handleBack, handlePasoChange } = useProductorStepper();
   const [saving, setSaving] = useState(false);
   const [createdId, setCreatedId] = useState<number | null>(null);
+  const [savedFamiliarIds, setSavedFamiliarIds] = useState<Map<number, number>>(new Map());
 
-  const handleNext = () => {
-    setPasoActual((paso) => {
-      const siguiente = Math.min(totalPasos, paso + 1);
-      setPasoMaximoAlcanzado((max) => Math.max(max, siguiente));
-      return siguiente;
-    });
+  const syncFamiliares = async (productorId: number) => {
+    const existingIds = new Set(savedFamiliarIds.values());
+    const currentTempIds = new Set(familiares.map(f => f.id).filter(id => id < 0));
+
+    for (const tempId of currentTempIds) {
+      if (!savedFamiliarIds.has(tempId)) {
+        const familiar = familiares.find(f => f.id === tempId);
+        if (familiar) {
+          const created = await createFamiliar(productorId, familiar);
+          setSavedFamiliarIds(prev => new Map(prev).set(tempId, created.id));
+        }
+      }
+    }
+
+    for (const [tempId, realId] of savedFamiliarIds) {
+      if (!currentTempIds.has(tempId)) {
+        await deleteFamiliar(productorId, realId);
+        setSavedFamiliarIds(prev => {
+          const next = new Map(prev);
+          next.delete(tempId);
+          return next;
+        });
+      }
+    }
   };
 
-  const handlePasoChange = (paso: number) => {
-    setPasoActual(paso);
-    setPasoMaximoAlcanzado((max) => Math.max(max, paso));
+  const handleNextStep = async () => {
+    if (pasoActual === 1) {
+      if (!validateStep(1)) return;
+      if (createdId) {
+        setSaving(true);
+        try {
+          await updateProductor(createdId, data);
+          await syncFamiliares(createdId);
+          handleNext();
+        } catch (err: unknown) {
+          const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Error al guardar. Verifique los datos.";
+          toast.error(msg);
+        } finally {
+          setSaving(false);
+        }
+      } else {
+        handleNext();
+      }
+    } else if (pasoActual === 2 && !createdId) {
+      setSaving(true);
+      try {
+        const result = await createProductor(data);
+        setCreatedId(result.id);
+        await syncFamiliares(result.id);
+        handleNext();
+      } catch (err: unknown) {
+        const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Error al guardar. Verifique los datos.";
+        toast.error(msg);
+      } finally {
+        setSaving(false);
+      }
+    } else {
+      handleNext();
+    }
   };
 
   const handleSave = async () => {
-    if (!validateStep(1)) {
-      setPasoActual(1);
-      return;
+    if (!createdId) return;
+    if (!inModal) {
+      navigate(`/productores/${createdId}`);
+    } else {
+      onSave?.();
     }
-    setSaving(true);
-    try {
-      const result = await createProductor(data);
-      setCreatedId(result.id);
-      for (const familiar of familiares) {
-        await createFamiliar(result.id, familiar);
-      }
-      if (pasoActual === totalPasos) {
-        if (!inModal) {
-          navigate(`/productores/${result.id}`);
-        } else {
-          onSave?.();
-        }
-      } else {
-        setPasoActual((paso) => {
-          const siguiente = Math.min(totalPasos, paso + 1);
-          setPasoMaximoAlcanzado((max) => Math.max(max, siguiente));
-          return siguiente;
-        });
-      }
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Error al guardar. Verifique los datos.";
-      alert(msg);
-    } finally {
-      setSaving(false);
-    }
+  };
+
+  const handlePasoChangeWithValidation = (paso: number) => {
+    if (paso > pasoActual && pasoActual === 1 && !validateStep(1)) return;
+    handlePasoChange(paso);
   };
 
   return (
@@ -96,7 +126,7 @@ function ProductorCreateForm({ inModal, onSave }: ProductorCreateProps) {
       )}
 
       <div className="mb-6">
-        <ProductorStepper pasoActual={pasoActual} pasoMaximoAlcanzado={pasoMaximoAlcanzado} onPasoChange={handlePasoChange} />
+        <ProductorStepper pasoActual={pasoActual} pasoMaximoAlcanzado={pasoMaximoAlcanzado} onPasoChange={handlePasoChangeWithValidation} />
       </div>
 
       <div className="space-y-6">
@@ -117,8 +147,8 @@ function ProductorCreateForm({ inModal, onSave }: ProductorCreateProps) {
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm">
         <Button
           variant="secondary"
-          onClick={() => setPasoActual((paso) => Math.max(1, paso - 1))}
-          disabled={pasoActual === 1}
+          onClick={handleBack}
+          disabled={isFirstStep}
           iconLeft={<ChevronLeft className="h-4 w-4" />}
         >
           Anterior
@@ -129,16 +159,17 @@ function ProductorCreateForm({ inModal, onSave }: ProductorCreateProps) {
           <span className="font-semibold text-[#111827]">{totalPasos}</span>
         </p>
 
-        {pasoActual === totalPasos ? (
-          <Button onClick={handleSave} disabled={saving} iconLeft={<Save className="h-4 w-4" />}>
+        {isLastStep ? (
+          <Button onClick={handleSave} disabled={saving || !createdId} iconLeft={<Save className="h-4 w-4" />}>
             {saving ? "Guardando..." : "Guardar Productor"}
           </Button>
         ) : (
           <Button
-            onClick={handleNext}
+            onClick={() => handleNextStep()}
+            disabled={saving}
             iconRight={<ArrowRight className="h-4 w-4" />}
           >
-            Siguiente
+            {saving ? "Guardando..." : "Siguiente"}
           </Button>
         )}
       </div>
@@ -148,9 +179,14 @@ function ProductorCreateForm({ inModal, onSave }: ProductorCreateProps) {
   );
 }
 
+const defaultInitialValues = {
+  estado: "ACTIVO" as const,
+  idiomaSecundario: "NINGUNO" as const,
+};
+
 export default function ProductorCreate({ inModal, onSave }: ProductorCreateProps) {
   return (
-    <ProductorFormProvider>
+    <ProductorFormProvider initial={defaultInitialValues}>
       <ProductorCreateForm inModal={inModal} onSave={onSave} />
     </ProductorFormProvider>
   );

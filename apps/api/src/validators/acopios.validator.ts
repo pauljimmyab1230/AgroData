@@ -1,11 +1,9 @@
 import Joi from 'joi';
 
 const estadoAcopioEnum = ['EN_PROCESO', 'COMPLETADO', 'EN_PLANTA'];
-const estadoProductoEnum = ['EXCELENTE', 'BUENO', 'REGULAR', 'RECHAZADO'];
 
 const sacoSchema = Joi.object({
-  id: Joi.string().max(36).allow('', null),
-  codigo: Joi.string().max(50).required().messages({
+  codigo: Joi.string().max(50).trim().required().messages({
     'any.required': 'El código del saco es obligatorio',
   }),
   peso: Joi.number().precision(2).positive().required().messages({
@@ -15,84 +13,52 @@ const sacoSchema = Joi.object({
   observaciones: Joi.string().allow('', null),
 });
 
-const fotoSchema = Joi.object({
-  id: Joi.string().max(36).allow('', null),
-  nombre: Joi.string().max(255).required().messages({
-    'any.required': 'El nombre de la foto es obligatorio',
+const acopioDetalleSchema = Joi.object({
+  productor_id: Joi.number().integer().positive().required().messages({
+    'any.required': 'El productor es obligatorio',
   }),
-  descripcion: Joi.string().max(500).allow('', null),
-  ruta_archivo: Joi.string().max(500).allow('', null),
+  cultivo_id: Joi.number().integer().positive().required().messages({
+    'any.required': 'El cultivo es obligatorio',
+  }),
+  observaciones: Joi.string().allow('', null),
+  sacos: Joi.array().items(sacoSchema).min(1).required().messages({
+    'array.min': 'Debe agregar al menos un saco',
+    'any.required': 'Los sacos son obligatorios',
+  }),
 });
 
 export const createAcopioSchema = Joi.object({
-  codigo: Joi.string().max(20).allow(''),
-  campania_id: Joi.string().max(36).required().messages({
-    'any.required': 'La campaña es obligatoria',
-  }),
-  productor_id: Joi.string().max(36).required().messages({
-    'any.required': 'El productor es obligatorio',
-  }),
-  parcela_id: Joi.string().max(36).required().messages({
-    'any.required': 'La parcela es obligatoria',
-  }),
-  cultivo_id: Joi.string().max(36).allow('', null),
+  codigo: Joi.string().max(20).trim().empty('').optional(),
   fecha: Joi.date().iso().required().messages({
     'any.required': 'La fecha es obligatoria',
   }),
-  acopiador: Joi.string().max(150).required().messages({
+  acopiador: Joi.string().max(150).trim().required().messages({
     'any.required': 'El acopiador es obligatorio',
   }),
-  acopiador_id: Joi.string().uuid().allow(null),
-  vehiculo: Joi.string().max(100).allow('', null),
-  ruta_acopio: Joi.string().max(200).allow('', null),
-  lote_productor: Joi.string().max(100).allow('', null),
-  total_sacos: Joi.number().integer().min(0).default(0),
-  peso_total: Joi.number().precision(2).min(0).default(0),
+  vehiculo: Joi.string().max(100).trim().allow('', null),
+  ruta_acopio: Joi.string().max(200).trim().allow('', null),
   estado: Joi.string().valid(...estadoAcopioEnum).default('EN_PROCESO'),
-  estado_producto: Joi.string().valid(...estadoProductoEnum).allow(null),
-  humedad: Joi.number().precision(2).min(0).max(100).allow(null),
-  impurezas: Joi.number().precision(2).min(0).max(100).allow(null),
-  observaciones_calidad: Joi.string().allow('', null),
-  firma_productor_url: Joi.string().max(500).allow('', null),
-  firma_acopiador_url: Joi.string().max(500).allow('', null),
   observaciones: Joi.string().allow('', null),
-  sacos: Joi.array().items(sacoSchema).default([]),
-  fotos: Joi.array().items(fotoSchema).default([]),
+  detalles: Joi.array().items(acopioDetalleSchema).min(1).required().messages({
+    'array.min': 'Debe agregar al menos un productor',
+    'any.required': 'Los detalles de productores son obligatorios',
+  }),
 });
 
 export const updateAcopioSchema = Joi.object({
-  codigo: Joi.string().max(20).allow(''),
-  campania_id: Joi.string().max(36),
-  productor_id: Joi.string().max(36),
-  parcela_id: Joi.string().max(36),
-  cultivo_id: Joi.string().max(36).allow('', null),
+  codigo: Joi.string().max(20).trim().empty('').optional(),
   fecha: Joi.date().iso(),
-  acopiador: Joi.string().max(150),
-  acopiador_id: Joi.string().uuid().allow(null),
-  vehiculo: Joi.string().max(100).allow('', null),
-  ruta_acopio: Joi.string().max(200).allow('', null),
-  lote_productor: Joi.string().max(100).allow('', null),
-  total_sacos: Joi.number().integer().min(0),
-  peso_total: Joi.number().precision(2).min(0),
+  acopiador: Joi.string().max(150).trim(),
+  vehiculo: Joi.string().max(100).trim().allow('', null),
+  ruta_acopio: Joi.string().max(200).trim().allow('', null),
   estado: Joi.string().valid(...estadoAcopioEnum),
-  estado_producto: Joi.string().valid(...estadoProductoEnum).allow(null),
-  humedad: Joi.number().precision(2).min(0).max(100).allow(null),
-  impurezas: Joi.number().precision(2).min(0).max(100).allow(null),
-  observaciones_calidad: Joi.string().allow('', null),
-  firma_productor_url: Joi.string().max(500).allow('', null),
-  firma_acopiador_url: Joi.string().max(500).allow('', null),
   observaciones: Joi.string().allow('', null),
-  sacos: Joi.array().items(sacoSchema),
-  fotos: Joi.array().items(fotoSchema),
+  detalles: Joi.array().items(acopioDetalleSchema).min(1),
 }).min(1);
 
 export const getAllAcopiosSchema = Joi.object({
-  search: Joi.string().max(100).allow('', null),
+  search: Joi.string().max(100).trim().allow('', null),
   estado: Joi.string().valid(...estadoAcopioEnum),
-  campania_id: Joi.string().max(36).allow('', null),
-  productor_id: Joi.string().max(36).allow('', null),
-  comunidad: Joi.string().max(150).allow('', null),
-  acopiador: Joi.string().max(150).allow('', null),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
 });

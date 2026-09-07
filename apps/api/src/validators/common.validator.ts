@@ -1,12 +1,11 @@
 import Joi from 'joi';
 
 export const idParamSchema = Joi.object({
-  id: Joi.alternatives().try(
-    Joi.number().integer().positive(),
-    Joi.string().uuid(),
-  ).required().messages({
+  id: Joi.number().integer().positive().required().messages({
     'any.required': 'El ID es obligatorio',
-    'alternatives.types': 'El ID debe ser un número entero o un UUID válido',
+    'number.base': 'El ID debe ser un número entero',
+    'number.integer': 'El ID debe ser un número entero',
+    'number.positive': 'El ID debe ser un número positivo',
   }),
 });
 
@@ -25,5 +24,14 @@ export const idDocumentoParamSchema = Joi.object({
     'number.integer': 'El ID del documento debe ser un número entero',
     'number.positive': 'El ID del documento debe ser un número positivo',
     'any.required': 'El ID del documento es obligatorio',
+  }),
+});
+
+export const idFotoParamSchema = Joi.object({
+  fotoId: Joi.number().integer().positive().required().messages({
+    'number.base': 'El ID de la foto debe ser un número',
+    'number.integer': 'El ID de la foto debe ser un número entero',
+    'number.positive': 'El ID de la foto debe ser un número positivo',
+    'any.required': 'El ID de la foto es obligatorio',
   }),
 });

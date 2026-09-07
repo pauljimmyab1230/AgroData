@@ -27,20 +27,20 @@ const operacionSchema = Joi.object({
 });
 
 export const createProcesamientoSchema = Joi.object({
-  campania_id: Joi.string().max(36).required().messages({
+  campania_id: Joi.number().integer().positive().required().messages({
     'any.required': 'La campaña es obligatoria',
   }),
-  fecha: Joi.date().iso().required().messages({
-    'any.required': 'La fecha es obligatoria',
+  fecha_inicio: Joi.date().iso().required().messages({
+    'any.required': 'La fecha de inicio es obligatoria',
   }),
-  producto: Joi.string().max(100).required().messages({
+  fecha_fin: Joi.date().iso().allow(null),
+  producto: Joi.string().max(100).trim().required().messages({
     'any.required': 'El producto es obligatorio',
   }),
-  responsable: Joi.string().max(150).required().messages({
+  responsable: Joi.string().max(150).trim().required().messages({
     'any.required': 'El responsable es obligatorio',
   }),
-  responsable_id: Joi.string().uuid().allow(null),
-  planta: Joi.string().max(100).required().messages({
+  planta: Joi.string().max(100).trim().required().messages({
     'any.required': 'La planta es obligatoria',
   }),
   linea_procesamiento: Joi.string().valid(...lineaProcesamientoEnum).required().messages({
@@ -52,21 +52,19 @@ export const createProcesamientoSchema = Joi.object({
   peso_salida: Joi.number().precision(2).min(0).allow(null),
   merma: Joi.number().precision(2).min(0).allow(null),
   rendimiento: Joi.number().precision(2).min(0).max(100).allow(null),
-  producto_base: Joi.string().max(100).allow('', null),
+  producto_base: Joi.string().max(100).trim().allow('', null),
   calidad_producto: Joi.string().valid(...calidadProductoEnum).allow(null),
   peso_final: Joi.number().precision(2).min(0).allow(null),
   humedad_final: Joi.number().precision(2).min(0).max(100).allow(null),
-  lotes: Joi.array().items(loteSchema).default([]),
-  operaciones: Joi.array().items(operacionSchema).default([]),
 });
 
 export const updateProcesamientoSchema = Joi.object({
-  campania_id: Joi.string().max(36),
-  fecha: Joi.date().iso(),
-  producto: Joi.string().max(100),
-  responsable: Joi.string().max(150),
-  responsable_id: Joi.string().uuid().allow(null),
-  planta: Joi.string().max(100),
+  campania_id: Joi.number().integer().positive(),
+  fecha_inicio: Joi.date().iso(),
+  fecha_fin: Joi.date().iso().allow(null),
+  producto: Joi.string().max(100).trim(),
+  responsable: Joi.string().max(150).trim(),
+  planta: Joi.string().max(100).trim(),
   linea_procesamiento: Joi.string().valid(...lineaProcesamientoEnum),
   estado: Joi.string().valid(...estadoProcesamientoEnum),
   observaciones: Joi.string().allow('', null),
@@ -74,7 +72,7 @@ export const updateProcesamientoSchema = Joi.object({
   peso_salida: Joi.number().precision(2).min(0).allow(null),
   merma: Joi.number().precision(2).min(0).allow(null),
   rendimiento: Joi.number().precision(2).min(0).max(100).allow(null),
-  producto_base: Joi.string().max(100).allow('', null),
+  producto_base: Joi.string().max(100).trim().allow('', null),
   calidad_producto: Joi.string().valid(...calidadProductoEnum).allow(null),
   peso_final: Joi.number().precision(2).min(0).allow(null),
   humedad_final: Joi.number().precision(2).min(0).max(100).allow(null),

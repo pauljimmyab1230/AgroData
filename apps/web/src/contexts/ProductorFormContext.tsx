@@ -1,15 +1,15 @@
-import { createContext, useContext, useState, useCallback } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import type { Productor, Familiar, Parcela } from "../services/productores";
 import { toast } from "../utils/toast";
 
 type ProductorFormData = Partial<Productor>;
 
-export type ProductorFieldErrors = Partial<Record<keyof Productor, string>>;
+type FieldErrors = Partial<Record<keyof Productor, string>>;
 
 type ProductorFormContextType = {
   data: ProductorFormData;
-  errors: ProductorFieldErrors;
+  errors: FieldErrors;
   familiares: Familiar[];
   parcelas: Parcela[];
   updateData: (patch: ProductorFormData) => void;
@@ -81,8 +81,8 @@ const LABELS: Record<keyof Productor, string> = {
 
 const mensajeRequerido = (label: string) => `El campo ${label} es obligatorio`;
 
-export function validateStep1(data: ProductorFormData): ProductorFieldErrors {
-  const errors: ProductorFieldErrors = {};
+export function validateStep1(data: ProductorFormData): FieldErrors {
+  const errors: FieldErrors = {};
 
   for (const field of REQUIRED_STEP1) {
     const value = data[field];
@@ -93,8 +93,8 @@ export function validateStep1(data: ProductorFormData): ProductorFieldErrors {
       continue;
     }
 
-    if (field === "dni" && String(value).length !== 8) {
-      errors[field] = "El DNI debe tener 8 dígitos";
+    if (field === "dni" && !/^\d{8}$/.test(String(value))) {
+      errors[field] = "El DNI debe tener exactamente 8 dígitos numéricos";
     }
     if ((field === "nombres" || field === "apellidoPaterno" || field === "apellidoMaterno") && String(value).trim().length < 2) {
       errors[field] = `El campo ${LABELS[field]} debe tener al menos 2 caracteres`;
@@ -102,6 +102,10 @@ export function validateStep1(data: ProductorFormData): ProductorFieldErrors {
     if (field === "idiomaPrincipal" && String(value) === "NINGUNO") {
       errors[field] = "El idioma principal no puede ser Ninguno";
     }
+  }
+
+  if (data.correo && data.correo.trim() !== "" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(data.correo))) {
+    errors.correo = "El correo electrónico no tiene un formato válido";
   }
 
   return errors;
@@ -115,9 +119,20 @@ export function ProductorFormProvider({
   children: ReactNode;
 }) {
   const [data, setData] = useState<ProductorFormData>(initial);
-  const [errors, setErrors] = useState<ProductorFieldErrors>({});
+  const [errors, setErrors] = useState<FieldErrors>({});
   const [familiares, setFamiliares] = useState<Familiar[]>([]);
   const [parcelas, setParcelas] = useState<Parcela[]>([]);
+  const initialRef = useRef(initial);
+  const initialJsonRef = useRef(JSON.stringify(initial));
+
+  useEffect(() => {
+    const newJson = JSON.stringify(initial);
+    if (newJson !== initialJsonRef.current && Object.keys(initial).length > 0) {
+      setData(initial);
+      initialRef.current = initial;
+      initialJsonRef.current = newJson;
+    }
+  }, [initial]);
 
   const updateData = useCallback((patch: ProductorFormData) => {
     setData((prev) => ({ ...prev, ...patch }));
@@ -134,6 +149,8 @@ export function ProductorFormProvider({
   const resetData = useCallback((initial: ProductorFormData) => {
     setData(initial);
     setErrors({});
+    setFamiliares([]);
+    setParcelas([]);
   }, []);
 
   const validateStep = useCallback((step: number): boolean => {

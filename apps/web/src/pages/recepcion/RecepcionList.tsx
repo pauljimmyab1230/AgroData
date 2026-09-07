@@ -229,6 +229,7 @@ export default function RecepcionList() {
       <RecepcionModal
         open={viewId !== null}
         onClose={() => setViewId(null)}
+        onEdit={(id) => { setViewId(null); setEditId(id); }}
         mode="view"
         recepcionId={viewId || undefined}
       />

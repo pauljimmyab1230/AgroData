@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Plus, Pencil, Eye, Trash2, MapPin, Ruler, Users, BadgeCheck, X, Download } from "lucide-react";
 import {
   Badge,
@@ -11,7 +11,8 @@ import {
   SectionHeader,
   Select,
 } from "../../components/ui";
-import { fetchParcelas, deleteParcela, type Parcela } from "../../services/parcelas";
+import { useParcelas, useDeleteParcela } from "../../hooks/queries";
+import { fetchParcelas, type Parcela } from "../../services/parcelas";
 import {
   comunidadesOpciones,
   cultivosOpciones,
@@ -19,6 +20,7 @@ import {
   toOptions,
 } from "../../constants/parcelaOpciones";
 import ParcelaModal from "../../components/parcelas/ParcelaModal";
+import { toast } from "../../utils/toast";
 
 const estadoBadge = (estado: string) =>
   estado === "ACTIVA" ? <Badge variant="forest">Activa</Badge> : <Badge variant="gray">Inactiva</Badge>;
@@ -45,55 +47,53 @@ function FilterSelect({
 }
 
 export default function ParcelaList() {
-  const [parcelas, setParcelas] = useState<Parcela[]>([]);
-  const [allParcelas, setAllParcelas] = useState<Parcela[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filtroComunidad, setFiltroComunidad] = useState("");
   const [filtroCultivo, setFiltroCultivo] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [viewId, setViewId] = useState<string | null>(null);
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [result, allResult] = await Promise.all([
-        fetchParcelas({
-          search: search || undefined,
-          comunidad: filtroComunidad || undefined,
-          cultivo: filtroCultivo || undefined,
-          estado: filtroEstado || undefined,
-          page,
-          limit: 10,
-        }),
-        fetchParcelas({
-          search: search || undefined,
-          comunidad: filtroComunidad || undefined,
-          cultivo: filtroCultivo || undefined,
-          estado: filtroEstado || undefined,
-          limit: 1000,
-        }),
-      ]);
-      setParcelas(result.data);
-      setAllParcelas(allResult.data);
-      setTotalPages(result.totalPages);
-      setTotal(result.total);
-    } catch {
-      // handled silently
-    } finally {
-      setLoading(false);
-    }
-  };
+  const filters = useMemo(() => ({
+    search: search || undefined,
+    comunidad: filtroComunidad || undefined,
+    cultivo: filtroCultivo || undefined,
+    estado: filtroEstado || undefined,
+    page,
+    limit: 10,
+  }), [search, filtroComunidad, filtroCultivo, filtroEstado, page]);
 
-  useEffect(() => {
-    loadData();
-  }, [page, filtroComunidad, filtroCultivo, filtroEstado]);
+  const { data, isLoading, isFetching } = useParcelas(filters);
+  const deleteMutation = useDeleteParcela();
+
+  const parcelas = data?.data ?? [];
+  const totalPages = data?.totalPages ?? 1;
+  const total = data?.total ?? 0;
+
+  const kpis = useMemo(() => [
+    { label: "Total Parcelas", value: String(total), icon: MapPin, iconClass: "bg-forest-600/10 text-forest-600" },
+    {
+      label: "Área Total",
+      value: `${parcelas.reduce((acc, p) => acc + (Number.isNaN(Number(p.area)) ? 0 : Number(p.area)), 0).toFixed(2)} ha`,
+      icon: Ruler,
+      iconClass: "bg-sun-100 text-sun-700",
+    },
+    {
+      label: "Productores con Parcelas",
+      value: String(new Set(parcelas.map((p) => p.productorId)).size),
+      icon: Users,
+      iconClass: "bg-forest-600/10 text-forest-600",
+    },
+    {
+      label: "Parcelas Certificadas",
+      value: String(parcelas.filter((p) => p.certificacion === "ORGANICA").length),
+      icon: BadgeCheck,
+      iconClass: "bg-sun-100 text-sun-700",
+    },
+  ], [total, parcelas]);
 
   const hasFilters =
     Boolean(search) ||
@@ -113,56 +113,45 @@ export default function ParcelaList() {
     setShowCreateModal(false);
     setEditId(null);
     setViewId(null);
-    loadData();
   };
 
-  const handleExportCsv = () => {
-    const headers = ["Código", "Nombre", "Productor", "Comunidad", "Cultivo", "Área", "Estado", "Certificación"];
-    const rows = parcelas.map((p) => [
-      p.codigo,
-      p.nombre,
-      p.productorNombre,
-      p.comunidad,
-      p.cultivo,
-      `${p.area} ${p.areaUnidad}`,
-      p.estado,
-      p.certificacion,
-    ]);
-    const csv = [headers, ...rows]
-      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "parcelas.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleExportCsv = async () => {
+    try {
+      const allResult = await fetchParcelas({
+        search: search || undefined,
+        comunidad: filtroComunidad || undefined,
+        cultivo: filtroCultivo || undefined,
+        estado: filtroEstado || undefined,
+        limit: 1000,
+      });
+      const headers = ["Código", "Nombre", "Productor", "Comunidad", "Cultivo", "Área", "Estado", "Certificación"];
+      const rows = allResult.data.map((p) => [
+        p.codigo,
+        p.nombre,
+        p.productorNombre,
+        p.comunidad,
+        p.cultivo,
+        `${p.area} ${p.areaUnidad}`,
+        p.estado,
+        p.certificacion,
+      ]);
+      const csv = [headers, ...rows]
+        .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+        .join("\n");
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "parcelas.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`CSV exportado: ${allResult.data.length} registros`);
+    } catch {
+      toast.error("Error al exportar el CSV");
+    }
   };
 
-  const kpis = [
-    { label: "Total Parcelas", value: String(total), icon: MapPin, iconClass: "bg-forest-600/10 text-forest-600" },
-    {
-      label: "Área Total",
-      value: `${allParcelas.reduce((acc, p) => acc + (Number.isNaN(Number(p.area)) ? 0 : Number(p.area)), 0).toFixed(2)} ha`,
-      icon: Ruler,
-      iconClass: "bg-sun-100 text-sun-700",
-    },
-    {
-      label: "Productores con Parcelas",
-      value: String(new Set(allParcelas.map((p) => p.productorId)).size),
-      icon: Users,
-      iconClass: "bg-forest-600/10 text-forest-600",
-    },
-    {
-      label: "Parcelas Certificadas",
-      value: String(allParcelas.filter((p) => p.certificacion === "ORGANICA").length),
-      icon: BadgeCheck,
-      iconClass: "bg-sun-100 text-sun-700",
-    },
-  ];
-
-  const columns = [
+  const columns = useMemo(() => [
     { key: "codigo", label: "Código", className: "font-medium text-forest-700" },
     {
       key: "nombre",
@@ -218,9 +207,9 @@ export default function ParcelaList() {
         </div>
       ),
     },
-  ];
+  ], []);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <LoadingSpinner />
@@ -230,6 +219,11 @@ export default function ParcelaList() {
 
   return (
     <div>
+      {isFetching && (
+        <div className="fixed inset-x-0 top-0 z-50 h-0.5">
+          <div className="h-full w-full animate-pulse bg-forest-500/40" />
+        </div>
+      )}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <SectionHeader
           title="Parcelas"
@@ -330,11 +324,11 @@ export default function ParcelaList() {
         onConfirm={async () => {
           if (!deleteId) return;
           try {
-            await deleteParcela(deleteId);
-            setParcelas((prev) => prev.filter((p) => p.id !== deleteId));
+            await deleteMutation.mutateAsync(deleteId);
             setDeleteId(null);
+            toast.success("Parcela eliminada correctamente");
           } catch {
-            // handled silently
+            toast.error("Error al eliminar la parcela");
           }
         }}
         title="Eliminar Parcela"

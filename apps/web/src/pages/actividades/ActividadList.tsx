@@ -36,10 +36,10 @@ export default function ActividadList() {
   const [filtroEstado, setFiltroEstado] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [viewId, setViewId] = useState<string | null>(null);
+  const [editId, setEditId] = useState<number | null>(null);
+  const [viewId, setViewId] = useState<number | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);

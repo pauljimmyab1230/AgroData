@@ -1,32 +1,13 @@
-import { useEffect, useState } from "react";
-import { Boxes, Plus, Scale, Users, Warehouse, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Plus, X } from "lucide-react";
 import { Button, ConfirmDialog, LoadingSpinner, SearchInput, SectionHeader, Select } from "../../components/ui";
 import AcopioKPI from "../../components/acopio/AcopioKPI";
 import AcopioTable from "../../components/acopio/AcopioTable";
-import {
-  fetchAcopios,
-  fetchAcopioStats,
-  deleteAcopio,
-  type AcopioView,
-  type AcopiosQuery,
-} from "../../services/acopios";
-import {
-  fetchCampanias,
-  type Campania,
-} from "../../services/campanias";
-import {
-  fetchProductores,
-  type Productor,
-} from "../../services/productores";
+import { fetchAcopios, fetchAcopioStats, deleteAcopio, type Acopio, formatKg } from "../../services/acopios";
 import AcopioModal from "../../components/acopio/AcopioModal";
+import { toast } from "../../utils/toast";
 
 const pageSize = 10;
-
-const displayToApiEstado: Record<string, string> = {
-  "En Proceso": "EN_PROCESO",
-  Completado: "COMPLETADO",
-  "En Planta": "EN_PLANTA",
-};
 
 function FilterSelect({
   label,
@@ -51,10 +32,6 @@ function FilterSelect({
 
 export default function AcopioList() {
   const [search, setSearch] = useState("");
-  const [filtroCampania, setFiltroCampania] = useState("");
-  const [filtroComunidad, setFiltroComunidad] = useState("");
-  const [filtroProductor, setFiltroProductor] = useState("");
-  const [filtroAcopiador, setFiltroAcopiador] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
   const [page, setPage] = useState(1);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -62,48 +39,23 @@ export default function AcopioList() {
   const [editId, setEditId] = useState<string | null>(null);
   const [viewId, setViewId] = useState<string | null>(null);
 
-  const [acopios, setAcopios] = useState<AcopioView[]>([]);
+  const [acopios, setAcopios] = useState<Acopio[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
 
   const [stats, setStats] = useState({
     total_acopios: 0,
-    productores_atendidos: 0,
     sacos_recibidos: 0,
     kilogramos_acopiados: 0,
   });
 
-  const [campaniasOpts, setCampaniasOpts] = useState<{ value: string; label: string }[]>([]);
-  const [productoresOpts, setProductoresOpts] = useState<{ value: string; label: string }[]>([]);
-
-  useEffect(() => {
-    Promise.all([
-      fetchCampanias({ limit: 100 }).catch(() => ({ data: [] })),
-      fetchProductores({ limit: 100 }).catch(() => ({ data: [] })),
-    ]).then(([campaniasRes, productoresRes]) => {
-      setCampaniasOpts(
-        (campaniasRes.data as Campania[]).map((c) => ({ value: c.id, label: c.nombre }))
-      );
-      setProductoresOpts(
-        (productoresRes.data as Productor[]).map((p) => ({
-          value: p.id,
-          label: `${p.nombres} ${p.apellidoPaterno}`,
-        }))
-      );
-    });
-  }, []);
-
-  const loadData = () => {
-    const params: AcopiosQuery = { page, limit: pageSize };
+  const loadData = useCallback(() => {
+    const params: Record<string, unknown> = { page, limit: pageSize };
     if (search) params.search = search;
-    if (filtroCampania) params.campania_id = filtroCampania;
-    if (filtroComunidad) params.comunidad = filtroComunidad;
-    if (filtroProductor) params.productor_id = filtroProductor;
-    if (filtroAcopiador) params.acopiador = filtroAcopiador;
-    if (filtroEstado) params.estado = displayToApiEstado[filtroEstado] ?? filtroEstado;
+    if (filtroEstado) params.estado = filtroEstado;
 
     setLoading(true);
-    fetchAcopios(params)
+    fetchAcopios(params as any)
       .then((res) => {
         setAcopios(res.data);
         setTotalPages(res.totalPages);
@@ -112,11 +64,11 @@ export default function AcopioList() {
         setAcopios([]);
       })
       .finally(() => setLoading(false));
-  };
+  }, [search, filtroEstado, page]);
 
   useEffect(() => {
     loadData();
-  }, [search, filtroCampania, filtroComunidad, filtroProductor, filtroAcopiador, filtroEstado, page]);
+  }, [loadData]);
 
   useEffect(() => {
     fetchAcopioStats()
@@ -128,43 +80,24 @@ export default function AcopioList() {
     {
       label: "Total Acopios",
       value: String(stats.total_acopios),
-      icon: Warehouse,
       iconClass: "bg-forest-600/10 text-forest-600",
-    },
-    {
-      label: "Productores Atendidos",
-      value: String(stats.productores_atendidos),
-      icon: Users,
-      iconClass: "bg-sun-100 text-sun-700",
     },
     {
       label: "Sacos Recibidos",
       value: String(stats.sacos_recibidos),
-      icon: Boxes,
       iconClass: "bg-forest-600/10 text-forest-600",
     },
     {
       label: "Kilogramos Acopiados",
-      value: `${Intl.NumberFormat("es-PE", { maximumFractionDigits: 1 }).format(stats.kilogramos_acopiados)} kg`,
-      icon: Scale,
+      value: formatKg(stats.kilogramos_acopiados),
       iconClass: "bg-red-50 text-red-600",
     },
   ];
 
-  const hasFilters =
-    Boolean(search) ||
-    Boolean(filtroCampania) ||
-    Boolean(filtroComunidad) ||
-    Boolean(filtroProductor) ||
-    Boolean(filtroAcopiador) ||
-    Boolean(filtroEstado);
+  const hasFilters = Boolean(search) || Boolean(filtroEstado);
 
   const clearFilters = () => {
     setSearch("");
-    setFiltroCampania("");
-    setFiltroComunidad("");
-    setFiltroProductor("");
-    setFiltroAcopiador("");
     setFiltroEstado("");
     setPage(1);
   };
@@ -182,59 +115,45 @@ export default function AcopioList() {
       await deleteAcopio(deleteId);
       setDeleteId(null);
       loadData();
+      toast.success("Acopio eliminado correctamente");
     } catch {
-      // ignore
+      toast.error("Error al eliminar el acopio");
     }
   };
 
+  const acopioAEliminar = acopios.find((a) => a.id === deleteId);
+
+  if (loading && acopios.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
   return (
     <div>
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <SectionHeader
-          title="Acopio"
-          description="Recepción de la producción de los productores"
-        />
-        <div className="flex items-center gap-2">
+      <SectionHeader
+        title="Acopios"
+        description="Gestión de acopios de producción"
+        actions={
           <Button onClick={() => setShowCreateModal(true)} iconLeft={<Plus className="h-4 w-4" />}>
             Nuevo Acopio
           </Button>
-        </div>
-      </div>
+        }
+      />
 
-      <AcopioKPI items={kpis} />
+      <AcopioKPI stats={kpis} />
 
       <div className="mb-6 flex flex-wrap items-end gap-3">
         <div className="max-w-md min-w-[200px] flex-1">
           <SearchInput
-            placeholder="Buscar por código, productor, comunidad o acopiador..."
+            placeholder="Buscar por código o acopiador..."
             value={search}
-            onChange={(val) => {
-              setSearch(val);
-              setPage(1);
-            }}
+            onChange={(val) => { setSearch(val); setPage(1); }}
           />
         </div>
 
-        <FilterSelect
-          label="Campaña"
-          placeholder="Todas"
-          options={campaniasOpts}
-          value={filtroCampania}
-          onChange={(val) => {
-            setFiltroCampania(val);
-            setPage(1);
-          }}
-        />
-        <FilterSelect
-          label="Productor"
-          placeholder="Todos"
-          options={productoresOpts}
-          value={filtroProductor}
-          onChange={(val) => {
-            setFiltroProductor(val);
-            setPage(1);
-          }}
-        />
         <FilterSelect
           label="Estado"
           placeholder="Todos"
@@ -244,10 +163,7 @@ export default function AcopioList() {
             { value: "EN_PLANTA", label: "En Planta" },
           ]}
           value={filtroEstado}
-          onChange={(val) => {
-            setFiltroEstado(val);
-            setPage(1);
-          }}
+          onChange={(val) => { setFiltroEstado(val); setPage(1); }}
         />
 
         {hasFilters && (
@@ -257,28 +173,26 @@ export default function AcopioList() {
         )}
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <LoadingSpinner />
-        </div>
-      ) : (
-        <AcopioTable
-          data={acopios}
-          currentPage={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          onView={(acopio) => setViewId(String(acopio.id))}
-          onEdit={(acopio) => setEditId(String(acopio.id))}
-          onDelete={(acopio) => setDeleteId(String(acopio.id))}
-        />
-      )}
+      <AcopioTable
+        data={acopios}
+        onView={(id) => setViewId(id)}
+        onEdit={(id) => setEditId(id)}
+        onDelete={(id) => setDeleteId(id)}
+        currentPage={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+      />
 
       <ConfirmDialog
         open={deleteId !== null}
         onClose={() => setDeleteId(null)}
         onConfirm={handleDelete}
         title="Eliminar Acopio"
-        message="¿Estás seguro de eliminar este acopio? Esta acción no se puede deshacer."
+        message={
+          acopioAEliminar
+            ? `¿Estás seguro de eliminar el acopio ${acopioAEliminar.codigo}? Esta acción no se puede deshacer.`
+            : "¿Estás seguro de eliminar este acopio? Esta acción no se puede deshacer."
+        }
         confirmText="Eliminar"
         variant="danger"
       />

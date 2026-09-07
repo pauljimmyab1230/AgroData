@@ -56,10 +56,6 @@ export function ResumenProductivoCard({ stats }: ResumenProductivoCardProps) {
                 <span className="text-gray-700">Parcelas</span>
                 <span className="font-medium text-[#111827]">{stats.parcelas} parcelas</span>
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-700">Productores</span>
-                <span className="font-medium text-[#111827]">{stats.productores} socios</span>
-              </div>
             </div>
           ) : (
             <p className="text-xs text-gray-400">Sin datos registrados en esta campaña.</p>

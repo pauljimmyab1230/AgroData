@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   Users,
@@ -11,7 +10,7 @@ import {
   Plus,
 } from "lucide-react";
 import { Badge, Breadcrumb, Button, Card, SectionHeader, LoadingSpinner } from "../../components/ui";
-import api from "../../services/api";
+import { useDashboard } from "../../hooks/queries";
 
 type Stat = {
   label: string;
@@ -27,119 +26,48 @@ const estadoBadge = (estado: string) => {
       return <Badge variant="yellow">Pendiente</Badge>;
     case "EN_PROCESO":
       return <Badge variant="forest">En curso</Badge>;
-    case "COMPLETADO":
+    case "COMPLETADA":
       return <Badge variant="gray">Completada</Badge>;
     default:
       return <Badge>{estado}</Badge>;
   }
 };
 
-interface DashboardData {
-  productores: number;
-  parcelas: number;
-  cultivos: number;
-  campanias: number;
-  campaniaActiva: {
-    nombre: string;
-    parcelasCultivadas: number;
-    actividades: number;
-  } | null;
-  actividadesRecientes: Array<{
-    nombre: string;
-    parcela: string;
-    estado: string;
-  }>;
-}
-
 export default function Dashboard() {
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<DashboardData>({
-    productores: 0,
-    parcelas: 0,
-    cultivos: 0,
-    campanias: 0,
-    campaniaActiva: null,
-    actividadesRecientes: [],
-  });
-
-  useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        const [productoresRes, parcelasRes, cultivosRes, campaniasRes, actividadesRes] =
-          await Promise.all([
-            api.get("/productores?limit=1").catch(() => ({ data: { total: 0 } })),
-            api.get("/parcelas?limit=1").catch(() => ({ data: { total: 0 } })),
-            api.get("/cultivos?limit=1").catch(() => ({ data: { total: 0 } })),
-            api.get("/campanias?limit=1").catch(() => ({ data: { total: 0, data: [] } })),
-            api.get("/actividades?limit=5").catch(() => ({ data: { data: [] } })),
-          ]);
-
-        const campaniaActiva = campaniasRes.data.data?.find(
-          (c: { estado: string }) => c.estado === "ACTIVA"
-        );
-
-        setData({
-          productores: productoresRes.data.total ?? 0,
-          parcelas: parcelasRes.data.total ?? 0,
-          cultivos: cultivosRes.data.total ?? 0,
-          campanias: campaniasRes.data.total ?? 0,
-          campaniaActiva: campaniaActiva
-            ? {
-                nombre: campaniaActiva.nombre,
-                parcelasCultivadas: 0,
-                actividades: 0,
-              }
-            : null,
-          actividadesRecientes: (actividadesRes.data.data ?? []).map(
-            (a: { nombre: string; parcela_nombre: string; estado: string }) => ({
-              nombre: a.nombre,
-              parcela: a.parcela_nombre ?? "",
-              estado: a.estado,
-            })
-          ),
-        });
-      } catch {
-        // keep defaults
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboard();
-  }, []);
+  const { data, isLoading } = useDashboard();
 
   const stats: Stat[] = [
     {
       label: "Productores",
-      value: String(data.productores),
+      value: String(data?.productores ?? 0),
       hint: "registrados",
       icon: Users,
       iconClass: "bg-forest-600/10 text-forest-600",
     },
     {
       label: "Parcelas",
-      value: String(data.parcelas),
+      value: String(data?.parcelas ?? 0),
       hint: "georeferenciadas",
       icon: MapPin,
       iconClass: "bg-sun-100 text-sun-600",
     },
     {
       label: "Cultivos",
-      value: String(data.cultivos),
+      value: String(data?.cultivos ?? 0),
       hint: "registrados",
       icon: Wheat,
       iconClass: "bg-forest-600/10 text-forest-600",
     },
     {
-      label: "Campañas",
-      value: String(data.campanias),
-      hint: data.campaniaActiva ? "1 activa" : "ninguna activa",
+      label: "Campa\u00f1as",
+      value: String(data?.campanias ?? 0),
+      hint: data?.campaniaActiva ? "1 activa" : "ninguna activa",
       icon: CalendarDays,
       iconClass: "bg-sun-100 text-sun-600",
     },
   ];
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <LoadingSpinner text="Cargando dashboard..." />
@@ -154,11 +82,11 @@ export default function Dashboard() {
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <SectionHeader
           title="Dashboard"
-          description="Resumen general de la cooperativa y sus actividades agrícolas."
+          description="Resumen general de la cooperativa y sus actividades agr\u00edcolas."
         />
         <div className="flex items-center gap-2">
           <Button as="link" to="/campanias/nueva" iconLeft={<Plus className="h-4 w-4" />}>
-            Nueva Campaña
+            Nueva Campa\u00f1a
           </Button>
         </div>
       </div>
@@ -191,15 +119,15 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {data.actividadesRecientes.length === 0 ? (
+          {!data?.actividadesRecientes?.length ? (
             <p className="py-6 text-center text-sm text-gray-400">No hay actividades registradas.</p>
           ) : (
             <ul className="divide-y divide-gray-100">
-              {data.actividadesRecientes.map((act, i) => (
-                <li key={i} className="flex items-center justify-between gap-4 py-3.5">
+              {data.actividadesRecientes.map((act) => (
+                <li key={act.id} className="flex items-center justify-between gap-4 py-3.5">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-[#111827]">{act.nombre}</p>
-                    <p className="mt-0.5 truncate text-xs text-gray-500">{act.parcela || "Sin parcela"}</p>
+                    <p className="truncate text-sm font-medium text-[#111827]">{act.tipoActividad}</p>
+                    <p className="mt-0.5 truncate text-xs text-gray-500">{act.codigo}</p>
                   </div>
                   {estadoBadge(act.estado)}
                 </li>
@@ -214,33 +142,33 @@ export default function Dashboard() {
               <Sprout className="h-5 w-5 text-forest-300" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white">Campaña actual</h2>
+              <h2 className="text-lg font-semibold text-white">Campa\u00f1a actual</h2>
               <p className="text-xs text-forest-300">
-                {data.campaniaActiva ? data.campaniaActiva.nombre : "Sin campaña activa"}
+                {data?.campaniaActiva ? data.campaniaActiva.nombre : "Sin campa\u00f1a activa"}
               </p>
             </div>
           </div>
 
-          {data.campaniaActiva ? (
+          {data?.campaniaActiva ? (
             <>
               <dl className="mt-6 space-y-4">
                 <div className="flex items-center justify-between">
-                  <dt className="text-sm text-forest-200">Parcelas cultivadas</dt>
-                  <dd className="text-lg font-semibold text-white">
-                    {data.campaniaActiva.parcelasCultivadas}
+                  <dt className="text-sm text-forest-200">C\u00f3digo</dt>
+                  <dd className="text-sm font-semibold text-white">
+                    {data.campaniaActiva.codigo}
                   </dd>
                 </div>
                 <div className="flex items-center justify-between">
-                  <dt className="text-sm text-forest-200">Actividades planificadas</dt>
-                  <dd className="text-lg font-semibold text-white">
-                    {data.campaniaActiva.actividades}
+                  <dt className="text-sm text-forest-200">A\u00f1o agr\u00edcola</dt>
+                  <dd className="text-sm font-semibold text-white">
+                    {data.campaniaActiva.anio_agricola}
                   </dd>
                 </div>
               </dl>
             </>
           ) : (
             <p className="mt-6 text-sm text-forest-300">
-              No hay campaña activa. Crea una nueva campaña para comenzar.
+              No hay campa\u00f1a activa. Crea una nueva campa\u00f1a para comenzar.
             </p>
           )}
         </div>

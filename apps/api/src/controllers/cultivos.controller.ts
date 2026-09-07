@@ -7,8 +7,7 @@ export const getAll = async (req: AuthRequest, res: Response, next: NextFunction
     const result = await cultivosService.getAll({
       search: req.query.search as string | undefined,
       estado: req.query.estado as string | undefined,
-      campania_id: req.query.campania_id as string | undefined,
-      productor_id: req.query.productor_id as string | undefined,
+      campanias_id: req.query.campania_id as string | undefined,
       parcela_id: req.query.parcela_id as string | undefined,
       page: parseInt(req.query.page as string) || 1,
       limit: parseInt(req.query.limit as string) || 20,
@@ -77,7 +76,7 @@ export const getGlobalStats = async (req: AuthRequest, res: Response, next: Next
     const stats = await cultivosService.getGlobalStats({
       search: req.query.search as string | undefined,
       estado: req.query.estado as string | undefined,
-      campania_id: req.query.campania_id as string | undefined,
+      campanias_id: req.query.campania_id as string | undefined,
     });
     res.status(200).json({
       success: true,

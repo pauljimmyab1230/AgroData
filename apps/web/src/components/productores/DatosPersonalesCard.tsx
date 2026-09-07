@@ -4,6 +4,7 @@ import { CardHeader, CardShell, Field } from "../shared/formControls";
 import type { FormMode } from "../shared/formControls";
 import type { Productor } from "../../services/productores";
 import { useProductorForm } from "../../contexts/ProductorFormContext";
+import { displayField } from "../../utils/formatters";
 
 type DatosPersonalesCardProps = {
   mode: FormMode;
@@ -26,11 +27,7 @@ export function DatosPersonalesCard({ mode, values }: DatosPersonalesCardProps) 
   const editable = mode !== "view";
   const { data, updateData, errors, clearFieldError } = useProductorForm();
 
-  const str = (val: unknown): string => (typeof val === "string" ? val : "");
-  const display = (field: keyof Productor) => {
-    if (mode === "view") return str(values?.[field]);
-    return str(data?.[field]);
-  };
+  const display = (field: keyof Productor) => displayField(mode, field, values, data);
 
   return (
     <CardShell>
@@ -48,12 +45,15 @@ export function DatosPersonalesCard({ mode, values }: DatosPersonalesCardProps) 
         <Field label="DNI" mode={mode} value={values?.dni} required error={errors?.dni}>
           <Input
             type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             placeholder="Ej. 44789632"
             maxLength={8}
             value={display("dni") as string}
             onChange={(e) => {
+              const filtered = e.target.value.replace(/\D/g, '').slice(0, 8);
               clearFieldError("dni");
-              updateData({ dni: e.target.value });
+              updateData({ dni: filtered });
             }}
             disabled={!editable}
           />

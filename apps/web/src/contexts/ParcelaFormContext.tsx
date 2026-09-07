@@ -1,20 +1,15 @@
 import { createContext, useContext, useState, useCallback } from "react";
 import type { ReactNode } from "react";
-import type { Parcela, ParcelaDocumento, ParcelaFoto } from "../services/parcelas";
+import type { Parcela } from "../services/parcelas";
 
 type ParcelaFormData = Partial<Parcela>;
 
-export type ParcelaFieldErrors = Partial<Record<keyof Parcela, string>>;
+type FieldErrors = Partial<Record<keyof Parcela, string>>;
 
 type ParcelaFormContextType = {
   data: ParcelaFormData;
-  errors: ParcelaFieldErrors;
-  documentos: ParcelaDocumento[];
-  fotos: ParcelaFoto[];
+  errors: FieldErrors;
   updateData: (patch: ParcelaFormData) => void;
-  resetData: (initial: ParcelaFormData) => void;
-  setDocumentos: (list: ParcelaDocumento[]) => void;
-  setFotos: (list: ParcelaFoto[]) => void;
   validate: () => boolean;
   clearFieldError: (field: keyof Parcela) => void;
 };
@@ -40,9 +35,7 @@ export function ParcelaFormProvider({
   children: ReactNode;
 }) {
   const [data, setData] = useState<ParcelaFormData>(initial);
-  const [errors, setErrors] = useState<ParcelaFieldErrors>({});
-  const [documentos, setDocumentos] = useState<ParcelaDocumento[]>(initial.documentos ?? []);
-  const [fotos, setFotos] = useState<ParcelaFoto[]>(initial.fotos ?? []);
+  const [errors, setErrors] = useState<FieldErrors>({});
 
   const updateData = useCallback((patch: ParcelaFormData) => {
     setData((prev) => ({ ...prev, ...patch }));
@@ -56,15 +49,8 @@ export function ParcelaFormProvider({
     });
   }, []);
 
-  const resetData = useCallback((initialData: ParcelaFormData) => {
-    setData(initialData);
-    setErrors({});
-    setDocumentos(initialData.documentos ?? []);
-    setFotos(initialData.fotos ?? []);
-  }, []);
-
   const validate = useCallback((): boolean => {
-    const nextErrors: ParcelaFieldErrors = {};
+    const nextErrors: FieldErrors = {};
 
     for (const field of REQUIRED_FIELDS) {
       const value = data[field];
@@ -97,12 +83,7 @@ export function ParcelaFormProvider({
       value={{
         data,
         errors,
-        documentos,
-        fotos,
         updateData,
-        resetData,
-        setDocumentos,
-        setFotos,
         validate,
         clearFieldError,
       }}

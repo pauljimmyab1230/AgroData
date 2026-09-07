@@ -1,94 +1,94 @@
-import { useNavigate } from "react-router-dom";
-import { Eye, Pencil, Trash2, UserRound } from "lucide-react";
+import { Eye, Pencil, Trash2 } from "lucide-react";
 import { Badge, DataTable } from "../ui";
-import { EstadoAcopioBadge } from "./badges";
-import { formatFecha, formatKg, type AcopioView } from "../../services/acopios";
+import { formatFecha, formatKg, type Acopio } from "../../services/acopios";
 
 interface AcopioTableProps {
-  data: AcopioView[];
+  data: Acopio[];
+  onView: (id: string) => void;
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
   currentPage?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
-  onDelete: (acopio: AcopioView) => void;
 }
+
+const estadoLabels: Record<string, string> = {
+  EN_PROCESO: "En Proceso",
+  COMPLETADO: "Completado",
+  EN_PLANTA: "En Planta",
+};
 
 export default function AcopioTable({
   data,
+  onView,
+  onEdit,
+  onDelete,
   currentPage,
   totalPages,
   onPageChange,
-  onDelete,
 }: AcopioTableProps) {
-  const navigate = useNavigate();
-
   const columns = [
     { key: "codigo", label: "Código", sortable: true, className: "font-medium text-forest-700" },
     {
       key: "fecha",
       label: "Fecha",
       sortable: true,
-      render: (acopio: Acopio) => <span className="text-gray-600">{formatFecha(acopio.fecha)}</span>,
+      render: (a: Acopio) => <span className="text-gray-600">{formatFecha(a.fecha)}</span>,
     },
+    { key: "acopiador", label: "Acopiador" },
     {
-      key: "productor",
-      label: "Productor",
-      render: (acopio: Acopio) => (
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-forest-600/10 text-forest-700">
-            <UserRound className="h-4 w-4" />
-          </div>
-          <div>
-            <p className="font-medium text-[#111827]">{acopio.productor}</p>
-            <p className="text-xs text-gray-500">{acopio.cultivo}</p>
-          </div>
-        </div>
+      key: "detalles",
+      label: "Productores",
+      render: (a: Acopio) => (
+        <span className="text-sm text-gray-600">{a.detalles.length} productor(es)</span>
       ),
     },
-    { key: "comunidad", label: "Comunidad" },
     {
       key: "totalSacos",
       label: "Sacos",
       sortable: true,
-      render: (acopio: Acopio) => <Badge variant="gray">{acopio.totalSacos}</Badge>,
+      render: (a: Acopio) => <Badge variant="gray">{a.totalSacos}</Badge>,
     },
     {
       key: "pesoTotal",
       label: "Peso Total",
       sortable: true,
-      render: (acopio: Acopio) => <span className="font-medium text-[#111827]">{formatKg(acopio.pesoTotal)}</span>,
+      render: (a: Acopio) => <span className="font-medium text-[#111827]">{formatKg(a.pesoTotal)}</span>,
     },
-    { key: "acopiador", label: "Acopiador" },
     {
       key: "estado",
       label: "Estado",
-      render: (acopio: Acopio) => <EstadoAcopioBadge estado={acopio.estado} />,
+      render: (a: Acopio) => {
+        const variant = a.estado === "COMPLETADO" ? "green" : a.estado === "EN_PLANTA" ? "blue" : "yellow";
+        return <Badge variant={variant}>{estadoLabels[a.estado] || a.estado}</Badge>;
+      },
     },
     {
       key: "acciones",
       label: "",
       className: "text-right",
-      render: (acopio: Acopio) => (
+      render: (a: Acopio) => (
         <div className="flex justify-end gap-1">
           <button
             type="button"
-            aria-label={`Ver ${acopio.codigo}`}
-            onClick={() => navigate(`/acopio/${acopio.id}`)}
+            aria-label={`Ver ${a.codigo}`}
+            onClick={() => onView(a.id)}
             className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-forest-600/10 hover:text-forest-700"
           >
             <Eye className="h-4 w-4" />
           </button>
           <button
             type="button"
-            aria-label={`Editar ${acopio.codigo}`}
-            onClick={() => navigate(`/acopio/${acopio.id}/editar`)}
+            aria-label={`Editar ${a.codigo}`}
+            onClick={() => onEdit(a.id)}
             className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-forest-600/10 hover:text-forest-700"
           >
             <Pencil className="h-4 w-4" />
           </button>
           <button
             type="button"
-            aria-label={`Eliminar ${acopio.codigo}`}
-            onClick={() => onDelete(acopio)}
+            aria-label={`Eliminar ${a.codigo}`}
+            onClick={() => onDelete(a.id)}
             className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
           >
             <Trash2 className="h-4 w-4" />

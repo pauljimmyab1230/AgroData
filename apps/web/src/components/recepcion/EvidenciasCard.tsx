@@ -134,9 +134,9 @@ function RegistroTile({
 
 export function EvidenciasCard({ mode, values, onChange }: EvidenciasCardProps) {
   const editable = mode !== "view";
-  const [fotos, setFotos] = useState<EvidenciaLocal[]>(
-    (values?.evidencias ?? []).map((e) => ({
-      id: e.id ?? String(Math.random()),
+  const [fotos, setFotos] = useState<EvidenciaLocal[]>(() =>
+    (values?.evidencias ?? []).map((e, i) => ({
+      id: e.id ?? String(i + 1),
       nombre: e.nombre,
       tipo: e.tipo ?? "foto",
       ruta_archivo: e.ruta_archivo,

@@ -25,14 +25,14 @@ function wktToCoords(wkt: string): Coord[] | null {
 async function savePoligono(parcelaId: number, coords: Coord[] | null): Promise<void> {
   if (!coords || coords.length < 3) {
     await prisma.$executeRawUnsafe(
-      'UPDATE parcelas_productor SET poligono = NULL WHERE id = ?',
+      'UPDATE parcela SET poligono = NULL WHERE id = ?',
       parcelaId,
     );
     return;
   }
   const wkt = coordsToWkt(coords);
   await prisma.$executeRawUnsafe(
-    'UPDATE parcelas_productor SET poligono = ST_GeomFromText(?, 4326) WHERE id = ?',
+    'UPDATE parcela SET poligono = ST_GeomFromText(?, 4326) WHERE id = ?',
     wkt,
     parcelaId,
   );
@@ -41,7 +41,7 @@ async function savePoligono(parcelaId: number, coords: Coord[] | null): Promise<
 async function fetchPoligono(parcelaId: number): Promise<Coord[] | null> {
   try {
     const rows = await prisma.$queryRaw<{ poligono: string }[]>`
-      SELECT ST_AsWKT(poligono) AS poligono FROM parcelas_productor WHERE id = ${parcelaId}
+      SELECT ST_AsWKT(poligono) AS poligono FROM parcela WHERE id = ${parcelaId}
     `;
     if (!rows.length || !rows[0].poligono) return null;
     return wktToCoords(rows[0].poligono);
@@ -53,8 +53,8 @@ async function fetchPoligono(parcelaId: number): Promise<Coord[] | null> {
 // ─── End helpers ─────────────────────────────────────────────
 
 const generateCodigoParcela = async (): Promise<string> => {
-  const last = await prisma.parcelas_productor.findFirst({
-    orderBy: { created_at: 'desc' },
+  const last = await prisma.parcela.findFirst({
+    orderBy: { codigo: 'desc' },
     select: { codigo: true },
   });
 
@@ -79,7 +79,7 @@ export const getAll = async (filters: {
   comunidad?: string;
   cultivo?: string;
   estado?: string;
-  productor_id?: string;
+  productores_id?: string;
   page?: number;
   limit?: number;
 }) => {
@@ -88,15 +88,14 @@ export const getAll = async (filters: {
   if (filters.comunidad) where.comunidad = filters.comunidad;
   if (filters.cultivo) where.cultivo = filters.cultivo;
   if (filters.estado) where.estado = filters.estado;
-  if (filters.productor_id) where.productor_id = Number(filters.productor_id);
+  if (filters.productores_id) where.productores_id = Number(filters.productores_id);
 
   if (filters.search) {
     where.OR = [
-      { codigo: { contains: filters.search } },
-      { nombre: { contains: filters.search } },
-      { cultivo: { contains: filters.search } },
-      { comunidad: { contains: filters.search } },
-      { productor: { nombres: { contains: filters.search } } },
+      { codigo: { contains: filters.search, mode: 'insensitive' } },
+      { nombre: { contains: filters.search, mode: 'insensitive' } },
+      { cultivo: { contains: filters.search, mode: 'insensitive' } },
+      { comunidad: { contains: filters.search, mode: 'insensitive' } },
     ];
   }
 
@@ -104,31 +103,32 @@ export const getAll = async (filters: {
   const limit = filters.limit || 20;
 
   const [parcelas, total] = await Promise.all([
-    prisma.parcelas_productor.findMany({
+    prisma.parcela.findMany({
       where,
       include: {
         productor: { select: productorSelect },
         _count: { select: { documentos: true, fotos: true } },
-        ubigeo_record: true,
       },
       orderBy: { created_at: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
     }),
-    prisma.parcelas_productor.count({ where }),
+    prisma.parcela.count({ where }),
   ]);
 
   let polyMap = new Map<number, Coord[] | null>();
-  try {
-    const poligonos = await prisma.$queryRaw<{ id: number; wkt: string }[]>`
-      SELECT id, ST_AsWKT(poligono) AS wkt
-      FROM parcelas_productor
-      WHERE id IN (${parcelas.map((p) => p.id)})
-        AND poligono IS NOT NULL
-    `;
-    polyMap = new Map(poligonos.map((r) => [r.id, wktToCoords(r.wkt)]));
-  } catch {
-    // poligono column may not support ST_AsWKT
+  if (parcelas.length > 0) {
+    try {
+      const poligonos = await prisma.$queryRaw<{ id: number; wkt: string }[]>`
+        SELECT id, ST_AsWKT(poligono) AS wkt
+        FROM parcela
+        WHERE id IN (${parcelas.map((p) => p.id)})
+          AND poligono IS NOT NULL
+      `;
+      polyMap = new Map(poligonos.map((r) => [r.id, wktToCoords(r.wkt)]));
+    } catch {
+      // poligono column may not support ST_AsWKT
+    }
   }
 
   const data = parcelas.map((p) => ({
@@ -140,13 +140,12 @@ export const getAll = async (filters: {
 };
 
 export const getById = async (id: number) => {
-  const parcela = await prisma.parcelas_productor.findFirst({
+  const parcela = await prisma.parcela.findFirst({
     where: { id, activo: true },
     include: {
       productor: { select: productorSelect },
       documentos: true,
       fotos: true,
-      ubigeo_record: true,
     },
   });
 
@@ -175,7 +174,6 @@ const buildCreateData = (data: Record<string, unknown>) => ({
   distrito: (data.distrito as string) || null,
   centro_poblado: (data.centro_poblado as string) || null,
   ubigeo: (data.ubigeo as string) || null,
-  ubigeo_id: data.ubigeo_id ? Number(data.ubigeo_id) : null,
   latitud: (data.latitud as string) || null,
   longitud: (data.longitud as string) || null,
   precision_gps: (data.precision_gps as string) || null,
@@ -200,14 +198,14 @@ const buildCreateData = (data: Record<string, unknown>) => ({
 });
 
 export const create = async (data: Record<string, unknown>, userId?: string) => {
-  const productorId = Number(data.productor_id);
+  const productorId = Number(data.productores_id);
   await ensureProductorExists(productorId);
 
   let codigo = (data.codigo as string) || '';
   if (!codigo.trim()) {
     codigo = await generateCodigoParcela();
   } else {
-    const exists = await prisma.parcelas_productor.findFirst({ where: { codigo } });
+    const exists = await prisma.parcela.findFirst({ where: { codigo } });
     if (exists) {
       throw createError(`El código ${codigo} ya está en uso`, 409);
     }
@@ -219,15 +217,14 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
     if (ubigeoRecord) ubigeoId = ubigeoRecord.id;
   }
 
-  const parcela = await prisma.parcelas_productor.create({
+  const parcela = await prisma.parcela.create({
     data: {
-      productor_id: productorId,
+      productores_id: productorId,
       codigo,
       ...buildCreateData(data),
-      ubigeo_id: ubigeoId,
       created_by: userId || null,
     },
-    include: { productor: { select: productorSelect }, ubigeo_record: true },
+    include: { productor: { select: productorSelect } },
   });
 
   const poligono = data.poligono as Coord[] | null | undefined;
@@ -239,7 +236,7 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
 };
 
 export const update = async (id: number, data: Record<string, unknown>, userId?: string) => {
-  const existing = await prisma.parcelas_productor.findFirst({ where: { id, activo: true } });
+  const existing = await prisma.parcela.findFirst({ where: { id, activo: true } });
 
   if (!existing) {
     throw createError('Parcela no encontrada', 404);
@@ -305,17 +302,17 @@ export const update = async (id: number, data: Record<string, unknown>, userId?:
   if (data.certificacion !== undefined) updateData.certificacion = data.certificacion;
   if (data.estado !== undefined) updateData.estado = data.estado;
   if (data.codigo !== undefined) updateData.codigo = data.codigo;
-  if (data.productor_id !== undefined && data.productor_id !== '') {
-    await ensureProductorExists(Number(data.productor_id));
-    updateData.productor_id = Number(data.productor_id);
+  if (data.productores_id !== undefined && data.productores_id !== '') {
+    await ensureProductorExists(Number(data.productores_id));
+    updateData.productores_id = Number(data.productores_id);
   }
 
   if (userId) updateData.updated_by = userId;
 
-  const updated = await prisma.parcelas_productor.update({
+  const updated = await prisma.parcela.update({
     where: { id },
     data: updateData,
-    include: { productor: { select: productorSelect }, ubigeo_record: true },
+    include: { productor: { select: productorSelect } },
   });
 
   if (data.poligono !== undefined) {
@@ -328,13 +325,13 @@ export const update = async (id: number, data: Record<string, unknown>, userId?:
 };
 
 export const remove = async (id: number) => {
-  const existing = await prisma.parcelas_productor.findFirst({ where: { id, activo: true } });
+  const existing = await prisma.parcela.findFirst({ where: { id, activo: true } });
 
   if (!existing) {
     throw createError('Parcela no encontrada', 404);
   }
 
-  await prisma.parcelas_productor.update({
+  await prisma.parcela.update({
     where: { id },
     data: { activo: false, estado: 'INACTIVA' },
   });
@@ -480,14 +477,14 @@ export const removeFoto = async (parcelaId: number, fotoId: number) => {
 // ─── Helpers ────────────────────────────────────────────────
 
 const ensureProductorExists = async (id: number) => {
-  const exists = await prisma.productores.findUnique({ where: { id }, select: { id: true } });
+  const exists = await prisma.productor.findUnique({ where: { id }, select: { id: true } });
   if (!exists) {
     throw createError('Productor no encontrado', 404);
   }
 };
 
 const ensureParcelaExists = async (id: number) => {
-  const exists = await prisma.parcelas_productor.findUnique({ where: { id }, select: { id: true } });
+  const exists = await prisma.parcela.findUnique({ where: { id }, select: { id: true } });
   if (!exists) {
     throw createError('Parcela no encontrada', 404);
   }

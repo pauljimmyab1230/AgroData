@@ -14,14 +14,11 @@ import {
   PackageCheck,
   Factory,
   Package,
-  Layers,
-  Route,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
   Settings,
   BookOpen,
-  GraduationCap,
 } from "lucide-react";
 
 type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean };
@@ -63,7 +60,6 @@ const navItems: SidebarEntry[] = [
       { to: "/cultivos", icon: Wheat, label: "Cultivos" },
       { to: "/actividades", icon: ClipboardList, label: "Actividades" },
       { to: "/inspecciones", icon: SearchCheck, label: "Inspecciones" },
-      { to: "/capacitaciones", icon: GraduationCap, label: "Capacitaciones" },
     ],
   },
 
@@ -75,17 +71,7 @@ const navItems: SidebarEntry[] = [
       { to: "/acopio", icon: Warehouse, label: "Acopio" },
       { to: "/recepcion", icon: PackageCheck, label: "Recepción" },
       { to: "/procesamiento", icon: Factory, label: "Procesamiento" },
-    ],
-  },
-
-  {
-    id: "trazabilidad",
-    label: "Trazabilidad",
-    icon: Route,
-    children: [
-      { to: "/lotes", icon: Layers, label: "Lotes" },
-      { to: "/inventario", icon: Package, label: "Inventario" },
-      { to: "/trazabilidad", icon: Route, label: "Trazabilidad" },
+      { to: "/kardex", icon: BookOpen, label: "Kardex" },
     ],
   },
 

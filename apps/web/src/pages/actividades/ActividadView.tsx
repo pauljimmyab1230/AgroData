@@ -24,7 +24,7 @@ import {
 
 interface ActividadViewProps {
   inModal?: boolean;
-  actividadId?: string;
+  actividadId?: number;
 }
 
 export default function ActividadView({ inModal, actividadId: propId }: ActividadViewProps) {

@@ -3,9 +3,9 @@ import type { Campania } from "../../services/campanias";
 
 type CampaniaActionsProps = {
   campania: Campania;
-  onView: (id: string) => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onView: (id: number) => void;
+  onEdit: (id: number) => void;
+  onDelete: (id: number) => void;
 };
 
 const baseClass = "rounded-lg p-1.5 text-gray-400 transition-colors";

@@ -1,19 +1,14 @@
-import { Package, Plus, X } from "lucide-react";
-import { Badge, Button, Select } from "../ui";
-import { CardHeader, CardShell, type FormMode } from "../shared/formControls";
-import { formatKg, lotesProductorDisponibles, type OrdenProcesamiento } from "../../services/procesamientos";
+import { Package } from "lucide-react";
+import { Badge } from "../ui";
+import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
+import type { OrdenProcesamiento } from "../../services/procesamientos";
 
 type MateriaPrimaCardProps = {
   mode: FormMode;
   values?: Partial<OrdenProcesamiento>;
 };
 
-const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: item }));
-
 export function MateriaPrimaCard({ mode, values }: MateriaPrimaCardProps) {
-  const editable = mode !== "view";
-  const [loteDisponible, setLoteDisponible] = useState("");
-
   const lotesActuales = values?.lotes ?? [];
 
   return (

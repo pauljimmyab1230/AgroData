@@ -7,6 +7,13 @@ export interface Evidencia {
   ruta_archivo: string;
 }
 
+export interface RecepcionSaco {
+  id?: number;
+  codigo: string;
+  peso: number;
+  observaciones?: string;
+}
+
 export interface Recepcion {
   id: string;
   codigo: string;
@@ -42,6 +49,7 @@ export interface Recepcion {
   firmaResponsableUrl: string;
   activo: boolean;
   evidencias: Evidencia[];
+  sacosDetalle: RecepcionSaco[];
   createdAt: string;
   updatedAt: string;
 }
@@ -81,6 +89,7 @@ interface RecepcionDTO {
   firma_responsable_url: string | null;
   activo: boolean;
   evidencias: Array<{ id: string; nombre: string; tipo?: string; ruta_archivo: string | null }>;
+  sacos_detalle: Array<{ id: number; codigo: string; peso: number | string; observaciones: string | null }>;
   created_at: string;
   updated_at: string;
 }
@@ -126,6 +135,12 @@ function toFrontend(dto: RecepcionDTO): Recepcion {
       tipo: e.tipo ?? "",
       ruta_archivo: e.ruta_archivo ?? "",
     })),
+    sacosDetalle: (dto.sacos_detalle ?? []).map(s => ({
+      id: s.id,
+      codigo: s.codigo,
+      peso: Number(s.peso) || 0,
+      observaciones: s.observaciones ?? "",
+    })),
     createdAt: dto.created_at,
     updatedAt: dto.updated_at,
   };
@@ -164,6 +179,7 @@ function toBackend(data: Partial<Recepcion>): Record<string, unknown> {
   if (data.firmaResponsableUrl !== undefined) out.firma_responsable_url = data.firmaResponsableUrl || null;
   if (data.activo !== undefined) out.activo = data.activo;
   if (data.evidencias !== undefined) out.evidencias = data.evidencias;
+  if (data.sacosDetalle !== undefined) out.sacos_detalle = data.sacosDetalle;
   return out;
 }
 
@@ -201,6 +217,7 @@ export interface RecepcionFormData {
   firmaResponsableUrl: string;
   activo: boolean;
   evidencias: Evidencia[];
+  sacosDetalle: RecepcionSaco[];
 }
 
 export const emptyRecepcionForm: RecepcionFormData = {
@@ -235,6 +252,7 @@ export const emptyRecepcionForm: RecepcionFormData = {
   firmaResponsableUrl: "",
   activo: true,
   evidencias: [],
+  sacosDetalle: [],
 };
 
 export const recepcionEstados = ["PENDIENTE_PESAJE", "EN_CONTROL_CALIDAD", "DISPONIBLE", "RECHAZADA"] as const;

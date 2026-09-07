@@ -2,8 +2,8 @@ import prisma from '../config/database';
 import { createError } from '../middleware/error.middleware';
 
 const generateCodigo = async (): Promise<string> => {
-  const last = await prisma.cultivos.findFirst({
-    orderBy: { created_at: 'desc' },
+  const last = await prisma.cultivo.findFirst({
+    orderBy: { codigo: 'desc' },
     select: { codigo: true },
   });
 
@@ -17,7 +17,7 @@ const ensureUniqueCodigo = async (codigo: string): Promise<string> => {
   let current = codigo;
   let attempts = 0;
   while (attempts < 10) {
-    const exists = await prisma.cultivos.findUnique({ where: { codigo: current }, select: { id: true } });
+    const exists = await prisma.cultivo.findUnique({ where: { codigo: current }, select: { id: true } });
     if (!exists) return current;
     const num = parseInt(current.replace('CUL-', ''), 10) + 1;
     current = `CUL-${String(num).padStart(3, '0')}`;
@@ -38,8 +38,7 @@ const ensureRelationExists = async (model: string, id: string | number) => {
 export const getAll = async (filters: {
   search?: string;
   estado?: string;
-  campania_id?: string;
-  productor_id?: string;
+  campanias_id?: string;
   parcela_id?: string;
   page?: number;
   limit?: number;
@@ -47,15 +46,14 @@ export const getAll = async (filters: {
   const where: Record<string, unknown> = { activo: true };
 
   if (filters.estado) where.estado = filters.estado;
-  if (filters.campania_id) where.campania_id = filters.campania_id;
-  if (filters.productor_id) where.productor_id = Number(filters.productor_id);
+  if (filters.campanias_id) where.campanias_id = Number(filters.campanias_id);
   if (filters.parcela_id) where.parcela_id = Number(filters.parcela_id);
 
   if (filters.search) {
     where.OR = [
-      { codigo: { contains: filters.search } },
-      { cultivo: { contains: filters.search } },
-      { variedad: { contains: filters.search } },
+      { codigo: { contains: filters.search, mode: 'insensitive' } },
+      { cultivo: { contains: filters.search, mode: 'insensitive' } },
+      { variedad: { contains: filters.search, mode: 'insensitive' } },
     ];
   }
 
@@ -63,29 +61,27 @@ export const getAll = async (filters: {
   const limit = filters.limit || 20;
 
   const [data, total] = await Promise.all([
-    prisma.cultivos.findMany({
+    prisma.cultivo.findMany({
       where,
       include: {
         campania: { select: { id: true, nombre: true, codigo: true } },
-        productor: { select: { id: true, nombres: true, apellido_paterno: true, apellido_materno: true } },
         parcela: { select: { id: true, nombre: true, codigo: true } },
       },
       orderBy: { created_at: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
     }),
-    prisma.cultivos.count({ where }),
+    prisma.cultivo.count({ where }),
   ]);
 
   return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
 };
 
 export const getById = async (id: string) => {
-  const cultivo = await prisma.cultivos.findFirst({
-    where: { id, activo: true },
+  const cultivo = await prisma.cultivo.findFirst({
+    where: { id: Number(id), activo: true },
     include: {
       campania: { select: { id: true, nombre: true, codigo: true } },
-      productor: { select: { id: true, nombres: true, apellido_paterno: true, apellido_materno: true, codigo: true } },
       parcela: { select: { id: true, nombre: true, codigo: true, cultivo: true, area: true } },
     },
   });
@@ -100,23 +96,21 @@ export const getById = async (id: string) => {
 export const create = async (data: Record<string, unknown>, userId?: string) => {
   let codigo = (data.codigo as string) || '';
   if (!codigo.trim()) {
-    codigo = await generateCodigo();
+    codigo = await ensureUniqueCodigo(await generateCodigo());
   } else {
-    const exists = await prisma.cultivos.findUnique({ where: { codigo } });
+    const exists = await prisma.cultivo.findUnique({ where: { codigo } });
     if (exists) {
       throw createError(`El código ${codigo} ya está en uso`, 409);
     }
   }
 
-  await ensureRelationExists('campanias', data.campania_id as string);
-  await ensureRelationExists('productores', data.productor_id as string);
-  await ensureRelationExists('parcelas_productor', data.parcela_id as string);
+  await ensureRelationExists('campanias', Number(data.campania_id));
+  await ensureRelationExists('parcela', Number(data.parcela_id));
 
-  return prisma.cultivos.create({
+  return prisma.cultivo.create({
     data: {
       codigo,
-      campania_id: data.campania_id as string,
-      productor_id: Number(data.productor_id),
+      campanias_id: Number(data.campania_id),
       parcela_id: Number(data.parcela_id),
       cultivo: data.cultivo as string,
       variedad: (data.variedad as string) || null,
@@ -145,14 +139,13 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
     },
     include: {
       campania: { select: { id: true, nombre: true, codigo: true } },
-      productor: { select: { id: true, nombres: true, apellido_paterno: true, apellido_materno: true } },
       parcela: { select: { id: true, nombre: true, codigo: true } },
     },
   });
 };
 
 export const update = async (id: string, data: Record<string, unknown>, userId?: string) => {
-  const existing = await prisma.cultivos.findFirst({ where: { id, activo: true } });
+  const existing = await prisma.cultivo.findFirst({ where: { id: Number(id), activo: true } });
 
   if (!existing) {
     throw createError('Cultivo no encontrado', 404);
@@ -160,22 +153,34 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
 
   const updateData: Record<string, unknown> = {};
 
-  const stringFields = ['codigo', 'cultivo', 'variedad', 'unidad_semilla', 'observaciones', 'distanciamiento_surcos', 'distanciamiento_plantas', 'densidad_siembra', 'tipo_semilla', 'lote_semilla', 'proveedor_semilla'];
+  if (data.codigo !== undefined && (data.codigo as string).trim()) {
+    const codigo = (data.codigo as string).trim();
+    const existingCodigo = await prisma.cultivo.findFirst({
+      where: { codigo, id: { not: Number(id) } },
+      select: { id: true },
+    });
+    if (existingCodigo) {
+      throw createError(`El código ${codigo} ya está en uso`, 409);
+    }
+    updateData.codigo = codigo;
+  }
+
+  const stringFields = ['cultivo', 'variedad', 'unidad_semilla', 'observaciones', 'distanciamiento_surcos', 'distanciamiento_plantas', 'densidad_siembra', 'tipo_semilla', 'lote_semilla', 'proveedor_semilla'];
   for (const field of stringFields) {
     if (data[field] !== undefined) updateData[field] = (data[field] as string) || null;
   }
 
-  const uuidFields = ['campania_id', 'productor_id', 'parcela_id'];
+  const uuidFields = ['campania_id', 'parcela_id'];
   const uuidModelMap: Record<string, string> = {
     campania_id: 'campanias',
-    productor_id: 'productores',
-    parcela_id: 'parcelas_productor',
+    parcela_id: 'parcela',
   };
   for (const field of uuidFields) {
     if (data[field] !== undefined) {
       const model = uuidModelMap[field];
-      if (model) await ensureRelationExists(model, data[field] as string);
-      updateData[field] = data[field];
+      if (model) await ensureRelationExists(model, Number(data[field]));
+      const dbField = field === 'campania_id' ? 'campanias_id' : field;
+      updateData[dbField] = Number(data[field]);
     }
   }
 
@@ -196,26 +201,25 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
 
   if (userId) updateData.updated_by = userId;
 
-  return prisma.cultivos.update({
-    where: { id },
+  return prisma.cultivo.update({
+    where: { id: Number(id) },
     data: updateData,
     include: {
       campania: { select: { id: true, nombre: true, codigo: true } },
-      productor: { select: { id: true, nombres: true, apellido_paterno: true, apellido_materno: true } },
       parcela: { select: { id: true, nombre: true, codigo: true } },
     },
   });
 };
 
 export const remove = async (id: string) => {
-  const existing = await prisma.cultivos.findFirst({ where: { id, activo: true } });
+  const existing = await prisma.cultivo.findFirst({ where: { id: Number(id), activo: true } });
 
   if (!existing) {
     throw createError('Cultivo no encontrado', 404);
   }
 
-  await prisma.cultivos.update({
-    where: { id },
+  await prisma.cultivo.update({
+    where: { id: Number(id) },
     data: { activo: false },
   });
 
@@ -227,36 +231,36 @@ export const remove = async (id: string) => {
 export const getGlobalStats = async (filters?: {
   search?: string;
   estado?: string;
-  campania_id?: string;
+  campanias_id?: string;
 }) => {
   const where: Record<string, unknown> = { activo: true };
 
   if (filters?.estado) where.estado = filters.estado;
-  if (filters?.campania_id) where.campania_id = filters.campania_id;
+  if (filters?.campanias_id) where.campanias_id = Number(filters.campanias_id);
 
   if (filters?.search) {
     where.OR = [
-      { codigo: { contains: filters.search } },
-      { cultivo: { contains: filters.search } },
-      { variedad: { contains: filters.search } },
+      { codigo: { contains: filters.search, mode: 'insensitive' } },
+      { cultivo: { contains: filters.search, mode: 'insensitive' } },
+      { variedad: { contains: filters.search, mode: 'insensitive' } },
     ];
   }
 
   const [total, porEstado, areaResult, campaniasResult] = await Promise.all([
-    prisma.cultivos.count({ where }),
-    prisma.cultivos.groupBy({
+    prisma.cultivo.count({ where }),
+    prisma.cultivo.groupBy({
       by: ['estado'],
       where,
       _count: { id: true },
     }),
-    prisma.cultivos.aggregate({
+    prisma.cultivo.aggregate({
       where,
       _sum: { area_sembrada: true },
     }),
-    prisma.cultivos.findMany({
+    prisma.cultivo.findMany({
       where,
-      select: { campania_id: true },
-      distinct: ['campania_id'],
+      select: { campanias_id: true },
+      distinct: ['campanias_id'],
     }),
   ]);
 

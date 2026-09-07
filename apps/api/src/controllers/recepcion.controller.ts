@@ -68,28 +68,3 @@ export const remove = async (req: AuthRequest, res: Response, next: NextFunction
     next(error);
   }
 };
-
-export const addEvidencia = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const evidencia = await recepcionService.addEvidencia(req.params.id, req.body);
-    res.status(201).json({
-      success: true,
-      message: 'Evidencia agregada exitosamente',
-      data: evidencia,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const removeEvidencia = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const result = await recepcionService.removeEvidencia(req.params.id, req.params.evidenciaId);
-    res.status(200).json({
-      success: true,
-      ...result,
-    });
-  } catch (error) {
-    next(error);
-  }
-};

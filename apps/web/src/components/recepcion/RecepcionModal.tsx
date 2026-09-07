@@ -8,11 +8,12 @@ interface RecepcionModalProps {
   open: boolean;
   onClose: () => void;
   onSave?: () => void;
+  onEdit?: (recepcionId: string) => void;
   mode: "create" | "edit" | "view";
   recepcionId?: string;
 }
 
-export default function RecepcionModal({ open, onClose, onSave, mode, recepcionId }: RecepcionModalProps) {
+export default function RecepcionModal({ open, onClose, onSave, onEdit, mode, recepcionId }: RecepcionModalProps) {
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
@@ -69,7 +70,7 @@ export default function RecepcionModal({ open, onClose, onSave, mode, recepcionI
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 py-4">
           {mode === "view" ? (
-            <RecepcionView inModal recepcionId={recepcionId} />
+            <RecepcionView inModal recepcionId={recepcionId} onEdit={onEdit ? (r) => onEdit(r.id) : undefined} />
           ) : mode === "create" ? (
             <RecepcionCreate inModal onSave={onSave} />
           ) : (

@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router-dom";
 import { Eye, Pencil, Trash2, UserRound } from "lucide-react";
 import { Badge, DataTable } from "../ui";
 import { EstadoRecepcionBadge } from "./badges";
@@ -9,6 +8,8 @@ interface RecepcionTableProps {
   currentPage?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
+  onView: (recepcion: Recepcion) => void;
+  onEdit: (recepcion: Recepcion) => void;
   onDelete: (recepcion: Recepcion) => void;
 }
 
@@ -17,9 +18,10 @@ export default function RecepcionTable({
   currentPage,
   totalPages,
   onPageChange,
+  onView,
+  onEdit,
   onDelete,
 }: RecepcionTableProps) {
-  const navigate = useNavigate();
 
   const columns = [
     { key: "codigo", label: "Código", sortable: true, className: "font-medium text-forest-700" },
@@ -82,7 +84,7 @@ export default function RecepcionTable({
           <button
             type="button"
             aria-label={`Ver ${recepcion.codigo}`}
-            onClick={() => navigate(`/recepcion/${recepcion.id}`)}
+            onClick={() => onView(recepcion)}
             className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-forest-600/10 hover:text-forest-700"
           >
             <Eye className="h-4 w-4" />
@@ -90,7 +92,7 @@ export default function RecepcionTable({
           <button
             type="button"
             aria-label={`Editar ${recepcion.codigo}`}
-            onClick={() => navigate(`/recepcion/${recepcion.id}/editar`)}
+            onClick={() => onEdit(recepcion)}
             className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-forest-600/10 hover:text-forest-700"
           >
             <Pencil className="h-4 w-4" />

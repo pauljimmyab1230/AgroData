@@ -35,28 +35,18 @@ import ProcesamientoList from "../pages/procesamiento/ProcesamientoList";
 import ProcesamientoCreate from "../pages/procesamiento/ProcesamientoCreate";
 import ProcesamientoView from "../pages/procesamiento/ProcesamientoView";
 import ProcesamientoEdit from "../pages/procesamiento/ProcesamientoEdit";
-import InventarioList from "../pages/inventario/InventarioList";
-import InventarioView from "../pages/inventario/InventarioView";
-import InventarioCreate from "../pages/inventario/InventarioCreate";
-import InventarioEdit from "../pages/inventario/InventarioEdit";
-import LoteList from "../pages/lotes/LoteList";
-import LoteView from "../pages/lotes/LoteView";
-import LoteCreate from "../pages/lotes/LoteCreate";
-import LoteEdit from "../pages/lotes/LoteEdit";
-import TrazabilidadList from "../pages/trazabilidad/TrazabilidadList";
-import TrazabilidadView from "../pages/trazabilidad/TrazabilidadView";
-import TrazabilidadCreate from "../pages/trazabilidad/TrazabilidadCreate";
-import TrazabilidadEdit from "../pages/trazabilidad/TrazabilidadEdit";
-import CapacitacionList from "../pages/capacitaciones/CapacitacionList";
-import CapacitacionCreate from "../pages/capacitaciones/CapacitacionCreate";
-import CapacitacionView from "../pages/capacitaciones/CapacitacionView";
-import CapacitacionEdit from "../pages/capacitaciones/CapacitacionEdit";
+import KardexList from "../pages/kardex/KardexList";
+import KardexView from "../pages/kardex/KardexView";
+import KardexCreate from "../pages/kardex/KardexCreate";
+import KardexEdit from "../pages/kardex/KardexEdit";
 import UsuarioList from "../pages/usuarios/UsuarioList";
 import UsuarioCreate from "../pages/usuarios/UsuarioCreate";
 import UsuarioView from "../pages/usuarios/UsuarioView";
 import UsuarioEdit from "../pages/usuarios/UsuarioEdit";
 import CatalogPage from "../pages/catalogos/CatalogPage";
 import ProductorView from "../pages/productores/ProductorView";
+import ProductorCreate from "../pages/productores/ProductorCreate";
+import ProductorEdit from "../pages/productores/ProductorEdit";
 
 export default function AppRoutes() {
     return (
@@ -89,29 +79,19 @@ export default function AppRoutes() {
                     <Route path="/recepcion/:id" element={<RecepcionView />} />
                     <Route path="/procesamiento" element={<ProcesamientoList />} />
                     <Route path="/procesamiento/:id" element={<ProcesamientoView />} />
-                    <Route path="/lotes" element={<LoteList />} />
-                    <Route path="/lotes/nuevo" element={<LoteCreate />} />
-                    <Route path="/lotes/:id" element={<LoteView />} />
-                    <Route path="/lotes/:id/editar" element={<LoteEdit />} />
-                    <Route path="/inventario" element={<InventarioList />} />
-                    <Route path="/inventario/nuevo" element={<InventarioCreate />} />
-                    <Route path="/inventario/:id" element={<InventarioView />} />
-                    <Route path="/inventario/:id/editar" element={<InventarioEdit />} />
-                    <Route path="/trazabilidad" element={<TrazabilidadList />} />
-                    <Route path="/trazabilidad/nueva" element={<TrazabilidadCreate />} />
-                    <Route path="/trazabilidad/:id" element={<TrazabilidadView />} />
-                    <Route path="/trazabilidad/:id/editar" element={<TrazabilidadEdit />} />
-                    <Route path="/capacitaciones" element={<CapacitacionList />} />
-                    <Route path="/capacitaciones/nueva" element={<CapacitacionCreate />} />
-                    <Route path="/capacitaciones/:id" element={<CapacitacionView />} />
-                    <Route path="/capacitaciones/:id/editar" element={<CapacitacionEdit />} />
+                    <Route path="/kardex" element={<KardexList />} />
+                    <Route path="/kardex/nuevo" element={<KardexCreate />} />
+                    <Route path="/kardex/:id" element={<KardexView />} />
+                    <Route path="/kardex/:id/editar" element={<KardexEdit />} />
                     <Route path="/usuarios" element={<UsuarioList />} />
                     <Route path="/usuarios/nuevo" element={<UsuarioCreate />} />
                     <Route path="/usuarios/:id" element={<UsuarioView />} />
                     <Route path="/usuarios/:id/editar" element={<UsuarioEdit />} />
                     <Route path="/catalogos/:catalogoId" element={<CatalogPage />} />
                     <Route path="/productores" element={<ProductorList />} />
+                    <Route path="/productores/nueva" element={<ProductorCreate />} />
                     <Route path="/productores/:id" element={<ProductorView />} />
+                    <Route path="/productores/:id/editar" element={<ProductorEdit />} />
                 </Route>
             </Route>
         </Routes>

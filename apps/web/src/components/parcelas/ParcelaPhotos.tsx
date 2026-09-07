@@ -4,6 +4,7 @@ import { DatePicker, Input, Textarea } from "../ui";
 import { Field, type FormMode } from "../shared/formControls";
 import type { ParcelaFoto } from "../../services/parcelas";
 import { uploadArchivo } from "../../services/productores";
+import { toast } from "../../utils/toast";
 
 const parseDate = (s?: string) => (s ? new Date(String(s).slice(0, 10) + "T00:00:00") : null);
 
@@ -37,7 +38,7 @@ export function ParcelaPhotos({ mode, fotos = [], onDelete, onUpload }: ParcelaP
       });
     } catch (err) {
       console.error("Error al subir foto:", err);
-      alert("Error al subir la fotografía");
+      toast.error("Error al subir la fotografía");
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";

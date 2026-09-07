@@ -9,7 +9,7 @@ interface CampaniaModalProps {
   onClose: () => void;
   onSave?: () => void;
   mode: "create" | "edit" | "view";
-  campaniaId?: string;
+  campaniaId?: number;
 }
 
 export default function CampaniaModal({ open, onClose, onSave, mode, campaniaId }: CampaniaModalProps) {

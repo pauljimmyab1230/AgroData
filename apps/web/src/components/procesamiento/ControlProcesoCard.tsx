@@ -1,40 +1,50 @@
-import { Scale, TrendingDown, ArrowDownRight, ArrowUpRight, Timer } from "lucide-react";
+import { Scale, TrendingDown, ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { Input } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
-import { formatKg, formatPct, type OrdenProcesamiento } from "../../services/procesamientos";
+import { formatKg, formatPct } from "../../services/procesamientos";
 
 type ControlProcesoCardProps = {
   mode: FormMode;
-  values?: Partial<OrdenProcesamiento>;
+  pesoEntrada: string;
+  pesoSalida: string;
+  merma: string;
+  rendimiento: string;
+  onChange: {
+    pesoEntrada: (v: string) => void;
+    pesoSalida: (v: string) => void;
+    merma: (v: string) => void;
+    rendimiento: (v: string) => void;
+  };
 };
 
-export function ControlProcesoCard({ mode, values }: ControlProcesoCardProps) {
+export function ControlProcesoCard({ mode, pesoEntrada, pesoSalida, merma, rendimiento, onChange }: ControlProcesoCardProps) {
   const editable = mode !== "view";
+  const rendNum = parseFloat(rendimiento) || 0;
 
   const comparacion = [
     {
       label: "Peso Entrada",
-      value: formatKg(values?.pesoEntrada ?? 0),
+      value: formatKg(parseFloat(pesoEntrada) || 0),
       icon: Scale,
       iconClass: "bg-sun-100 text-sun-700",
     },
     {
       label: "Peso Salida",
-      value: formatKg(values?.pesoSalida ?? 0),
+      value: formatKg(parseFloat(pesoSalida) || 0),
       icon: Scale,
       iconClass: "bg-[#0A4174]/10 text-[#0A4174]",
     },
     {
       label: "Merma",
-      value: formatKg(values?.merma ?? 0),
+      value: formatKg(parseFloat(merma) || 0),
       icon: TrendingDown,
       iconClass: "bg-red-50 text-red-600",
     },
     {
       label: "Rendimiento",
-      value: formatPct(values?.rendimiento ?? 0),
-      icon: values?.rendimiento && values.rendimiento > 0 ? ArrowUpRight : ArrowDownRight,
-      iconClass: values?.rendimiento && values.rendimiento > 0 ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600",
+      value: formatPct(rendNum),
+      icon: rendNum > 0 ? ArrowUpRight : ArrowDownRight,
+      iconClass: rendNum > 0 ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600",
     },
   ];
 
@@ -47,52 +57,52 @@ export function ControlProcesoCard({ mode, values }: ControlProcesoCardProps) {
       />
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Field label="Peso Entrada (kg)" mode={mode} value={values?.pesoEntrada ? formatKg(values.pesoEntrada) : undefined}>
+        <Field label="Peso Entrada (kg)" mode={mode} value={pesoEntrada ? formatKg(Number(pesoEntrada)) : undefined}>
           <Input
             type="number"
             step="0.1"
             min="0"
             placeholder="0.0"
-            value={values?.pesoEntrada ?? ""}
-            onChange={(e) => {}}
-            disabled
-          />
-        </Field>
-
-        <Field label="Peso Salida (kg)" mode={mode} value={values?.pesoSalida ? formatKg(values.pesoSalida) : undefined}>
-          <Input
-            type="number"
-            step="0.1"
-            min="0"
-            placeholder="0.0"
-            value={values?.pesoSalida ?? ""}
-            onChange={(e) => {}}
+            value={pesoEntrada}
+            onChange={(e) => onChange.pesoEntrada(e.target.value)}
             disabled={!editable}
           />
         </Field>
 
-        <Field label="Merma (kg)" mode={mode} value={values?.merma ? formatKg(values.merma) : undefined}>
+        <Field label="Peso Salida (kg)" mode={mode} value={pesoSalida ? formatKg(Number(pesoSalida)) : undefined}>
           <Input
             type="number"
             step="0.1"
             min="0"
             placeholder="0.0"
-            value={values?.merma ?? ""}
-            onChange={(e) => {}}
-            disabled
+            value={pesoSalida}
+            onChange={(e) => onChange.pesoSalida(e.target.value)}
+            disabled={!editable}
           />
         </Field>
 
-        <Field label="Rendimiento (%)" mode={mode} value={values?.rendimiento ? formatPct(values.rendimiento) : undefined}>
+        <Field label="Merma (kg)" mode={mode} value={merma ? formatKg(Number(merma)) : undefined}>
+          <Input
+            type="number"
+            step="0.1"
+            min="0"
+            placeholder="0.0"
+            value={merma}
+            onChange={(e) => onChange.merma(e.target.value)}
+            disabled={!editable}
+          />
+        </Field>
+
+        <Field label="Rendimiento (%)" mode={mode} value={rendimiento ? formatPct(Number(rendimiento)) : undefined}>
           <Input
             type="number"
             step="0.1"
             min="0"
             max="100"
             placeholder="0.0"
-            value={values?.rendimiento ?? ""}
-            onChange={(e) => {}}
-            disabled
+            value={rendimiento}
+            onChange={(e) => onChange.rendimiento(e.target.value)}
+            disabled={!editable}
           />
         </Field>
       </div>

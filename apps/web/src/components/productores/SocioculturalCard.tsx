@@ -4,6 +4,7 @@ import { CardHeader, CardShell, Field } from "../shared/formControls";
 import type { FormMode } from "../shared/formControls";
 import type { Productor } from "../../services/productores";
 import { useProductorForm } from "../../contexts/ProductorFormContext";
+import { displayField } from "../../utils/formatters";
 
 type SocioculturalCardProps = {
   mode: FormMode;
@@ -32,13 +33,13 @@ const idiomaSecundarioOptions = [
 ];
 
 const materialViviendaOptions = [
-  { value: "Adobe", label: "Adobe" },
-  { value: "Tapial", label: "Tapial" },
-  { value: "Ladrillo", label: "Ladrillo" },
-  { value: "Bloque", label: "Bloque" },
-  { value: "Madera", label: "Madera" },
-  { value: "Zinc", label: "Zinc" },
-  { value: "Otro", label: "Otro" },
+  { value: "ADOBE", label: "Adobe" },
+  { value: "TAPIAL", label: "Tapial" },
+  { value: "LADRILLO", label: "Ladrillo" },
+  { value: "BLOQUE", label: "Bloque" },
+  { value: "MADERA", label: "Madera" },
+  { value: "ZINC", label: "Zinc" },
+  { value: "OTRO", label: "Otro" },
 ];
 
 const siNoOptions = [
@@ -64,10 +65,7 @@ export function SocioculturalCard({ mode, values }: SocioculturalCardProps) {
   const editable = mode !== "view";
   const { data, updateData, errors, clearFieldError } = useProductorForm();
 
-  const display = (field: keyof Productor) => {
-    if (mode === "view") return values?.[field] ?? "";
-    return data?.[field] ?? "";
-  };
+  const display = (field: keyof Productor) => displayField(mode, field, values, data);
 
   return (
     <>

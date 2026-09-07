@@ -2,6 +2,20 @@ import { Response, NextFunction } from 'express';
 import * as productoresService from '../services/productores.service';
 import { AuthRequest } from '../middleware/auth.middleware';
 
+// ─── Stats ────────────────────────────────────────────────
+
+export const getStats = async (_req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const stats = await productoresService.getStats();
+    res.status(200).json({
+      success: true,
+      data: stats,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // ─── Productores ────────────────────────────────────────────
 
 export const getComunidades = async (_req: AuthRequest, res: Response, next: NextFunction) => {
@@ -189,6 +203,18 @@ export const removeDocumento = async (req: AuthRequest, res: Response, next: Nex
     res.status(200).json({
       success: true,
       ...result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const removeOrphanDocumentos = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    await productoresService.removeOrphanDocumentos(Number(req.params.id), req.body.keptDocumentIds || []);
+    res.status(200).json({
+      success: true,
+      message: 'Documentos huérfanos eliminados',
     });
   } catch (error) {
     next(error);

@@ -1,3 +1,4 @@
+import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -33,3 +34,29 @@ export const upload = multer({
   fileFilter,
   limits: { fileSize: 10 * 1024 * 1024 },
 });
+
+// Rate limiter simple en memoria
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+export function rateLimit(windowMs: number, maxRequests: number) {
+  return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
+    const now = Date.now();
+    const entry = rateLimitMap.get(ip);
+
+    if (!entry || now > entry.resetAt) {
+      rateLimitMap.set(ip, { count: 1, resetAt: now + windowMs });
+      return next();
+    }
+
+    entry.count++;
+    if (entry.count > maxRequests) {
+      res.status(429).json({
+        success: false,
+        message: 'Demasiadas peticiones. Intenta más tarde.',
+      });
+      return;
+    }
+    next();
+  };
+}

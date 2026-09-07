@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { X } from "lucide-react";
 import ProductorCreate from "../../pages/productores/ProductorCreate";
 import ProductorEdit from "../../pages/productores/ProductorEdit";
@@ -12,19 +12,28 @@ interface ProductorModalProps {
 }
 
 export default function ProductorModal({ open, onClose, onSave, mode, productorId }: ProductorModalProps) {
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === "Escape") onClose();
+  }, [onClose]);
+
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
+      document.addEventListener("keydown", handleKeyDown);
     } else {
       document.body.style.overflow = "";
     }
     return () => {
       document.body.style.overflow = "";
+      document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [open]);
+  }, [open, handleKeyDown]);
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={mode === "create" ? "Nuevo Productor" : "Editar Productor"}
       className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-200 ${
         open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
       }`}
@@ -52,6 +61,7 @@ export default function ProductorModal({ open, onClose, onSave, mode, productorI
           <button
             type="button"
             onClick={onClose}
+            aria-label="Cerrar"
             className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
           >
             <X className="h-5 w-5" />

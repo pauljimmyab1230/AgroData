@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { LoadingSpinner } from "../../components/ui";
 import CultivoHeader from "../../components/cultivos/CultivoHeader";
 import CultivoForm from "../../components/cultivos/CultivoForm";
-import { fetchCultivo, type Cultivo } from "../../services/cultivos";
+import { useCultivo } from "../../hooks/queries";
 
 interface CultivoEditProps {
   inModal?: boolean;
@@ -14,20 +13,9 @@ interface CultivoEditProps {
 export default function CultivoEdit({ inModal, cultivoId: propId, onSave }: CultivoEditProps) {
   const { id: paramId } = useParams();
   const id = propId || paramId;
-  const [cultivo, setCultivo] = useState<Cultivo | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: cultivo, isLoading } = useCultivo(id || null);
 
-  useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    setCultivo(null);
-    fetchCultivo(id)
-      .then(setCultivo)
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [id]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <LoadingSpinner />

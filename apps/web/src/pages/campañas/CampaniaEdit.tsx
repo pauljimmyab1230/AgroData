@@ -1,29 +1,21 @@
-import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Breadcrumb, LoadingSpinner } from "../../components/ui";
 import { CampaniaHeader } from "../../components/campanias/CampaniaHeader";
 import { CampaniaForm } from "../../components/campanias/CampaniaForm";
-import { fetchCampania, type Campania } from "../../services/campanias";
+import { useCampania } from "../../hooks/queries";
 
 interface CampaniaEditProps {
   inModal?: boolean;
-  campaniaId?: string;
+  campaniaId?: number;
   onSave?: () => void;
 }
 
 export default function CampaniaEdit({ inModal, campaniaId: propId, onSave }: CampaniaEditProps) {
   const { id: paramId } = useParams();
-  const id = propId || paramId;
-  const [campania, setCampania] = useState<Campania | null>(null);
-  const [loading, setLoading] = useState(true);
+  const numId = paramId ? Number(paramId) : null;
+  const id = propId ?? (numId && !Number.isNaN(numId) ? numId : null);
 
-  useEffect(() => {
-    if (!id) return;
-    fetchCampania(id)
-      .then(setCampania)
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [id]);
+  const { data: campania, isLoading: loading } = useCampania(id);
 
   if (loading) {
     return (

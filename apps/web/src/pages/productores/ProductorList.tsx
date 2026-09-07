@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Plus, Pencil, Eye, Trash2, Download, Users, UserCheck, User } from "lucide-react";
 import {
   Badge,
@@ -11,157 +11,75 @@ import {
   SectionHeader,
   Select,
 } from "../../components/ui";
-import { fetchProductores, fetchComunidades, deleteProductor, type Productor } from "../../services/productores";
+import { useProductores, useComunidades, useDeleteProductor, useProductorStats } from "../../hooks/queries";
+import { fetchAllProductoresForCsv, type Productor } from "../../services/productores";
 import ProductorModal from "../../components/productores/ProductorModal";
 import ProductorViewModal from "../../components/productores/ProductorViewModal";
 import { toast } from "../../utils/toast";
-
-const estadoBadge = (estado: string) => {
-  switch (estado) {
-    case "ACTIVO":
-      return <Badge variant="green">Activo</Badge>;
-    case "SUSPENDIDO":
-      return <Badge variant="yellow">Suspendido</Badge>;
-    case "INACTIVO":
-      return <Badge variant="gray">Inactivo</Badge>;
-    default:
-      return <Badge>{estado}</Badge>;
-  }
-};
+import { getEstadoProductorBadgeVariant, getEstadoProductorLabel } from "../../utils/formatters";
 
 export default function ProductorList() {
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [estadoFilter, setEstadoFilter] = useState("");
   const [cargoFilter, setCargoFilter] = useState("");
   const [sexoFilter, setSexoFilter] = useState("");
   const [comunidadFilter, setComunidadFilter] = useState("");
-  const [comunidades, setComunidades] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [productores, setProductores] = useState<Productor[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [viewId, setViewId] = useState<number | null>(null);
 
-  useEffect(() => {
-    fetchComunidades().then(setComunidades).catch(() => toast.error("Error al cargar comunidades"));
-  }, []);
+  const filters = useMemo(() => ({
+    search: search || undefined,
+    estado: estadoFilter || undefined,
+    cargo: cargoFilter || undefined,
+    sexo: sexoFilter || undefined,
+    comunidad: comunidadFilter || undefined,
+    page,
+    limit: 10,
+  }), [search, estadoFilter, cargoFilter, sexoFilter, comunidadFilter, page]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 300);
-    return () => clearTimeout(timer);
-  }, [search]);
+  const { data, isLoading, isFetching } = useProductores(filters);
+  const { data: comunidades = [] } = useComunidades();
+  const { data: stats } = useProductorStats();
+  const deleteMutation = useDeleteProductor();
 
-  const loadData = async (silent = false) => {
-    if (!silent) setLoading(true);
-    try {
-      const result = await fetchProductores({
-        search: debouncedSearch || undefined,
-        estado: estadoFilter || undefined,
-        cargo: cargoFilter || undefined,
-        sexo: sexoFilter || undefined,
-        comunidad: comunidadFilter || undefined,
-        page,
-        limit: 10,
-      });
-      setProductores(result.data);
-      setTotalPages(result.totalPages);
-      setTotal(result.total);
-    } catch {
-      toast.error("Error al cargar los productores");
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  };
+  const productores = data?.data ?? [];
+  const totalPages = data?.totalPages ?? 1;
 
-  const handleModalClose = () => {
-    setShowCreateModal(false);
-    setEditId(null);
-    setViewId(null);
-    loadData(true);
-  };
-
-  useEffect(() => {
-    loadData();
-  }, [debouncedSearch, estadoFilter, cargoFilter, sexoFilter, comunidadFilter, page]);
-
-  const kpis = [
+  const kpis = useMemo(() => [
     {
       label: "Total Socios",
-      value: String(total),
+      value: String(stats?.total ?? 0),
       hint: "productores registrados",
       icon: Users,
       iconClass: "bg-forest-100 text-forest-700",
     },
     {
       label: "Activos",
-      value: String(productores.filter((p) => p.estado === "ACTIVO").length),
-      hint: "en la página actual",
+      value: String(stats?.activos ?? 0),
+      hint: `${stats?.suspendidos ?? 0} suspendidos`,
       icon: UserCheck,
       iconClass: "bg-green-100 text-green-700",
     },
     {
       label: "Mujeres",
-      value: String(productores.filter((p) => p.sexo === "FEMENINO").length),
-      hint: "socias en la página actual",
+      value: String(stats?.mujeres ?? 0),
+      hint: "socias registradas",
       icon: User,
       iconClass: "bg-pink-100 text-pink-700",
     },
     {
       label: "Varones",
-      value: String(productores.filter((p) => p.sexo === "MASCULINO").length),
-      hint: "socios en la página actual",
+      value: String(stats?.varones ?? 0),
+      hint: "socios registrados",
       icon: User,
       iconClass: "bg-blue-100 text-blue-700",
     },
-  ];
+  ], [stats]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
-  const handleExportCsv = () => {
-    const headers = ["Código", "DNI", "Nombres", "Comunidad", "Estado", "Fecha Ingreso"];
-    const rows = productores.map((p) => [
-      p.codigo,
-      p.dni,
-      `${p.nombres} ${p.apellidoPaterno} ${p.apellidoMaterno}`,
-      p.comunidad,
-      p.estado,
-      p.fechaIngreso,
-    ]);
-    const csv = [headers, ...rows]
-      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "productores.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleResetFilters = () => {
-    setSearch("");
-    setEstadoFilter("");
-    setCargoFilter("");
-    setSexoFilter("");
-    setComunidadFilter("");
-    setPage(1);
-  };
-
-  const hasActiveFilters = search || estadoFilter || cargoFilter || sexoFilter || comunidadFilter;
-
-  const columns = [
+  const columns = useMemo(() => [
     { key: "codigo", label: "Código", className: "font-medium text-forest-700" },
     {
       key: "nombreCompleto",
@@ -185,7 +103,7 @@ export default function ProductorList() {
     { key: "dni", label: "DNI" },
     { key: "comunidad", label: "Comunidad" },
     { key: "fechaIngreso", label: "Ingreso" },
-    { key: "estado", label: "Estado", render: (productor: Productor) => estadoBadge(productor.estado) },
+    { key: "estado", label: "Estado", render: (productor: Productor) => <Badge variant={getEstadoProductorBadgeVariant(productor.estado)}>{getEstadoProductorLabel(productor.estado)}</Badge> },
     {
       key: "acciones",
       label: "",
@@ -219,10 +137,69 @@ export default function ProductorList() {
         </div>
       ),
     },
-  ];
+  ], []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  const handleExportCsv = async () => {
+    try {
+      const allProductores = await fetchAllProductoresForCsv({
+        search: search || undefined,
+        estado: estadoFilter || undefined,
+        cargo: cargoFilter || undefined,
+        sexo: sexoFilter || undefined,
+        comunidad: comunidadFilter || undefined,
+      });
+      const headers = ["Código", "DNI", "Nombres", "Comunidad", "Estado", "Fecha Ingreso"];
+      const rows = allProductores.map((p) => [
+        p.codigo,
+        p.dni,
+        `${p.nombres} ${p.apellidoPaterno} ${p.apellidoMaterno}`,
+        p.comunidad,
+        p.estado,
+        p.fechaIngreso,
+      ]);
+      const csv = [headers, ...rows]
+        .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+        .join("\n");
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "productores.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`CSV exportado: ${allProductores.length} registros`);
+    } catch (error) {
+      console.error("Error al exportar CSV:", error);
+      toast.error("Error al exportar el CSV");
+    }
+  };
+
+  const handleResetFilters = () => {
+    setSearch("");
+    setEstadoFilter("");
+    setCargoFilter("");
+    setSexoFilter("");
+    setComunidadFilter("");
+    setPage(1);
+  };
+
+  const hasActiveFilters = search || estadoFilter || cargoFilter || sexoFilter || comunidadFilter;
 
   return (
     <div>
+      {isFetching && (
+        <div className="fixed inset-x-0 top-0 z-50 h-0.5">
+          <div className="h-full w-full animate-pulse bg-forest-500/40" />
+        </div>
+      )}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <SectionHeader
           title="Productores"
@@ -351,9 +328,9 @@ export default function ProductorList() {
         onConfirm={async () => {
           if (deleteId === null) return;
           try {
-            await deleteProductor(deleteId);
-            setProductores(prev => prev.filter(p => p.id !== deleteId));
+            await deleteMutation.mutateAsync(deleteId);
             setDeleteId(null);
+            toast.success("Productor eliminado correctamente");
           } catch {
             toast.error("Error al eliminar el productor");
           }
@@ -367,14 +344,14 @@ export default function ProductorList() {
       <ProductorModal
         open={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        onSave={handleModalClose}
+        onSave={() => setShowCreateModal(false)}
         mode="create"
       />
 
       <ProductorModal
         open={editId !== null}
         onClose={() => setEditId(null)}
-        onSave={handleModalClose}
+        onSave={() => setEditId(null)}
         mode="edit"
         productorId={editId || undefined}
       />

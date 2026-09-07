@@ -97,3 +97,15 @@ export const getGlobalStats = async (req: AuthRequest, res: Response, next: Next
     next(error);
   }
 };
+
+export const getTimeline = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const timeline = await campaniasService.getTimeline(req.params.id);
+    res.status(200).json({
+      success: true,
+      data: timeline,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

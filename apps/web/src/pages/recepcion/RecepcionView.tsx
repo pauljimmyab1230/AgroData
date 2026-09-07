@@ -1,35 +1,28 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { ArrowLeft, BadgeCheck, Pencil, Scale, TrendingDown, Warehouse } from "lucide-react";
+import { ArrowLeft, Pencil, Scale, Package } from "lucide-react";
 import { Breadcrumb, Button } from "../../components/ui";
-import RecepcionHeader from "../../components/recepcion/RecepcionHeader";
-import RecepcionKPI from "../../components/recepcion/RecepcionKPI";
-import { InformacionGeneralCard } from "../../components/recepcion/InformacionGeneralCard";
-import { LoteProductorCard } from "../../components/recepcion/LoteProductorCard";
-import { PesajeCard } from "../../components/recepcion/PesajeCard";
-import { CalidadCard } from "../../components/recepcion/CalidadCard";
-import { ClasificacionCard } from "../../components/recepcion/ClasificacionCard";
-import { ResultadoCard } from "../../components/recepcion/ResultadoCard";
-import { EvidenciasCard } from "../../components/recepcion/EvidenciasCard";
-import { ObservacionesCard } from "../../components/recepcion/ObservacionesCard";
-import { ResultadoRecepcionBadge } from "../../components/recepcion/badges";
+import { CardHeader, CardShell, Field } from "../../components/shared/formControls";
 import {
   type Recepcion,
   fetchRecepcion,
   formatearPeso,
 } from "../../services/recepciones";
 
-function formatPct(valor: number | undefined): string {
-  if (valor === undefined) return "—";
-  return `${Intl.NumberFormat("es-PE", { maximumFractionDigits: 2 }).format(valor)}%`;
-}
-
 interface RecepcionViewProps {
   inModal?: boolean;
   recepcionId?: string;
+  onEdit?: (recepcion: Recepcion) => void;
 }
 
-export default function RecepcionView({ inModal, recepcionId: propId }: RecepcionViewProps) {
+const estadoLabels: Record<string, string> = {
+  PENDIENTE_PESAJE: "Pendiente de Pesaje",
+  EN_CONTROL_CALIDAD: "En Control de Calidad",
+  DISPONIBLE: "Disponible",
+  RECHAZADA: "Rechazada",
+};
+
+export default function RecepcionView({ inModal, recepcionId: propId, onEdit }: RecepcionViewProps) {
   const { id: paramId } = useParams();
   const id = propId || paramId;
   const [recepcion, setRecepcion] = useState<Recepcion | null>(null);
@@ -37,24 +30,16 @@ export default function RecepcionView({ inModal, recepcionId: propId }: Recepcio
 
   useEffect(() => {
     if (!id) return;
-    let cancelled = false;
     fetchRecepcion(id)
-      .then((r) => {
-        if (!cancelled) setRecepcion(r);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+      .then(setRecepcion)
+      .catch(() => setRecepcion(null))
+      .finally(() => setLoading(false));
   }, [id]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <p className="text-sm text-gray-500">Cargando recepción...</p>
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-forest-600 border-t-transparent" />
       </div>
     );
   }
@@ -72,74 +57,130 @@ export default function RecepcionView({ inModal, recepcionId: propId }: Recepcio
     );
   }
 
-  const kpis = [
-    {
-      label: "Peso Campo",
-      value: formatearPeso(recepcion.pesoCampo),
-      icon: Scale,
-      iconClass: "bg-sun-100 text-sun-700",
-    },
-    {
-      label: "Peso Planta",
-      value: formatearPeso(recepcion.pesoNeto),
-      icon: Warehouse,
-      iconClass: "bg-forest-600/10 text-forest-600",
-    },
-    {
-      label: "Merma",
-      value: formatPct(recepcion.merma),
-      icon: TrendingDown,
-      iconClass: "bg-purple-50 text-purple-600",
-    },
-    {
-      label: "Resultado",
-      value: recepcion.resultado ?? "—",
-      icon: BadgeCheck,
-      iconClass: "bg-emerald-50 text-emerald-600",
-      extra: <ResultadoRecepcionBadge resultado={recepcion.resultado} />,
-    },
-  ];
+  const pesoNeto = (recepcion.pesoBruto || 0) - (recepcion.tara || 0);
 
   return (
-    <div>
+    <div className="space-y-6">
       {!inModal && (
         <>
-          <Breadcrumb items={[{ label: "Recepción", to: "/recepcion" }, { label: recepcion.codigo }]} />
-
+          <Breadcrumb
+            items={[
+              { label: "Recepción", to: "/recepcion" },
+              { label: recepcion.codigo, to: `/recepcion/${recepcion.id}` },
+            ]}
+          />
           <div className="mb-8 flex items-center gap-4">
             <Button variant="ghost" as="link" to="/recepcion" iconLeft={<ArrowLeft className="h-4 w-4" />}>
-              Recepción
+              Volver
+            </Button>
+            <div className="flex-1" />
+            <Button
+              variant="secondary"
+              onClick={() => onEdit?.(recepcion)}
+              iconLeft={<Pencil className="h-4 w-4" />}
+            >
+              Editar
             </Button>
           </div>
-
-          <RecepcionHeader
-            recepcion={recepcion}
-            actions={
-              <Button
-                variant="secondary"
-                as="link"
-                to={`/recepcion/${recepcion.id}/editar`}
-                iconLeft={<Pencil className="h-4 w-4" />}
-              >
-                Editar
-              </Button>
-            }
-          />
         </>
       )}
 
-      <RecepcionKPI items={kpis} />
+      {/* Header */}
+      <CardShell>
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-forest-600/10 text-forest-600">
+            <Scale className="h-6 w-6" />
+          </div>
+          <div className="flex-1">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-bold text-[#111827]">{recepcion.codigo}</h1>
+              <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">
+                {estadoLabels[recepcion.estado] || recepcion.estado}
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-gray-500">
+              {recepcion.fecha} · {recepcion.responsable} · {recepcion.planta}
+            </p>
+          </div>
+        </div>
+      </CardShell>
 
-      <div className="grid gap-6">
-        <InformacionGeneralCard mode="view" values={recepcion} />
-        <LoteProductorCard mode="view" values={recepcion} />
-        <PesajeCard mode="view" values={recepcion} />
-        <CalidadCard mode="view" values={recepcion} />
-        <ClasificacionCard mode="view" values={recepcion} />
-        <ResultadoCard mode="view" values={recepcion} />
-        <EvidenciasCard mode="view" values={recepcion} />
-        <ObservacionesCard mode="view" values={recepcion} />
-      </div>
+      {/* Datos Generales */}
+      <CardShell>
+        <CardHeader icon={<span className="text-lg">📋</span>} title="Datos Generales" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Field label="Fecha" mode="view" value={recepcion.fecha} />
+          <Field label="Responsable" mode="view" value={recepcion.responsable} />
+          <Field label="Planta" mode="view" value={recepcion.planta} />
+          <Field label="Lote Productor" mode="view" value={recepcion.loteProductor} />
+          <Field label="Acopio" mode="view" value={recepcion.acopioCodigo || "Manual"} />
+        </div>
+      </CardShell>
+
+      {/* Pesaje */}
+      <CardShell>
+        <CardHeader icon={<Scale size={20} />} title="Pesaje" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <p className="text-xs text-gray-500">Total Sacos</p>
+            <p className="text-xl font-bold text-[#111827]">{recepcion.sacos}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Peso Bruto</p>
+            <p className="text-xl font-bold text-[#111827]">{recepcion.pesoBruto ? formatearPeso(recepcion.pesoBruto) : "—"}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Tara</p>
+            <p className="text-xl font-bold text-[#111827]">{recepcion.tara ? formatearPeso(recepcion.tara) : "—"}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Peso Neto</p>
+            <p className="text-xl font-bold text-[#111827]">{pesoNeto > 0 ? formatearPeso(pesoNeto) : "—"}</p>
+          </div>
+        </div>
+      </CardShell>
+
+      {/* Detalle de Sacos */}
+      {recepcion.sacosDetalle && recepcion.sacosDetalle.length > 0 && (
+        <CardShell>
+          <CardHeader icon={<Package size={20} />} title="Detalle de Sacos" />
+          <div className="rounded-lg bg-gray-50 p-3">
+            <div className="mb-2 flex items-center gap-4 text-sm">
+              <span className="font-medium text-gray-600">Total: {recepcion.sacosDetalle.length} sacos</span>
+              <span className="font-semibold text-[#111827]">
+                {formatearPeso(recepcion.sacosDetalle.reduce((sum, s) => sum + s.peso, 0))}
+              </span>
+            </div>
+            <div className="grid gap-2">
+              {recepcion.sacosDetalle.map((saco, i) => (
+                <div key={i} className="flex items-center justify-between rounded-lg bg-white px-3 py-2 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-medium text-gray-500">{saco.codigo}</span>
+                    <span className="font-semibold text-[#111827]">{saco.peso.toFixed(2)} kg</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </CardShell>
+      )}
+
+      {/* Calidad */}
+      <CardShell>
+        <CardHeader icon={<span className="text-lg">🔍</span>} title="Control de Calidad" />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Humedad" mode="view" value={recepcion.humedad ? `${recepcion.humedad}%` : "—"} />
+          <Field label="Impurezas" mode="view" value={recepcion.impurezas ? `${recepcion.impurezas}%` : "—"} />
+        </div>
+      </CardShell>
+
+      {/* Observaciones */}
+      {recepcion.observaciones && (
+        <CardShell>
+          <CardHeader icon={<span className="text-lg">📝</span>} title="Observaciones" />
+          <p className="text-sm text-gray-700">{recepcion.observaciones}</p>
+        </CardShell>
+      )}
     </div>
   );
 }

@@ -5,46 +5,29 @@ import api from "./api";
 export interface ActividadInsumo {
   id?: string;
   producto: string;
-  categoria?: string;
-  fabricante?: string;
   cantidad?: number | null;
   unidad?: string;
-  lote?: string;
   costoUnitario?: number | null;
-  costoTotal?: number | null;
-  observaciones?: string;
 }
 
 export interface ActividadManoObra {
   id?: string;
   trabajador: string;
-  funcion?: string;
-  jornales?: number | null;
   horas?: number | null;
-  observaciones?: string;
+  jornales?: number | null;
 }
 
 export interface ActividadMaquinaria {
   id?: string;
   equipo: string;
-  operador?: string;
   horasUso?: number | null;
-  combustible?: string | null;
-  observaciones?: string;
+  combustible?: number | null;
 }
 
 export interface Actividad {
-  id: string;
+  id: number;
   codigo: string;
-  campaniaId: string;
-  campaniaNombre: string;
-  campaniaCodigo: string;
-  productorId: string;
-  productorNombre: string;
-  parcelaId: string;
-  parcelaNombre: string;
-  parcelaCodigo: string;
-  cultivoId: string | null;
+  cultivoId: number;
   cultivoNombre: string;
   cultivoCodigo: string;
   fecha: string;
@@ -74,16 +57,10 @@ export interface Actividad {
 }
 
 interface ActividadDTO {
-  id: string;
+  id: number;
   codigo: string;
-  campania_id: string;
-  campania: { id: string; nombre: string; codigo: string };
-  productor_id: string;
-  productor: { id: string; nombres: string; apellido_paterno: string; apellido_materno: string };
-  parcela_id: string;
-  parcela: { id: string; nombre: string; codigo: string };
-  cultivo_id: string | null;
-  cultivo: { id: string; cultivo: string; codigo: string } | null;
+  cultivo_id: number;
+  cultivo: { id: number; cultivo: string; codigo: string } | null;
   fecha: string;
   tipo_actividad: string;
   descripcion: string | null;
@@ -103,9 +80,9 @@ interface ActividadDTO {
   objetivo: string | null;
   resultado: string | null;
   proxima_actividad: string | null;
-  insumos: Array<{ nombre: string; cantidad: number; unidad: string; costo: number | null }>;
-  mano_obra: Array<{ nombre: string; horas: number; tarifa: number | null }>;
-  maquinaria: Array<{ nombre: string; horas: number; costo: number | null }>;
+  insumos: Array<{ id?: number; nombre: string; cantidad: number | null; unidad: string | null; costo: number | null }>;
+  mano_obra: Array<{ id?: number; nombre: string; horas: number | null; tarifa: number | null }>;
+  maquinaria: Array<{ id?: number; nombre: string; horas: number | null; costo: number | null }>;
   created_at: string;
   updated_at: string;
 }
@@ -114,14 +91,6 @@ function toFrontend(dto: ActividadDTO): Actividad {
   return {
     id: dto.id,
     codigo: dto.codigo,
-    campaniaId: dto.campania_id,
-    campaniaNombre: dto.campania?.nombre ?? "",
-    campaniaCodigo: dto.campania?.codigo ?? "",
-    productorId: dto.productor_id,
-    productorNombre: `${dto.productor?.nombres ?? ""} ${dto.productor?.apellido_paterno ?? ""} ${dto.productor?.apellido_materno ?? ""}`.trim(),
-    parcelaId: dto.parcela_id,
-    parcelaNombre: dto.parcela?.nombre ?? "",
-    parcelaCodigo: dto.parcela?.codigo ?? "",
     cultivoId: dto.cultivo_id,
     cultivoNombre: dto.cultivo?.cultivo ?? "",
     cultivoCodigo: dto.cultivo?.codigo ?? "",
@@ -145,17 +114,13 @@ function toFrontend(dto: ActividadDTO): Actividad {
     resultado: dto.resultado ?? "",
     proximaActividad: dto.proxima_actividad ?? "",
     insumos: (dto.insumos ?? []).map((i) => ({
-      id: i.id, producto: i.producto, categoria: i.categoria, fabricante: i.fabricante,
-      cantidad: i.cantidad, unidad: i.unidad, lote: i.lote,
-      costoUnitario: i.costo_unitario, costoTotal: i.costo_total, observaciones: i.observaciones,
+      id: i.id, producto: i.producto, cantidad: i.cantidad, unidad: i.unidad, costoUnitario: i.costo_unitario,
     })),
     manoObra: (dto.mano_obra ?? []).map((m) => ({
-      id: m.id, trabajador: m.trabajador, funcion: m.funcion,
-      jornales: m.jornales, horas: m.horas, observaciones: m.observaciones,
+      id: m.id, trabajador: m.trabajador, horas: m.horas, jornales: m.jornales,
     })),
     maquinaria: (dto.maquinaria ?? []).map((m) => ({
-      id: m.id, equipo: m.equipo, operador: m.operador,
-      horasUso: m.horas_uso, combustible: m.combustible, observaciones: m.observaciones,
+      id: m.id, equipo: m.equipo, horasUso: m.horas_uso, combustible: m.combustible,
     })),
     createdAt: dto.created_at,
     updatedAt: dto.updated_at,
@@ -165,10 +130,7 @@ function toFrontend(dto: ActividadDTO): Actividad {
 function toBackend(data: Partial<Actividad>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   if (data.codigo !== undefined) out.codigo = data.codigo;
-  if (data.campaniaId !== undefined) out.campania_id = data.campaniaId;
-  if (data.productorId !== undefined) out.productor_id = data.productorId;
-  if (data.parcelaId !== undefined) out.parcela_id = data.parcelaId;
-  if (data.cultivoId !== undefined) out.cultivo_id = data.cultivoId || null;
+  if (data.cultivoId !== undefined) out.cultivo_id = Number(data.cultivoId);
   if (data.fecha !== undefined) out.fecha = data.fecha;
   if (data.tipoActividad !== undefined) out.tipo_actividad = data.tipoActividad;
   if (data.descripcion !== undefined) out.descripcion = data.descripcion || null;
@@ -188,9 +150,22 @@ function toBackend(data: Partial<Actividad>): Record<string, unknown> {
   if (data.objetivo !== undefined) out.objetivo = data.objetivo || null;
   if (data.resultado !== undefined) out.resultado = data.resultado || null;
   if (data.proximaActividad !== undefined) out.proxima_actividad = data.proximaActividad || null;
-  if (data.insumos !== undefined) out.insumos = data.insumos;
-  if (data.manoObra !== undefined) out.mano_obra = data.manoObra;
-  if (data.maquinaria !== undefined) out.maquinaria = data.maquinaria;
+  if (data.insumos !== undefined) out.insumos = data.insumos.map((i) => ({
+    producto: i.producto,
+    cantidad: i.cantidad,
+    unidad: i.unidad,
+    costo_unitario: i.costoUnitario,
+  }));
+  if (data.manoObra !== undefined) out.mano_obra = data.manoObra.map((m) => ({
+    trabajador: m.trabajador,
+    horas: m.horas,
+    jornales: m.jornales,
+  }));
+  if (data.maquinaria !== undefined) out.maquinaria = data.maquinaria.map((m) => ({
+    equipo: m.equipo,
+    horas_uso: m.horasUso,
+    combustible: m.combustible,
+  }));
   return out;
 }
 
@@ -200,9 +175,7 @@ export interface ActividadesQuery {
   search?: string;
   estado?: string;
   tipo_actividad?: string;
-  campania_id?: string;
-  productor_id?: string;
-  parcela_id?: string;
+  cultivo_id?: string;
   page?: number;
   limit?: number;
 }
@@ -212,9 +185,7 @@ export async function fetchActividades(params?: ActividadesQuery): Promise<{ dat
   if (params?.search) query.search = params.search;
   if (params?.estado) query.estado = params.estado;
   if (params?.tipo_actividad) query.tipo_actividad = params.tipo_actividad;
-  if (params?.campania_id) query.campania_id = params.campania_id;
-  if (params?.productor_id) query.productor_id = params.productor_id;
-  if (params?.parcela_id) query.parcela_id = params.parcela_id;
+  if (params?.cultivo_id) query.cultivo_id = params.cultivo_id;
   if (params?.page) query.page = String(params.page);
   if (params?.limit) query.limit = String(params.limit);
 
@@ -252,12 +223,6 @@ export async function deleteActividad(id: string): Promise<void> {
 export type ActividadFormData = {
   codigo: string;
   fecha: string;
-  campaniaId: string;
-  campania: string;
-  productorId: string;
-  productor: string;
-  parcelaId: string;
-  parcela: string;
   cultivoId: string;
   cultivo: string;
   responsableTecnico: string;
@@ -287,13 +252,7 @@ export function actividadToFormData(a: Actividad): ActividadFormData {
   return {
     codigo: a.codigo,
     fecha: a.fecha,
-    campaniaId: a.campaniaId,
-    campania: a.campaniaNombre,
-    productorId: a.productorId,
-    productor: a.productorNombre,
-    parcelaId: a.parcelaId,
-    parcela: a.parcelaNombre,
-    cultivoId: a.cultivoId ?? "",
+    cultivoId: String(a.cultivoId ?? ""),
     cultivo: a.cultivoNombre,
     responsableTecnico: a.responsableTecnico,
     tipoActividad: a.tipoActividad,
@@ -322,12 +281,6 @@ export function actividadToFormData(a: Actividad): ActividadFormData {
 export const emptyActividad: ActividadFormData = {
   codigo: "",
   fecha: "",
-  campaniaId: "",
-  campania: "",
-  productorId: "",
-  productor: "",
-  parcelaId: "",
-  parcela: "",
   cultivoId: "",
   cultivo: "",
   responsableTecnico: "",
@@ -355,10 +308,7 @@ export const emptyActividad: ActividadFormData = {
 
 export function formDataToActividad(data: ActividadFormData): Partial<Actividad> {
   return {
-    campaniaId: data.campaniaId,
-    productorId: data.productorId,
-    parcelaId: data.parcelaId,
-    cultivoId: data.cultivoId || null,
+    cultivoId: data.cultivoId ? Number(data.cultivoId) : 0,
     fecha: data.fecha,
     tipoActividad: data.tipoActividad,
     descripcion: data.descripcion,
@@ -380,28 +330,19 @@ export function formDataToActividad(data: ActividadFormData): Partial<Actividad>
     proximaActividad: data.proximaActividad,
     insumos: data.insumos.map((i) => ({
       producto: i.producto,
-      categoria: i.categoria,
-      fabricante: i.fabricante,
       cantidad: i.cantidad,
       unidad: i.unidad,
-      lote: i.lote,
-      costo_unitario: i.costoUnitario,
-      costo_total: i.costoTotal,
-      observaciones: i.observaciones,
+      costoUnitario: i.costoUnitario,
     })),
     manoObra: data.manoObra.map((m) => ({
       trabajador: m.trabajador,
-      funcion: m.funcion,
-      jornales: m.jornales,
       horas: m.horas,
-      observaciones: m.observaciones,
+      jornales: m.jornales,
     })),
     maquinaria: data.maquinaria.map((m) => ({
       equipo: m.equipo,
-      operador: m.operador,
-      horas_uso: m.horasUso,
+      horasUso: m.horasUso,
       combustible: m.combustible,
-      observaciones: m.observaciones,
     })),
   };
 }
@@ -410,10 +351,6 @@ export function formatearFecha(fecha?: string): string {
   if (!fecha) return "—";
   const [anio, mes, dia] = fecha.split("-");
   return `${dia}/${mes}/${anio}`;
-}
-
-export function obtenerSiguienteCodigo(total: number): string {
-  return `ACT-${new Date().getFullYear()}-${String(total + 1).padStart(3, "0")}`;
 }
 
 // ─── Options ───────────────────────────────────────────────

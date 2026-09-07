@@ -1,14 +1,11 @@
 import { Router } from 'express';
 import * as procesamientoController from '../controllers/procesamiento.controller';
 import { validate } from '../middleware/validate.middleware';
-import { authMiddleware } from '../middleware/auth.middleware';
+import { authMiddleware, adminMiddleware } from '../middleware/auth.middleware';
 import {
   createProcesamientoSchema,
   updateProcesamientoSchema,
   getAllProcesamientosSchema,
-  addLoteSchema,
-  addOperacionSchema,
-  updateOperacionSchema,
 } from '../validators/procesamiento.validator';
 import { idParamSchema } from '../validators/common.validator';
 
@@ -18,14 +15,8 @@ router.use(authMiddleware);
 
 router.get('/', validate(getAllProcesamientosSchema), procesamientoController.getAll);
 router.get('/:id', validate(idParamSchema, 'params'), procesamientoController.getById);
-router.post('/', validate(createProcesamientoSchema), procesamientoController.create);
-router.put('/:id', validate(idParamSchema, 'params'), validate(updateProcesamientoSchema), procesamientoController.update);
-router.delete('/:id', validate(idParamSchema, 'params'), procesamientoController.remove);
-
-router.post('/:id/lotes', validate(idParamSchema, 'params'), validate(addLoteSchema), procesamientoController.addLote);
-router.delete('/:id/lotes/:loteId', procesamientoController.removeLote);
-
-router.post('/:id/operaciones', validate(idParamSchema, 'params'), validate(addOperacionSchema), procesamientoController.addOperacion);
-router.put('/:id/operaciones/:operacionId', validate(idParamSchema, 'params'), validate(updateOperacionSchema), procesamientoController.updateOperacion);
+router.post('/', adminMiddleware, validate(createProcesamientoSchema), procesamientoController.create);
+router.put('/:id', adminMiddleware, validate(idParamSchema, 'params'), validate(updateProcesamientoSchema), procesamientoController.update);
+router.delete('/:id', adminMiddleware, validate(idParamSchema, 'params'), procesamientoController.remove);
 
 export default router;

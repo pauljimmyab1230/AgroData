@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Fingerprint,
   FileText,
@@ -10,10 +11,14 @@ import {
   Camera,
   PenLine,
   User,
+  CheckCircle,
+  XCircle,
+  Clock,
 } from "lucide-react";
-import { Badge, Button, Modal } from "../ui";
+import { Badge, Button, Modal, Select } from "../ui";
 import { CardHeader, CardShell, type FormMode } from "../shared/formControls";
-import { fetchDocumentos, createDocumento, deleteDocumento, uploadArchivo, type Documento } from "../../services/productores";
+import { useDocumentos, useCreateDocumento, useDeleteDocumento } from "../../hooks/queries";
+import { updateDocumentoEstado, uploadArchivo, type Documento } from "../../services/productores";
 import { toast } from "../../utils/toast";
 
 type DocTipo = {
@@ -54,20 +59,46 @@ const formatSize = (bytes: number) =>
     ? `${(bytes / (1024 * 1024)).toFixed(1)} MB`
     : `${Math.max(1, Math.round(bytes / 1024))} KB`;
 
+const mimeTypesPermitidos = ["image/jpeg", "image/png", "application/pdf", "image/webp"];
+
+const isUrlSegura = (url: string): boolean => {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
+const estadoOptions = [
+  { value: "PENDIENTE", label: "Pendiente" },
+  { value: "VERIFICADO", label: "Verificado" },
+  { value: "RECHAZADO", label: "Rechazado" },
+];
+
+const estadoIcon = (estado: string) => {
+  switch (estado) {
+    case "VERIFICADO":
+      return <CheckCircle className="h-3.5 w-3.5 text-green-600" />;
+    case "RECHAZADO":
+      return <XCircle className="h-3.5 w-3.5 text-red-500" />;
+    default:
+      return <Clock className="h-3.5 w-3.5 text-yellow-500" />;
+  }
+};
+
 export function DocumentoUploader({ mode, productorId }: DocumentoUploaderProps) {
   const readOnly = mode === "view";
-  const [documentos, setDocumentos] = useState<Documento[]>([]);
+  const qc = useQueryClient();
+  const validProductorId = productorId && productorId > 0 ? productorId : null;
+  const { data: documentos = [] } = useDocumentos(
+    validProductorId && mode !== "create" ? validProductorId : null
+  );
+  const createDocumentoMutation = useCreateDocumento(validProductorId || 0);
+  const deleteDocumentoMutation = useDeleteDocumento(validProductorId || 0);
   const [verDoc, setVerDoc] = useState<Documento | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const uploadTargetRef = useRef<{ categoria: string; tipo: string } | null>(null);
-
-  useEffect(() => {
-    if (productorId && mode !== "create") {
-      fetchDocumentos(productorId)
-        .then(setDocumentos)
-        .catch(console.error);
-    }
-  }, [productorId, mode]);
 
   const handleUploadClick = (categoria: string, tipo: string) => {
     uploadTargetRef.current = { categoria, tipo };
@@ -78,11 +109,16 @@ export function DocumentoUploader({ mode, productorId }: DocumentoUploaderProps)
     const file = e.target.files?.[0];
     const target = uploadTargetRef.current;
     if (file && target && productorId) {
+      if (!mimeTypesPermitidos.includes(file.type)) {
+        toast.error("Tipo de archivo no permitido. Use JPEG, PNG, PDF o WebP.");
+        if (inputRef.current) inputRef.current.value = "";
+        return;
+      }
       try {
         const tipo = target.tipo.toLowerCase();
         const folder = tipo === 'firma' ? 'firmas' : tipo === 'fotografía' || tipo === 'fotografia' ? 'fotos' : 'documentos';
         const uploaded = await uploadArchivo(folder, file);
-        const doc = await createDocumento(productorId, {
+        await createDocumentoMutation.mutateAsync({
           tipo: target.tipo,
           categoria: target.categoria,
           nombre_archivo: uploaded.nombre_archivo,
@@ -90,25 +126,48 @@ export function DocumentoUploader({ mode, productorId }: DocumentoUploaderProps)
           tamano_bytes: uploaded.tamano_bytes,
           mime_type: uploaded.mime_type,
         });
-        setDocumentos((prev) => [
-          ...prev.filter((d) => !(d.categoria === target.categoria && d.tipo === target.tipo)),
-          doc,
-        ]);
-      } catch (err) {
-        console.error("Error al subir documento:", err);
-        toast.error("Error al subir el documento");
-      }
+        toast.success("Documento subido correctamente");
+    } catch (error) {
+      console.error("Error al subir documento:", error);
+      toast.error("Error al subir el documento");
+    }
     }
     if (inputRef.current) inputRef.current.value = "";
   };
 
   const handleDelete = async (doc: Documento) => {
-    if (!productorId) return;
+    if (!validProductorId) return;
     try {
-      await deleteDocumento(productorId, doc.id);
-      setDocumentos((prev) => prev.filter((d) => d.id !== doc.id));
-    } catch (err) {
-      console.error("Error al eliminar documento:", err);
+      await deleteDocumentoMutation.mutateAsync(doc.id);
+      toast.success("Documento eliminado");
+    } catch (error) {
+      console.error("Error al eliminar documento:", error);
+      toast.error("Error al eliminar el documento");
+    }
+  };
+
+  const handleDownload = (doc: Documento) => {
+    if (doc.rutaArchivo && isUrlSegura(doc.rutaArchivo)) {
+      const link = document.createElement("a");
+      link.href = doc.rutaArchivo;
+      link.download = doc.nombreArchivo;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  const handleEstadoChange = async (doc: Documento, nuevoEstado: string) => {
+    if (!validProductorId) return;
+    if (nuevoEstado !== "PENDIENTE" && nuevoEstado !== "VERIFICADO" && nuevoEstado !== "RECHAZADO") return;
+    try {
+      await updateDocumentoEstado(validProductorId, doc.id, nuevoEstado);
+      qc.invalidateQueries({ queryKey: ["documentos", validProductorId] });
+      toast.success(`Documento ${nuevoEstado.toLowerCase()}`);
+    } catch {
+      toast.error("Error al cambiar el estado del documento");
     }
   };
 
@@ -143,9 +202,9 @@ export function DocumentoUploader({ mode, productorId }: DocumentoUploaderProps)
                     <div className="flex flex-1 flex-col gap-3 p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-[#111827]">{doc.nombre_archivo}</p>
+                          <p className="truncate text-sm font-medium text-[#111827]">{doc.nombreArchivo}</p>
                           <p className="mt-0.5 text-xs text-gray-500">
-                            {formatSize(doc.tamano_bytes)} · {new Date(doc.created_at).toLocaleDateString("es-PE")}
+                            {formatSize(doc.tamanoBytes)} · {new Date(doc.createdAt).toLocaleDateString("es-PE")}
                           </p>
                         </div>
                         <Badge
@@ -155,6 +214,19 @@ export function DocumentoUploader({ mode, productorId }: DocumentoUploaderProps)
                           {doc.estado}
                         </Badge>
                       </div>
+
+                      {!readOnly && (
+                        <div className="flex items-center gap-2">
+                          {estadoIcon(doc.estado)}
+                          <Select
+                            options={estadoOptions}
+                            value={doc.estado}
+                            onChange={(val) => handleEstadoChange(doc, val)}
+                            placeholder="Estado"
+                          />
+                        </div>
+                      )}
+
                       <div className="mt-auto flex items-center gap-1.5">
                         <Button
                           variant="secondary"
@@ -164,13 +236,18 @@ export function DocumentoUploader({ mode, productorId }: DocumentoUploaderProps)
                         >
                           Ver
                         </Button>
-                        <Button variant="secondary" size="sm" iconLeft={<Download className="h-3.5 w-3.5" />}>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          iconLeft={<Download className="h-3.5 w-3.5" />}
+                          onClick={() => handleDownload(doc)}
+                        >
                           Descargar
                         </Button>
                         {!readOnly && (
                           <button
                             type="button"
-                            aria-label={`Eliminar ${doc.nombre_archivo}`}
+                            aria-label={`Eliminar ${doc.nombreArchivo}`}
                             onClick={() => handleDelete(doc)}
                             className="ml-auto flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
                           >
@@ -221,7 +298,7 @@ export function DocumentoUploader({ mode, productorId }: DocumentoUploaderProps)
                 <FileText size={20} />
               </span>
               <div className="min-w-0">
-                <p className="truncate font-semibold text-[#111827]">{verDoc.nombre_archivo}</p>
+                <p className="truncate font-semibold text-[#111827]">{verDoc.nombreArchivo}</p>
                 <p className="text-xs text-gray-500">{verDoc.tipo}</p>
               </div>
             </div>
@@ -232,11 +309,11 @@ export function DocumentoUploader({ mode, productorId }: DocumentoUploaderProps)
               </div>
               <div>
                 <dt className="text-xs font-medium text-gray-500">Fecha</dt>
-                <dd className="mt-0.5 font-medium text-[#111827]">{new Date(verDoc.created_at).toLocaleDateString("es-PE")}</dd>
+                <dd className="mt-0.5 font-medium text-[#111827]">{new Date(verDoc.createdAt).toLocaleDateString("es-PE")}</dd>
               </div>
               <div>
                 <dt className="text-xs font-medium text-gray-500">Tamaño</dt>
-                <dd className="mt-0.5 font-medium text-[#111827]">{formatSize(verDoc.tamano_bytes)}</dd>
+                <dd className="mt-0.5 font-medium text-[#111827]">{formatSize(verDoc.tamanoBytes)}</dd>
               </div>
               <div>
                 <dt className="text-xs font-medium text-gray-500">Estado</dt>
@@ -247,6 +324,15 @@ export function DocumentoUploader({ mode, productorId }: DocumentoUploaderProps)
                 </dd>
               </div>
             </dl>
+            {verDoc.rutaArchivo && (
+              <Button
+                variant="secondary"
+                iconLeft={<Download className="h-4 w-4" />}
+                onClick={() => handleDownload(verDoc)}
+              >
+                Descargar archivo
+              </Button>
+            )}
           </div>
         )}
       </Modal>

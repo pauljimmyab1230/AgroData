@@ -7,7 +7,7 @@ const estadoDocumentoEnum = ['PENDIENTE', 'VERIFICADO', 'RECHAZADO'];
 const opcional = () => Joi.string().max(200).allow('', null);
 
 export const createParcelaSchema = Joi.object({
-  productor_id: Joi.string().required(),
+  productores_id: Joi.number().integer().positive().required(),
   codigo: Joi.string().max(20).allow(''),
   nombre: Joi.string().max(200).required(),
   cultivo_principal: Joi.string().max(100).required(),
@@ -47,7 +47,7 @@ export const createParcelaSchema = Joi.object({
 });
 
 export const updateParcelaSchema = Joi.object({
-  productor_id: Joi.string(),
+  productores_id: Joi.number().integer().positive(),
   codigo: Joi.string().max(20).allow(''),
   nombre: Joi.string().max(200),
   cultivo_principal: Joi.string().max(100),
@@ -127,7 +127,7 @@ export const getAllParcelasSchema = Joi.object({
   comunidad: Joi.string().max(150).allow('', null),
   cultivo: Joi.string().max(100).allow('', null),
   estado: Joi.string().valid(...estadoParcelaEnum),
-  productor_id: Joi.string(),
+  productor_id: Joi.number().integer().positive(),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
 });

@@ -98,7 +98,7 @@ export interface Parcela {
 export type EstadoCampania = 'PLANIFICADA' | 'ACTIVA' | 'FINALIZADA' | 'CANCELADA';
 
 export interface Campania {
-  id: string;
+  id: number;
   codigo: string;
   nombre: string;
   anio_agricola: string;
@@ -231,31 +231,6 @@ export interface Recepcion {
   observaciones: string | null;
   documento_firmado: boolean;
   firma_responsable_url: string | null;
-  activo: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-// ─── Lotes ──────────────────────────────────────────────────
-export type EstadoLote = 'REGISTRADO' | 'EN_PROCESAMIENTO' | 'DISPONIBLE' | 'CONSUMIDO' | 'VENCIDO';
-
-export interface Lote {
-  id: string;
-  codigo: string;
-  nombre: string;
-  campania_id: string;
-  cultivo: string;
-  origen: string;
-  peso_inicial: number;
-  peso_disponible: number;
-  unidad: string;
-  estado: EstadoLote;
-  fecha_produccion: string | null;
-  fecha_vencimiento: string | null;
-  calidad: string | null;
-  certificacion: string | null;
-  ubicacion: string | null;
-  observaciones: string | null;
   activo: boolean;
   created_at: string;
   updated_at: string;

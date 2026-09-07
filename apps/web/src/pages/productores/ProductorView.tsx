@@ -1,8 +1,6 @@
-import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import {
   ArrowLeft,
-  Pencil,
   Sprout,
   Ruler,
   Layers,
@@ -17,39 +15,19 @@ import { OrganizacionCard } from "../../components/productores/OrganizacionCard"
 import { FamiliarTable } from "../../components/productores/FamiliarTable";
 import { ParcelaTable } from "../../components/productores/ParcelaTable";
 import { DocumentoUploader } from "../../components/productores/DocumentoUploader";
-import { fetchProductor, fetchParcelas, fetchDocumentos, type Productor, type Parcela, type Documento } from "../../services/productores";
+import { useProductor, useParcelasByProductor, useDocumentos } from "../../hooks/queries";
 import { ProductorFormProvider } from "../../contexts/ProductorFormContext";
-import { toast } from "../../utils/toast";
-
-const formatFecha = (fecha: string) => {
-  const [y, m, d] = fecha.split("-").map(Number);
-  const meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-  return `${d} ${meses[m - 1]} ${y}`;
-};
+import { formatFecha, getEstadoProductorBadgeVariant, getEstadoProductorLabel } from "../../utils/formatters";
 
 export default function ProductorView() {
   const { id } = useParams();
-  const [productor, setProductor] = useState<Productor | null>(null);
-  const [parcelas, setParcelas] = useState<Parcela[]>([]);
-  const [documentos, setDocumentos] = useState<Documento[]>([]);
-  const [loading, setLoading] = useState(true);
+  const numId = Number(id);
+  const isValidId = !isNaN(numId) && numId > 0;
+  const { data: productor, isLoading, error } = useProductor(isValidId ? numId : null);
+  const { data: parcelas = [] } = useParcelasByProductor(isValidId ? numId : null);
+  const { data: documentos = [] } = useDocumentos(isValidId ? numId : null);
 
-  useEffect(() => {
-    if (!id) return;
-    const numId = Number(id);
-    fetchProductor(numId)
-      .then(setProductor)
-      .catch(() => toast.error("Error al cargar el productor"))
-      .finally(() => setLoading(false));
-    fetchParcelas(numId)
-      .then(setParcelas)
-      .catch(() => toast.error("Error al cargar las parcelas"));
-    fetchDocumentos(numId)
-      .then(setDocumentos)
-      .catch(() => toast.error("Error al cargar los documentos"));
-  }, [id]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <LoadingSpinner />
@@ -57,7 +35,7 @@ export default function ProductorView() {
     );
   }
 
-  if (!productor) {
+  if (error || !productor) {
     return (
       <div className="py-20 text-center text-gray-500">
         <p>No se encontró el productor.</p>
@@ -65,17 +43,12 @@ export default function ProductorView() {
     );
   }
 
-  const estadoBadge =
-    productor.estado === "ACTIVO" ? (
-      <Badge variant="green">Activo</Badge>
-    ) : productor.estado === "SUSPENDIDO" ? (
-      <Badge variant="yellow">Suspendido</Badge>
-    ) : (
-      <Badge variant="gray">Inactivo</Badge>
-    );
+  const estadoBadge = (
+    <Badge variant={getEstadoProductorBadgeVariant(productor.estado)}>{getEstadoProductorLabel(productor.estado)}</Badge>
+  );
 
   const totalParcelas = parcelas.length;
-  const areaTotal = parcelas.reduce((sum, p) => sum + Number(p.area), 0).toFixed(2);
+  const areaTotal = parcelas.reduce((sum, p) => sum + (Number(p.area) || 0), 0).toFixed(2);
   const cultivosActivos = new Set(
     parcelas.filter((p) => p.estado === "ACTIVA").map((p) => p.cultivo),
   ).size;
@@ -175,7 +148,7 @@ export default function ProductorView() {
       </div>
 
       <div className="mb-6">
-        <ProductorStepper pasoActual={4} />
+        <ProductorStepper pasoActual={3} isViewMode />
       </div>
 
       <div className="grid gap-6">

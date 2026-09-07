@@ -1,20 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Plus, X } from "lucide-react";
-import { Button, ConfirmDialog, LoadingSpinner, SearchInput, Select } from "../../components/ui";
+import { Button, ConfirmDialog, SearchInput, Select } from "../../components/ui";
 import { CampaniaHeader } from "../../components/campanias/CampaniaHeader";
 import { CampaniaKPI } from "../../components/campanias/CampaniaKPI";
 import { CampaniaTable } from "../../components/campanias/CampaniaTable";
-import { fetchCampanias, deleteCampania, fetchCampaniaGlobalStats, type Campania, type CampaniaGlobalStats } from "../../services/campanias";
+import { useCampanias, useCampaniaGlobalStats, useDeleteCampania } from "../../hooks/queries";
 import CampaniaModal from "../../components/campanias/CampaniaModal";
+import { campaniaEstados } from "../../services/campanias";
+import { toast } from "../../utils/toast";
 
 const currentYear = new Date().getFullYear();
 const aniosAgricolas = Array.from({ length: 5 }, (_, i) => {
   const y = currentYear - i;
   return `${y}-${y + 1}`;
 });
-const estadosOpciones = ["PLANIFICADA", "ACTIVA", "FINALIZADA", "CANCELADA"];
 
-const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: item }));
+const toOptions = (items: readonly string[]) => items.map((item) => ({ value: item, label: item }));
 
 function FilterSelect({
   label,
@@ -38,46 +39,29 @@ function FilterSelect({
 }
 
 export default function CampaniaList() {
-  const [campanias, setCampanias] = useState<Campania[]>([]);
-  const [globalStats, setGlobalStats] = useState<CampaniaGlobalStats>({ total: 0, estados: {} });
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filtroAnio, setFiltroAnio] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [viewId, setViewId] = useState<string | null>(null);
+  const [editId, setEditId] = useState<number | null>(null);
+  const [viewId, setViewId] = useState<number | null>(null);
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const filters = {
-        search: search || undefined,
-        estado: filtroEstado || undefined,
-        anioAgricola: filtroAnio || undefined,
-      };
-      const [result, stats] = await Promise.all([
-        fetchCampanias({ ...filters, page, limit: 10 }),
-        fetchCampaniaGlobalStats(filters),
-      ]);
-      setCampanias(result.data);
-      setGlobalStats(stats);
-      setTotalPages(result.totalPages);
-      setTotal(result.total);
-    } catch {
-      // handled silently
-    } finally {
-      setLoading(false);
-    }
-  };
+  const filters = useMemo(() => ({
+    search: search || undefined,
+    estado: filtroEstado || undefined,
+    anioAgricola: filtroAnio || undefined,
+  }), [search, filtroEstado, filtroAnio]);
 
-  useEffect(() => {
-    loadData();
-  }, [page, filtroAnio, filtroEstado, search]);
+  const { data: result, isLoading } = useCampanias({ ...filters, page, limit: 10 });
+  const { data: globalStats } = useCampaniaGlobalStats(filters);
+  const deleteMutation = useDeleteCampania();
+
+  const campanias = result?.data ?? [];
+  const totalPages = result?.totalPages ?? 1;
+  const total = result?.total ?? 0;
+  const stats = globalStats ?? { total: 0, estados: {} };
 
   const hasFilters = Boolean(search) || Boolean(filtroAnio) || Boolean(filtroEstado);
 
@@ -88,19 +72,12 @@ export default function CampaniaList() {
     setPage(1);
   };
 
-  const handleModalClose = () => {
-    setShowCreateModal(false);
-    setEditId(null);
-    setViewId(null);
-    loadData();
-  };
-
   const campaniaAEliminar = campanias.find((c) => c.id === deleteId);
 
-  if (loading && campanias.length === 0) {
+  if (isLoading && campanias.length === 0) {
     return (
       <div className="flex items-center justify-center py-20">
-        <LoadingSpinner />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-forest-600 border-t-transparent" />
       </div>
     );
   }
@@ -117,7 +94,7 @@ export default function CampaniaList() {
         }
       />
 
-      <CampaniaKPI stats={globalStats} />
+      <CampaniaKPI stats={stats} />
 
       <div className="mb-6 flex flex-wrap items-end gap-3">
         <div className="max-w-md min-w-[200px] flex-1">
@@ -142,7 +119,7 @@ export default function CampaniaList() {
         <FilterSelect
           label="Estado"
           placeholder="Todos"
-          options={toOptions(estadosOpciones)}
+          options={toOptions(campaniaEstados)}
           value={filtroEstado}
           onChange={(val) => {
             setFiltroEstado(val);
@@ -155,6 +132,11 @@ export default function CampaniaList() {
             Limpiar filtros
           </Button>
         )}
+      </div>
+
+      <div className="mb-3 text-sm text-gray-500">
+        Mostrando <span className="font-medium text-[#111827]">{campanias.length}</span> de{" "}
+        <span className="font-medium text-[#111827]">{total}</span> campañas
       </div>
 
       <CampaniaTable
@@ -173,11 +155,11 @@ export default function CampaniaList() {
         onConfirm={async () => {
           if (!deleteId) return;
           try {
-            await deleteCampania(deleteId);
+            await deleteMutation.mutateAsync(deleteId);
             setDeleteId(null);
-            loadData();
+            toast.success("Campaña eliminada correctamente");
           } catch {
-            // handled silently
+            toast.error("Error al eliminar la campaña");
           }
         }}
         title="Eliminar Campaña"
@@ -193,23 +175,23 @@ export default function CampaniaList() {
       <CampaniaModal
         open={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        onSave={handleModalClose}
+        onSave={() => setShowCreateModal(false)}
         mode="create"
       />
 
       <CampaniaModal
         open={editId !== null}
         onClose={() => setEditId(null)}
-        onSave={handleModalClose}
+        onSave={() => setEditId(null)}
         mode="edit"
-        campaniaId={editId || undefined}
+        campaniaId={editId ?? undefined}
       />
 
       <CampaniaModal
         open={viewId !== null}
         onClose={() => setViewId(null)}
         mode="view"
-        campaniaId={viewId || undefined}
+        campaniaId={viewId ?? undefined}
       />
     </div>
   );

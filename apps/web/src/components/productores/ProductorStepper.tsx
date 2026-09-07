@@ -5,6 +5,7 @@ export type ProductorStepperProps = {
   pasoActual: number;
   pasoMaximoAlcanzado?: number;
   onPasoChange?: (paso: number) => void;
+  isViewMode?: boolean;
 };
 
 const pasos: StepperStep[] = [
@@ -13,6 +14,6 @@ const pasos: StepperStep[] = [
   { id: 3, label: "Documentos", icon: FileText },
 ];
 
-export function ProductorStepper({ pasoActual, pasoMaximoAlcanzado, onPasoChange }: ProductorStepperProps) {
-  return <Stepper steps={pasos} active={pasoActual} maxReached={pasoMaximoAlcanzado} onChange={onPasoChange} />;
+export function ProductorStepper({ pasoActual, pasoMaximoAlcanzado, onPasoChange, isViewMode }: ProductorStepperProps) {
+  return <Stepper steps={pasos} active={isViewMode ? 3 : pasoActual} maxReached={isViewMode ? 3 : pasoMaximoAlcanzado} onChange={onPasoChange} />;
 }

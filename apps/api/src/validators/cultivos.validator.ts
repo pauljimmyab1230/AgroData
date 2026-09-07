@@ -9,20 +9,17 @@ const procedenciaSemillaEnum = ['CERTIFICADA', 'COMUN', 'PRODUCIDA_EN_CAMPO', 'C
 const destinoProduccionEnum = ['VENTA_COOPERATIVA', 'COMERCIALIZACION_LOCAL', 'AUTOCONSUMO', 'SEMILLA'];
 
 export const createCultivoSchema = Joi.object({
-  codigo: Joi.string().max(20).allow(''),
-  campania_id: Joi.string().uuid().required().messages({
+  codigo: Joi.string().max(20).trim().empty('').optional(),
+  campania_id: Joi.number().integer().positive().required().messages({
     'any.required': 'La campaña es obligatoria',
-  }),
-  productor_id: Joi.number().integer().positive().required().messages({
-    'any.required': 'El productor es obligatorio',
   }),
   parcela_id: Joi.number().integer().positive().required().messages({
     'any.required': 'La parcela es obligatoria',
   }),
-  cultivo: Joi.string().max(100).required().messages({
+  cultivo: Joi.string().max(100).trim().required().messages({
     'any.required': 'El cultivo es obligatorio',
   }),
-  variedad: Joi.string().max(100).allow('', null),
+  variedad: Joi.string().max(100).trim().allow('', null),
   area_sembrada: Joi.number().positive().allow(null),
   fecha_siembra: Joi.date().iso().allow(null),
   metodo_siembra: Joi.string().valid(...metodoSiembraEnum).allow(null),
@@ -31,25 +28,24 @@ export const createCultivoSchema = Joi.object({
   certificacion: Joi.string().valid(...certificacionCultivoEnum).default('SIN_CERTIFICAR'),
   procedencia_semilla: Joi.string().valid(...procedenciaSemillaEnum).allow(null),
   cantidad_semilla: Joi.number().min(0).allow(null),
-  unidad_semilla: Joi.string().max(10).allow('', null),
+  unidad_semilla: Joi.string().max(10).trim().allow('', null),
   fecha_cosecha: Joi.date().iso().allow(null),
   estado: Joi.string().valid(...estadoCultivoEnum).default('ACTIVO'),
   observaciones: Joi.string().allow('', null),
   rendimiento_esperado: Joi.number().min(0).allow(null),
   produccion_estimada: Joi.number().min(0).allow(null),
   destino_produccion: Joi.string().valid(...destinoProduccionEnum).allow(null),
-  distanciamiento_surcos: Joi.string().max(50).allow('', null),
-  distanciamiento_plantas: Joi.string().max(50).allow('', null),
-  densidad_siembra: Joi.string().max(50).allow('', null),
-  tipo_semilla: Joi.string().max(100).allow('', null),
-  lote_semilla: Joi.string().max(100).allow('', null),
-  proveedor_semilla: Joi.string().max(150).allow('', null),
+  distanciamiento_surcos: Joi.string().max(50).trim().allow('', null),
+  distanciamiento_plantas: Joi.string().max(50).trim().allow('', null),
+  densidad_siembra: Joi.string().max(50).trim().allow('', null),
+  tipo_semilla: Joi.string().max(100).trim().allow('', null),
+  lote_semilla: Joi.string().max(100).trim().allow('', null),
+  proveedor_semilla: Joi.string().max(150).trim().allow('', null),
 });
 
 export const updateCultivoSchema = Joi.object({
-  codigo: Joi.string().max(20).allow(''),
-  campania_id: Joi.string().uuid(),
-  productor_id: Joi.number().integer().positive(),
+  codigo: Joi.string().max(20).trim().empty('').optional(),
+  campania_id: Joi.number().integer().positive(),
   parcela_id: Joi.number().integer().positive(),
   cultivo: Joi.string().max(100),
   variedad: Joi.string().max(100).allow('', null),
@@ -77,11 +73,16 @@ export const updateCultivoSchema = Joi.object({
 }).min(1);
 
 export const getAllCultivosSchema = Joi.object({
-  search: Joi.string().max(100).allow('', null),
+  search: Joi.string().max(100).trim().allow('', null),
   estado: Joi.string().valid(...estadoCultivoEnum),
-  campania_id: Joi.string().uuid(),
-  productor_id: Joi.number().integer().positive(),
+  campania_id: Joi.number().integer().positive(),
   parcela_id: Joi.number().integer().positive(),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
+});
+
+export const getStatsCultivosSchema = Joi.object({
+  search: Joi.string().max(100).trim().allow('', null),
+  estado: Joi.string().valid(...estadoCultivoEnum),
+  campania_id: Joi.number().integer().positive(),
 });

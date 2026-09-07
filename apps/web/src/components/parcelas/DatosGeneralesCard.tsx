@@ -4,9 +4,7 @@ import { Input, Select } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import { useParcelaForm } from "../../contexts/ParcelaFormContext";
 import {
-  comunidadesOpciones,
   cultivosOpciones,
-  sectoresOpciones,
   estadosOpciones,
   toOptions,
   type ParcelaSelectOption,

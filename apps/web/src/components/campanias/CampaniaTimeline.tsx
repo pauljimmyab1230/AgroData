@@ -1,25 +1,17 @@
-import { useEffect, useState } from "react";
 import { History, Sprout, ClipboardCheck, SearchCheck, Warehouse } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { CardHeader, CardShell } from "../shared/formControls";
-import api from "../../services/api";
+import { useCampaniaTimeline } from "../../hooks/queries";
+import type { TimelineEvent } from "../../services/campanias";
 
-type EventoTimeline = {
-  id: string;
-  tipo: "cultivo" | "actividad" | "inspeccion" | "acopio";
-  titulo: string;
-  descripcion: string;
-  fecha: string;
-};
-
-const iconosTipo: Record<EventoTimeline["tipo"], LucideIcon> = {
+const iconosTipo: Record<TimelineEvent["tipo"], LucideIcon> = {
   cultivo: Sprout,
   actividad: ClipboardCheck,
   inspeccion: SearchCheck,
   acopio: Warehouse,
 };
 
-const coloresTipo: Record<EventoTimeline["tipo"], string> = {
+const coloresTipo: Record<TimelineEvent["tipo"], string> = {
   cultivo: "bg-forest-100 text-forest-700",
   actividad: "bg-sun-100 text-sun-700",
   inspeccion: "bg-blue-100 text-blue-700",
@@ -34,78 +26,11 @@ const formatFecha = (fecha: string) => {
 };
 
 interface CampaniaTimelineProps {
-  campaniaId: string;
+  campaniaId: number;
 }
 
 export function CampaniaTimeline({ campaniaId }: CampaniaTimelineProps) {
-  const [eventos, setEventos] = useState<EventoTimeline[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!campaniaId) return;
-
-    const fetchEventos = async () => {
-      try {
-        const [cultivosRes, actividadesRes, inspeccionesRes, acopiosRes] = await Promise.all([
-          api.get("/cultivos", { params: { campania_id: campaniaId, limit: 50 } }).catch(() => ({ data: { data: [] } })),
-          api.get("/actividades", { params: { campania_id: campaniaId, limit: 50 } }).catch(() => ({ data: { data: [] } })),
-          api.get("/inspecciones", { params: { campania_id: campaniaId, limit: 50 } }).catch(() => ({ data: { data: [] } })),
-          api.get("/acopio", { params: { campania_id: campaniaId, limit: 50 } }).catch(() => ({ data: { data: [] } })),
-        ]);
-
-        const items: EventoTimeline[] = [];
-
-        for (const c of cultivosRes.data.data ?? []) {
-          items.push({
-            id: `cultivo-${c.id}`,
-            tipo: "cultivo",
-            titulo: `Cultivo registrado: ${c.cultivo}`,
-            descripcion: `${c.productor?.nombres ?? ""} ${c.productor?.apellido_paterno ?? ""} - ${c.parcela?.nombre ?? ""}`,
-            fecha: c.created_at ?? c.fecha_siembra ?? "",
-          });
-        }
-
-        for (const a of actividadesRes.data.data ?? []) {
-          items.push({
-            id: `actividad-${a.id}`,
-            tipo: "actividad",
-            titulo: `Actividad: ${a.tipo_actividad ?? a.descripcion ?? "Sin descripción"}`,
-            descripcion: `${a.responsable_tecnico ?? ""} - ${a.estado ?? ""}`,
-            fecha: a.created_at ?? a.fecha ?? "",
-          });
-        }
-
-        for (const i of inspeccionesRes.data.data ?? []) {
-          items.push({
-            id: `inspeccion-${i.id}`,
-            tipo: "inspeccion",
-            titulo: `Inspección: ${i.codigo}`,
-            descripcion: `${i.inspector ?? ""} - ${i.estado ?? ""}`,
-            fecha: i.created_at ?? i.fecha ?? "",
-          });
-        }
-
-        for (const a of acopiosRes.data.data ?? []) {
-          items.push({
-            id: `acopio-${a.id}`,
-            tipo: "acopio",
-            titulo: `Acopio: ${a.codigo}`,
-            descripcion: `${a.acopiador ?? ""} - ${a.peso_total ?? 0} kg`,
-            fecha: a.created_at ?? a.fecha ?? "",
-          });
-        }
-
-        items.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
-        setEventos(items.slice(0, 10));
-      } catch {
-        // silently handle
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEventos();
-  }, [campaniaId]);
+  const { data: eventos, isLoading } = useCampaniaTimeline(campaniaId);
 
   return (
     <CardShell>
@@ -115,11 +40,11 @@ export function CampaniaTimeline({ campaniaId }: CampaniaTimelineProps) {
         description="Eventos y hitos registrados de la campaña"
       />
 
-      {loading ? (
+      {isLoading ? (
         <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
           <p className="text-sm text-gray-400">Cargando eventos...</p>
         </div>
-      ) : eventos.length === 0 ? (
+      ) : !eventos || eventos.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
           <History size={28} className="text-gray-300" />
           <p className="text-sm text-gray-400">Sin eventos registrados</p>

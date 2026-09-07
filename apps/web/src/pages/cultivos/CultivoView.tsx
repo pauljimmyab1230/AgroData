@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Pencil, Ruler, Sprout, Wheat } from "lucide-react";
 import { Badge, Button, Card, LoadingSpinner } from "../../components/ui";
@@ -11,7 +10,7 @@ import { InformacionTecnicaCard } from "../../components/cultivos/InformacionTec
 import { EstimacionProduccionCard } from "../../components/cultivos/EstimacionProduccionCard";
 import { ObservacionesCard } from "../../components/cultivos/ObservacionesCard";
 import CultivoHistorial from "../../components/cultivos/CultivoHistorial";
-import { fetchCultivo, type Cultivo } from "../../services/cultivos";
+import { useCultivo } from "../../hooks/queries";
 
 interface CultivoViewProps {
   inModal?: boolean;
@@ -21,18 +20,9 @@ interface CultivoViewProps {
 export default function CultivoView({ inModal, cultivoId: propId }: CultivoViewProps) {
   const { id: paramId } = useParams();
   const id = propId || paramId;
-  const [cultivo, setCultivo] = useState<Cultivo | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: cultivo, isLoading } = useCultivo(id || null);
 
-  useEffect(() => {
-    if (!id) return;
-    fetchCultivo(id)
-      .then(setCultivo)
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [id]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <LoadingSpinner />

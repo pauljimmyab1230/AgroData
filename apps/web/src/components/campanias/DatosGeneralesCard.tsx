@@ -20,11 +20,14 @@ type DatosGeneralesCardProps = {
   mode: FormMode;
   value: CampaniaFormData;
   onChange?: (patch: Partial<CampaniaFormData>) => void;
+  errors?: Record<string, string>;
 };
 
 const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: item }));
 
-export function DatosGeneralesCard({ mode, value, onChange }: DatosGeneralesCardProps) {
+export function DatosGeneralesCard({ mode, value, onChange, errors }: DatosGeneralesCardProps) {
+  const editable = mode !== "view";
+
   return (
     <CardShell>
       <CardHeader
@@ -49,6 +52,7 @@ export function DatosGeneralesCard({ mode, value, onChange }: DatosGeneralesCard
             onChange={(e) => onChange?.({ nombre: e.target.value })}
             placeholder="Ej. Campaña 2025-2026 Quinua Orgánica"
           />
+          {editable && errors?.nombre && <p className="mt-1 text-xs text-red-500">{errors.nombre}</p>}
         </Field>
 
         <Field label="Año Agrícola" mode={mode} value={value.anioAgricola} required>
@@ -58,6 +62,7 @@ export function DatosGeneralesCard({ mode, value, onChange }: DatosGeneralesCard
             value={value.anioAgricola}
             onChange={(v) => onChange?.({ anioAgricola: v })}
           />
+          {editable && errors?.anioAgricola && <p className="mt-1 text-xs text-red-500">{errors.anioAgricola}</p>}
         </Field>
 
         <Field label="Fecha de Inicio" mode={mode} value={formatFecha(value.fechaInicio)} required>
@@ -65,6 +70,7 @@ export function DatosGeneralesCard({ mode, value, onChange }: DatosGeneralesCard
             selected={value.fechaInicio ? new Date(value.fechaInicio + "T00:00:00") : null}
             onChange={(date) => onChange?.({ fechaInicio: date?.toISOString().split("T")[0] ?? "" })}
           />
+          {editable && errors?.fechaInicio && <p className="mt-1 text-xs text-red-500">{errors.fechaInicio}</p>}
         </Field>
 
         <Field label="Fecha de Fin" mode={mode} value={formatFecha(value.fechaFin)} required>
@@ -72,6 +78,7 @@ export function DatosGeneralesCard({ mode, value, onChange }: DatosGeneralesCard
             selected={value.fechaFin ? new Date(value.fechaFin + "T00:00:00") : null}
             onChange={(date) => onChange?.({ fechaFin: date?.toISOString().split("T")[0] ?? "" })}
           />
+          {editable && errors?.fechaFin && <p className="mt-1 text-xs text-red-500">{errors.fechaFin}</p>}
         </Field>
 
         <Field label="Responsable de la Campaña" mode={mode} value={value.responsable} required>
@@ -81,6 +88,7 @@ export function DatosGeneralesCard({ mode, value, onChange }: DatosGeneralesCard
             onChange={(e) => onChange?.({ responsable: e.target.value })}
             placeholder="Nombre del responsable"
           />
+          {editable && errors?.responsable && <p className="mt-1 text-xs text-red-500">{errors.responsable}</p>}
         </Field>
 
         <div className="sm:col-span-2">
@@ -91,6 +99,7 @@ export function DatosGeneralesCard({ mode, value, onChange }: DatosGeneralesCard
               onChange={(e) => onChange?.({ tecnicoCoordinador: e.target.value })}
               placeholder="Nombre del técnico coordinador"
             />
+            {editable && errors?.tecnicoCoordinador && <p className="mt-1 text-xs text-red-500">{errors.tecnicoCoordinador}</p>}
           </Field>
         </div>
 
@@ -113,6 +122,7 @@ export function DatosGeneralesCard({ mode, value, onChange }: DatosGeneralesCard
               onChange={(e) => onChange?.({ objetivo: e.target.value })}
               placeholder="Describe el objetivo principal de la campaña..."
             />
+            {editable && errors?.objetivo && <p className="mt-1 text-xs text-red-500">{errors.objetivo}</p>}
           </Field>
         </div>
       </div>

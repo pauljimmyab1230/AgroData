@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { X, Sprout } from "lucide-react";
 import { Badge, LoadingSpinner } from "../ui";
 import { DatosPersonalesCard } from "./DatosPersonalesCard";
@@ -8,9 +8,9 @@ import { OrganizacionCard } from "./OrganizacionCard";
 import { FamiliarTable } from "./FamiliarTable";
 import { ParcelaTable } from "./ParcelaTable";
 import { DocumentoUploader } from "./DocumentoUploader";
-import { fetchProductor, fetchParcelas, fetchDocumentos, type Productor, type Parcela, type Documento } from "../../services/productores";
+import { useProductor } from "../../hooks/queries";
 import { ProductorFormProvider } from "../../contexts/ProductorFormContext";
-import { toast } from "../../utils/toast";
+import { getEstadoProductorBadgeVariant, getEstadoProductorLabel } from "../../utils/formatters";
 
 interface ProductorViewModalProps {
   open: boolean;
@@ -19,58 +19,37 @@ interface ProductorViewModalProps {
 }
 
 export default function ProductorViewModal({ open, onClose, productorId }: ProductorViewModalProps) {
-  const [productor, setProductor] = useState<Productor | null>(null);
-  const [parcelas, setParcelas] = useState<Parcela[]>([]);
-  const [documentos, setDocumentos] = useState<Documento[]>([]);
-  const [loading, setLoading] = useState(false);
+  const numId = productorId ? Number(productorId) : null;
+  const { data: productor, isLoading: loadingProductor } = useProductor(
+    open && numId ? numId : null
+  );
 
-  useEffect(() => {
-    if (open && productorId) {
-      const numId = Number(productorId);
-      const prevId = productor?.id;
-      if (prevId === numId && productor) return;
-      setLoading(true);
-      Promise.all([
-        fetchProductor(numId),
-        fetchParcelas(numId),
-        fetchDocumentos(numId),
-      ])
-        .then(([p, par, doc]) => {
-          setProductor(p);
-          setParcelas(par);
-          setDocumentos(doc);
-        })
-        .catch(() => toast.error("Error al cargar los datos del productor"))
-        .finally(() => setLoading(false));
-    }
-  }, [open, productorId]);
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === "Escape") onClose();
+  }, [onClose]);
 
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
+      document.addEventListener("keydown", handleKeyDown);
     } else {
       document.body.style.overflow = "";
     }
     return () => {
       document.body.style.overflow = "";
+      document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [open]);
+  }, [open, handleKeyDown]);
 
-  const estadoBadge = (estado: string) => {
-    switch (estado) {
-      case "ACTIVO":
-        return <Badge variant="green">Activo</Badge>;
-      case "SUSPENDIDO":
-        return <Badge variant="yellow">Suspendido</Badge>;
-      case "INACTIVO":
-        return <Badge variant="gray">Inactivo</Badge>;
-      default:
-        return <Badge>{estado}</Badge>;
-    }
-  };
+  const estadoBadge = (estado: string) => (
+    <Badge variant={getEstadoProductorBadgeVariant(estado)}>{getEstadoProductorLabel(estado)}</Badge>
+  );
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Detalle del productor"
       className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-200 ${
         open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
       }`}
@@ -103,6 +82,7 @@ export default function ProductorViewModal({ open, onClose, productorId }: Produ
             <button
               type="button"
               onClick={onClose}
+              aria-label="Cerrar"
               className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
             >
               <X className="h-5 w-5" />
@@ -112,7 +92,7 @@ export default function ProductorViewModal({ open, onClose, productorId }: Produ
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 py-4">
-          {loading ? (
+          {loadingProductor ? (
             <div className="flex items-center justify-center py-20">
               <LoadingSpinner />
             </div>
@@ -123,9 +103,9 @@ export default function ProductorViewModal({ open, onClose, productorId }: Produ
                 <ContactoUbicacionCard mode="view" values={productor} />
                 <SocioculturalCard mode="view" values={productor} />
                 <OrganizacionCard mode="view" values={productor} />
-                <FamiliarTable mode="view" productorId={Number(productorId)} />
-                <ParcelaTable mode="view" productorId={Number(productorId)} />
-                <DocumentoUploader mode="view" productorId={Number(productorId)} />
+                {numId && <FamiliarTable mode="view" productorId={numId} />}
+                {numId && <ParcelaTable mode="view" productorId={numId} />}
+                {numId && <DocumentoUploader mode="view" productorId={numId} />}
               </div>
             </ProductorFormProvider>
           ) : (

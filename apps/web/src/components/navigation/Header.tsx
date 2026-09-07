@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Bell, Menu, LogOut, User, Settings, ChevronDown } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import ProfileModal from "./ProfileModal";
@@ -9,6 +10,7 @@ interface AdminHeaderProps {
 
 export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -87,11 +89,12 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
                       type="button"
                       onClick={() => {
                         setShowDropdown(false);
+                        navigate("/usuarios");
                       }}
                       className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50"
                     >
                       <Settings className="h-4 w-4 text-gray-400" />
-                      Configuración
+                      Configuraci\u00f3n
                     </button>
                   </div>
                   

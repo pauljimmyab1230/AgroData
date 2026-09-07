@@ -4,6 +4,7 @@ import { CardHeader, CardShell, Field } from "../shared/formControls";
 import type { FormMode } from "../shared/formControls";
 import type { Productor } from "../../services/productores";
 import { useProductorForm } from "../../contexts/ProductorFormContext";
+import { displayField } from "../../utils/formatters";
 
 type OrganizacionCardProps = {
   mode: FormMode;
@@ -31,10 +32,7 @@ export function OrganizacionCard({ mode, values }: OrganizacionCardProps) {
   const editable = mode !== "view";
   const { data, updateData, errors, clearFieldError } = useProductorForm();
 
-  const display = (field: keyof Productor) => {
-    if (mode === "view") return values?.[field] ?? "";
-    return data?.[field] ?? "";
-  };
+  const display = (field: keyof Productor) => displayField(mode, field, values, data);
 
   return (
     <CardShell>

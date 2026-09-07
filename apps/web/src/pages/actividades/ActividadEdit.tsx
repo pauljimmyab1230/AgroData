@@ -7,7 +7,7 @@ import { fetchActividad, tipoActividadLabels, type Actividad } from "../../servi
 
 interface ActividadEditProps {
   inModal?: boolean;
-  actividadId?: string;
+  actividadId?: number;
   onSave?: () => void;
 }
 

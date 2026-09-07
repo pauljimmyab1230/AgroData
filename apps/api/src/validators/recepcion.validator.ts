@@ -1,36 +1,26 @@
 import Joi from 'joi';
 
 const estadoRecepcionEnum = ['PENDIENTE_PESAJE', 'EN_CONTROL_CALIDAD', 'DISPONIBLE', 'RECHAZADA'];
-const estadoProductoEnum = ['EXCELENTE', 'BUENO', 'REGULAR', 'RECHAZADO'];
-const categoriaRecepcionEnum = ['PRIMERA', 'SEGUNDA', 'INDUSTRIAL', 'DESCARTE'];
-const destinoRecepcionEnum = ['PROCESAMIENTO', 'ALMACEN_TEMPORAL', 'RECHAZADO'];
-const resultadoRecepcionEnum = ['ACEPTADO', 'ACEPTADO_CON_OBSERVACIONES', 'RECHAZADO'];
+const categoriaEnum = ['PRIMERA', 'SEGUNDA', 'TERCERA', 'RECHAZADA'];
+const destinoEnum = ['PROCESAMIENTO', 'ALMACENAMIENTO', 'DEVOLUCION', 'RECHAZO'];
+const resultadoEnum = ['ACEPTADO', 'ACEPTADO_CON_OBSERVACIONES', 'RECHAZADO'];
 
-const evidenciaSchema = Joi.object({
-  id: Joi.string().max(36).allow('', null),
-  nombre: Joi.string().max(255).required().messages({
-    'any.required': 'El nombre de la evidencia es obligatorio',
-  }),
-  descripcion: Joi.string().max(500).allow('', null),
-  ruta_archivo: Joi.string().max(500).allow('', null),
+const sacoSchema = Joi.object({
+  codigo: Joi.string().max(50).required(),
+  peso: Joi.number().precision(2).min(0).required(),
+  observaciones: Joi.string().allow('', null),
 });
 
 export const createRecepcionSchema = Joi.object({
-  campania_id: Joi.string().max(36).required().messages({
-    'any.required': 'La campaña es obligatoria',
-  }),
-  acopio_id: Joi.string().max(36).allow('', null),
-  lote_productor: Joi.string().max(100).required().messages({
-    'any.required': 'El lote del productor es obligatorio',
-  }),
+  acopio_id: Joi.number().integer().positive().allow(null),
+  lote_productor: Joi.string().max(100).allow('', null),
   fecha: Joi.date().iso().required().messages({
     'any.required': 'La fecha es obligatoria',
   }),
-  responsable: Joi.string().max(150).required().messages({
+  responsable: Joi.string().max(150).trim().required().messages({
     'any.required': 'El responsable es obligatorio',
   }),
-  responsable_id: Joi.string().uuid().allow(null),
-  planta: Joi.string().max(100).required().messages({
+  planta: Joi.string().max(100).trim().required().messages({
     'any.required': 'La planta es obligatoria',
   }),
   sacos: Joi.number().integer().min(0).default(0),
@@ -46,26 +36,24 @@ export const createRecepcionSchema = Joi.object({
   color: Joi.string().max(50).allow('', null),
   olor: Joi.string().max(50).allow('', null),
   presencia_insectos: Joi.string().max(50).allow('', null),
-  estado_producto: Joi.string().valid(...estadoProductoEnum).allow(null),
-  categoria: Joi.string().valid(...categoriaRecepcionEnum).allow(null),
-  destino: Joi.string().valid(...destinoRecepcionEnum).allow(null),
-  resultado: Joi.string().valid(...resultadoRecepcionEnum).allow(null),
+  estado_producto: Joi.string().max(50).allow('', null),
+  categoria: Joi.string().valid(...categoriaEnum).allow(null),
+  destino: Joi.string().valid(...destinoEnum).allow(null),
+  resultado: Joi.string().valid(...resultadoEnum).allow(null),
   motivo: Joi.string().allow('', null),
-  estado: Joi.string().valid(...estadoRecepcionEnum).default('PENDIENTE_PESAJE'),
   observaciones: Joi.string().allow('', null),
   documento_firmado: Joi.boolean().default(false),
   firma_responsable_url: Joi.string().max(500).allow('', null),
-  evidencias: Joi.array().items(evidenciaSchema).default([]),
+  estado: Joi.string().valid(...estadoRecepcionEnum).default('PENDIENTE_PESAJE'),
+  sacos_detalle: Joi.array().items(sacoSchema).default([]),
 });
 
 export const updateRecepcionSchema = Joi.object({
-  campania_id: Joi.string().max(36),
-  acopio_id: Joi.string().max(36).allow('', null),
-  lote_productor: Joi.string().max(100),
+  acopio_id: Joi.number().integer().positive().allow(null),
+  lote_productor: Joi.string().max(100).allow('', null),
   fecha: Joi.date().iso(),
-  responsable: Joi.string().max(150),
-  responsable_id: Joi.string().uuid().allow(null),
-  planta: Joi.string().max(100),
+  responsable: Joi.string().max(150).trim(),
+  planta: Joi.string().max(100).trim(),
   sacos: Joi.number().integer().min(0),
   peso_campo: Joi.number().precision(2).min(0).allow(null),
   peso_bruto: Joi.number().precision(2).min(0).allow(null),
@@ -79,19 +67,20 @@ export const updateRecepcionSchema = Joi.object({
   color: Joi.string().max(50).allow('', null),
   olor: Joi.string().max(50).allow('', null),
   presencia_insectos: Joi.string().max(50).allow('', null),
-  estado_producto: Joi.string().valid(...estadoProductoEnum).allow(null),
-  categoria: Joi.string().valid(...categoriaRecepcionEnum).allow(null),
-  destino: Joi.string().valid(...destinoRecepcionEnum).allow(null),
-  resultado: Joi.string().valid(...resultadoRecepcionEnum).allow(null),
+  estado_producto: Joi.string().max(50).allow('', null),
+  categoria: Joi.string().valid(...categoriaEnum).allow(null),
+  destino: Joi.string().valid(...destinoEnum).allow(null),
+  resultado: Joi.string().valid(...resultadoEnum).allow(null),
   motivo: Joi.string().allow('', null),
-  estado: Joi.string().valid(...estadoRecepcionEnum),
   observaciones: Joi.string().allow('', null),
   documento_firmado: Joi.boolean(),
   firma_responsable_url: Joi.string().max(500).allow('', null),
+  estado: Joi.string().valid(...estadoRecepcionEnum),
+  sacos_detalle: Joi.array().items(sacoSchema),
 }).min(1);
 
 export const getAllRecepcionesSchema = Joi.object({
-  search: Joi.string().max(100).allow('', null),
+  search: Joi.string().max(100).trim().allow('', null),
   estado: Joi.string().valid(...estadoRecepcionEnum),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),

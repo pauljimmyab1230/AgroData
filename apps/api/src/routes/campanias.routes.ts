@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import * as campaniasController from '../controllers/campanias.controller';
 import { validate } from '../middleware/validate.middleware';
-import { authMiddleware } from '../middleware/auth.middleware';
+import { authMiddleware, adminMiddleware } from '../middleware/auth.middleware';
 import {
   createCampaniaSchema,
   updateCampaniaSchema,
@@ -14,11 +14,12 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get('/', validate(getAllCampaniasSchema), campaniasController.getAll);
-router.get('/stats', campaniasController.getGlobalStats);
+router.get('/stats', validate(getAllCampaniasSchema), campaniasController.getGlobalStats);
 router.get('/:id', validate(idParamSchema, 'params'), campaniasController.getById);
 router.get('/:id/stats', validate(idParamSchema, 'params'), campaniasController.getStats);
-router.post('/', validate(createCampaniaSchema), campaniasController.create);
-router.patch('/:id', validate(idParamSchema, 'params'), validate(updateCampaniaSchema), campaniasController.update);
-router.delete('/:id', validate(idParamSchema, 'params'), campaniasController.remove);
+router.get('/:id/timeline', validate(idParamSchema, 'params'), campaniasController.getTimeline);
+router.post('/', adminMiddleware, validate(createCampaniaSchema), campaniasController.create);
+router.patch('/:id', adminMiddleware, validate(idParamSchema, 'params'), validate(updateCampaniaSchema), campaniasController.update);
+router.delete('/:id', adminMiddleware, validate(idParamSchema, 'params'), campaniasController.remove);
 
 export default router;

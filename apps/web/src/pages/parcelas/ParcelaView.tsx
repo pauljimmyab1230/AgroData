@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -17,8 +16,7 @@ import { DatosGeneralesCard } from "../../components/parcelas/DatosGeneralesCard
 import { InformacionAgroecologicaCard } from "../../components/parcelas/InformacionAgroecologicaCard";
 import { UbicacionCard } from "../../components/parcelas/UbicacionCard";
 import { PoligonoCard } from "../../components/parcelas/PoligonoCard";
-import { fetchParcela, type Parcela } from "../../services/parcelas";
-import { ParcelaFormProvider } from "../../contexts/ParcelaFormContext";
+import { useParcela } from "../../hooks/queries";
 
 const formatFecha = (fecha: string) => {
   if (!fecha) return "—";
@@ -48,18 +46,9 @@ interface ParcelaViewProps {
 export default function ParcelaView({ inModal, parcelaId: propId }: ParcelaViewProps) {
   const { id: paramId } = useParams();
   const id = propId || paramId;
-  const [parcela, setParcela] = useState<Parcela | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: parcela, isLoading } = useParcela(id || null);
 
-  useEffect(() => {
-    if (!id) return;
-    fetchParcela(id)
-      .then(setParcela)
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [id]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <LoadingSpinner />
@@ -129,8 +118,7 @@ export default function ParcelaView({ inModal, parcelaId: propId }: ParcelaViewP
   ];
 
   return (
-    <ParcelaFormProvider initial={parcela}>
-      <div>
+    <div>
       {!inModal && (
         <>
           <Breadcrumb items={[{ label: "Parcelas", to: "/parcelas" }, { label: parcela.codigo }]} />
@@ -241,7 +229,6 @@ export default function ParcelaView({ inModal, parcelaId: propId }: ParcelaViewP
           </ol>
         </Card>
       </div>
-      </div>
-    </ParcelaFormProvider>
+    </div>
   );
 }

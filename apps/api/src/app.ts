@@ -18,10 +18,7 @@ import inspeccionesRoutes from './routes/inspecciones.routes';
 import acopiosRoutes from './routes/acopios.routes';
 import recepcionRoutes from './routes/recepcion.routes';
 import procesamientoRoutes from './routes/procesamiento.routes';
-import lotesRoutes from './routes/lotes.routes';
-import inventarioRoutes from './routes/inventario.routes';
-import trazabilidadRoutes from './routes/trazabilidad.routes';
-import capacitacionesRoutes from './routes/capacitaciones.routes';
+import kardexRoutes from './routes/kardex.routes';
 import catalogosRoutes from './routes/catalogos.routes';
 import ubigeoRoutes from './routes/ubigeo.routes';
 
@@ -73,13 +70,10 @@ app.use('/api/inspecciones', inspeccionesRoutes);
 app.use('/api/acopios', acopiosRoutes);
 app.use('/api/recepciones', recepcionRoutes);
 app.use('/api/procesamientos', procesamientoRoutes);
-app.use('/api/lotes', lotesRoutes);
-app.use('/api/inventario', inventarioRoutes);
-app.use('/api/trazabilidad', trazabilidadRoutes);
-app.use('/api/capacitaciones', capacitacionesRoutes);
+app.use('/api/kardex', kardexRoutes);
 app.use('/api/catalogos', catalogosRoutes);
 app.use('/api/ubigeo', ubigeoRoutes);
-app.use('/uploads', authMiddleware, express.static(path.join(__dirname, '..', 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 app.use((_req, res) => {
   res.status(404).json({

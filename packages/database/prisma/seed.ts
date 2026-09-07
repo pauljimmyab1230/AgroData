@@ -1,15 +1,15 @@
-import { PrismaClient } from '@prisma/client';
+﻿import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Sembrando datos de prueba...');
+  console.log('ðŸŒ± Sembrando datos de prueba...');
 
   const passwordHash = await bcrypt.hash('Admin123!', 10);
   const passwordHashDemo = await bcrypt.hash('Demo123!', 10);
 
-  // ─── USUARIOS ───────────────────────────────────────────────
+  // â”€â”€â”€ USUARIOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const admin = await prisma.usuarios.upsert({
     where: { email: 'admin@agrodata.com' },
     update: {},
@@ -38,7 +38,7 @@ async function main() {
     where: { email: 'maria.garcia@agrodata.com' },
     update: {},
     create: {
-      nombre: 'María García',
+      nombre: 'MarÃ­a GarcÃ­a',
       email: 'maria.garcia@agrodata.com',
       password: passwordHashDemo,
       rol: 'USER',
@@ -46,14 +46,14 @@ async function main() {
     },
   });
 
-  console.log('✅ Usuarios creados');
+  console.log('âœ… Usuarios creados');
 
-  // ─── PRODUCTORES ────────────────────────────────────────────
+  // â”€â”€â”€ PRODUCTORES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const productoresData = [
     {
       codigo: 'SOC-001',
       dni: '45123678',
-      nombres: 'Teófilo',
+      nombres: 'TeÃ³filo',
       apellido_paterno: 'Huanca',
       apellido_materno: 'Quispe',
       sexo: 'MASCULINO' as const,
@@ -124,7 +124,7 @@ async function main() {
       provincia: 'Huamanga',
       distrito: 'Vinchos',
       comunidad: 'Huallhua',
-      direccion: 'Sin dirección',
+      direccion: 'Sin direcciÃ³n',
       nivel_educativo: 'SIN_ESTUDIOS' as const,
       idioma_principal: 'QUECHUA' as const,
       idioma_secundario: 'NINGUNO' as const,
@@ -202,7 +202,7 @@ async function main() {
       provincia: 'Huamanga',
       distrito: 'Carmen Alto',
       comunidad: 'Carmen Alto',
-      direccion: 'Jr. San Martín 321',
+      direccion: 'Jr. San MartÃ­n 321',
       nivel_educativo: 'UNIVERSITARIO' as const,
       idioma_principal: 'ESPANOL' as const,
       idioma_secundario: 'QUECHUA' as const,
@@ -228,7 +228,7 @@ async function main() {
       provincia: 'Huamanga',
       distrito: 'Acos Vinchos',
       comunidad: 'Pillcuaro',
-      direccion: 'Sin dirección',
+      direccion: 'Sin direcciÃ³n',
       nivel_educativo: 'PRIMARIA' as const,
       idioma_principal: 'QUECHUA' as const,
       idioma_secundario: 'NINGUNO' as const,
@@ -332,7 +332,7 @@ async function main() {
       provincia: 'Huamanga',
       distrito: 'Acos Vinchos',
       comunidad: 'Pampa Cangallo',
-      direccion: 'Sin dirección',
+      direccion: 'Sin direcciÃ³n',
       nivel_educativo: 'PRIMARIA' as const,
       idioma_principal: 'QUECHUA' as const,
       idioma_secundario: 'ESPANOL' as const,
@@ -383,7 +383,7 @@ async function main() {
 
   const productores = [];
   for (const data of cleanedData) {
-    const p = await prisma.productores.upsert({
+    const p = await prisma.productor.upsert({
       where: { dni: data.dni },
       update: {},
       create: data as any,
@@ -391,22 +391,22 @@ async function main() {
     productores.push(p);
   }
 
-  console.log(`✅ ${productores.length} productores creados`);
+  console.log(`âœ… ${productores.length} productores creados`);
 
-  // ─── FAMILIARES ─────────────────────────────────────────────
+  // â”€â”€â”€ FAMILIARES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const familiaresData = [
     { productor_id: productores[0].id, nombres: 'Mercedes Quispe de Huanca', parentesco: 'Esposa', dni: '45123679', sexo: 'FEMENINO' as const, fecha_nacimiento: new Date('1978-05-20'), ocupacion: 'Agricultora', dependiente: false, vive_con_productor: true },
     { productor_id: productores[0].id, nombres: 'Jhonatan Huanca Quispe', parentesco: 'Hijo', sexo: 'MASCULINO' as const, fecha_nacimiento: new Date('2000-08-10'), ocupacion: 'Estudiante', nivel_educativo: 'SECUNDARIA' as const, dependiente: true, vive_con_productor: true },
     { productor_id: productores[0].id, nombres: 'Katherin Huanca Quispe', parentesco: 'Hija', sexo: 'FEMENINO' as const, fecha_nacimiento: new Date('2004-03-25'), ocupacion: 'Estudiante', nivel_educativo: 'SECUNDARIA' as const, dependiente: true, vive_con_productor: true },
     { productor_id: productores[1].id, nombres: 'Alejandro Mamani Condori', parentesco: 'Esposo', dni: '46234568', sexo: 'MASCULINO' as const, fecha_nacimiento: new Date('1978-09-12'), ocupacion: 'Agricultor', dependiente: false, vive_con_productor: true },
     { productor_id: productores[1].id, nombres: 'Soledad Mamani Mamani', parentesco: 'Hija', sexo: 'FEMENINO' as const, fecha_nacimiento: new Date('2002-12-01'), ocupacion: 'Agricultora', dependiente: true, vive_con_productor: true },
-    { productor_id: productores[2].id, nouns: 'Rufina Yupanqui de Ticona', parentesco: 'Esposa', dni: '47345679', sexo: 'FEMENINO' as const, fecha_nacimiento: new Date('1970-07-15'), ocupacion: 'Agricultora', dependiente: false, vive_con_productor: true },
+    { productor_id: productores[2].id, nombres: 'Rufina Yupanqui de Ticona', parentesco: 'Esposa', dni: '47345679', sexo: 'FEMENINO' as const, fecha_nacimiento: new Date('1970-07-15'), ocupacion: 'Agricultora', dependiente: false, vive_con_productor: true },
     { productor_id: productores[2].id, nombres: 'Brian Ticona Yupanqui', parentesco: 'Hijo', sexo: 'MASCULINO' as const, fecha_nacimiento: new Date('1998-02-28'), ocupacion: 'Agricultor', dependiente: false, vive_con_productor: false },
-    { productor_id: productores[4].id, nouns: 'Gladys Yupanqui de Quispe', parentesco: 'Esposa', sexo: 'FEMENINO' as const, fecha_nacimiento: new Date('1975-11-10'), ocupacion: 'Agricultora', dependiente: false, vive_con_productor: true },
+    { productor_id: productores[4].id, nombres: 'Gladys Yupanqui de Quispe', parentesco: 'Esposa', sexo: 'FEMENINO' as const, fecha_nacimiento: new Date('1975-11-10'), ocupacion: 'Agricultora', dependiente: false, vive_con_productor: true },
     { productor_id: productores[4].id, nombres: 'Yerson Quispe Yupanqui', parentesco: 'Hijo', sexo: 'MASCULINO' as const, fecha_nacimiento: new Date('2001-06-18'), ocupacion: 'Estudiante', nivel_educativo: 'TECNICO' as const, dependiente: true, vive_con_productor: true },
-    { productor_id: productores[6].id, nouns: 'Gregoria Ccorahua de Lipa', parentesco: 'Esposa', sexo: 'FEMENINO' as const, fecha_nacimiento: new Date('1968-04-22'), ocupacion: 'Agricultora', dependiente: false, vive_con_productor: true },
-    { productor_id: productores[7].id, nouns: 'Mario Huaman Poma', parentesco: 'Esposo', dni: '43890124', sexo: 'MASCULINO' as const, fecha_nacimiento: new Date('1976-03-30'), ocupacion: 'Agricultor', dependiente: false, vive_con_productor: true },
-    { productor_id: productores[10].id, nouns: 'Gladys Ttito de Ynga', parentesco: 'Esposa', sexo: 'FEMENINO' as const, fecha_nacimiento: new Date('1973-08-05'), ocupacion: 'Agricultora', dependiente: false, vive_con_productor: true },
+    { productor_id: productores[6].id, nombres: 'Gregoria Ccorahua de Lipa', parentesco: 'Esposa', sexo: 'FEMENINO' as const, fecha_nacimiento: new Date('1968-04-22'), ocupacion: 'Agricultora', dependiente: false, vive_con_productor: true },
+    { productor_id: productores[7].id, nombres: 'Mario Huaman Poma', parentesco: 'Esposo', dni: '43890124', sexo: 'MASCULINO' as const, fecha_nacimiento: new Date('1976-03-30'), ocupacion: 'Agricultor', dependiente: false, vive_con_productor: true },
+    { productor_id: productores[10].id, nombres: 'Gladys Ttito de Ynga', parentesco: 'Esposa', sexo: 'FEMENINO' as const, fecha_nacimiento: new Date('1973-08-05'), ocupacion: 'Agricultora', dependiente: false, vive_con_productor: true },
   ];
 
   const cleanedFamiliares = familiaresData.map((f) => {
@@ -419,14 +419,14 @@ async function main() {
   });
 
   for (const f of cleanedFamiliares) {
-    await prisma.familiares_productor.create({ data: f as any });
+    await prisma.familiar.create({ data: f as any });
   }
 
-  console.log(`✅ ${cleanedFamiliares.length} familiares creados`);
+  console.log(`âœ… ${cleanedFamiliares.length} familiares creados`);
 
-  // ─── PARCELAS ───────────────────────────────────────────────
+  // â”€â”€â”€ PARCELAS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const parcelasData = [
-    // Productor 1 - Teófilo Huanca (Presidente) - 3 parcelas
+    // Productor 1 - TeÃ³filo Huanca (Presidente) - 3 parcelas
     {
       productor_id: productores[0].id,
       codigo: 'PAR-001',
@@ -449,7 +449,7 @@ async function main() {
       textura: 'Media',
       pendiente: '15-25%',
       fuente_agua: 'Manantial',
-      sistema_riego: 'Sequía',
+      sistema_riego: 'SequÃ­a',
       zona_agroecologica: 'Quechua',
       disponibilidad_agua: 'Media',
       certificacion: 'ORGANICA' as const,
@@ -478,7 +478,7 @@ async function main() {
       tipo_suelo: 'Franco arenoso',
       textura: 'Media',
       pendiente: '5-15%',
-      fuente_agua: 'Río',
+      fuente_agua: 'RÃ­o',
       sistema_riego: 'A gravedad',
       zona_agroecologica: 'Quechua',
       disponibilidad_agua: 'Alta',
@@ -509,7 +509,7 @@ async function main() {
       textura: 'Fina',
       pendiente: '0-5%',
       fuente_agua: 'Lluvia',
-      sistema_riego: 'Sequía',
+      sistema_riego: 'SequÃ­a',
       zona_agroecologica: 'Quechua',
       disponibilidad_agua: 'Baja',
       certificacion: 'EN_TRANSICION' as const,
@@ -539,7 +539,7 @@ async function main() {
       tipo_suelo: 'Franco limoso',
       textura: 'Media',
       pendiente: '5-15%',
-      fuente_agua: 'Río',
+      fuente_agua: 'RÃ­o',
       sistema_riego: 'A gravedad',
       zona_agroecologica: 'Quechua',
       disponibilidad_agua: 'Alta',
@@ -570,7 +570,7 @@ async function main() {
       textura: 'Media',
       pendiente: '15-25%',
       fuente_agua: 'Lluvia',
-      sistema_riego: 'Sequía',
+      sistema_riego: 'SequÃ­a',
       zona_agroecologica: 'Quechua',
       disponibilidad_agua: 'Baja',
       certificacion: 'CONVENCIONAL' as const,
@@ -601,8 +601,8 @@ async function main() {
       textura: 'Media',
       pendiente: '15-25%',
       fuente_agua: 'Manantial',
-      sistema_riego: 'Sequía',
-      zona_agroecologica: 'Suní',
+      sistema_riego: 'SequÃ­a',
+      zona_agroecologica: 'SunÃ­',
       disponibilidad_agua: 'Media',
       certificacion: 'ORGANICA' as const,
       estado: 'ACTIVA' as const,
@@ -630,7 +630,7 @@ async function main() {
       tipo_suelo: 'Arcilloso',
       textura: 'Fina',
       pendiente: '5-15%',
-      fuente_agua: 'Río',
+      fuente_agua: 'RÃ­o',
       sistema_riego: 'A gravedad',
       zona_agroecologica: 'Quechua',
       disponibilidad_agua: 'Alta',
@@ -662,7 +662,7 @@ async function main() {
       textura: 'Media',
       pendiente: '5-15%',
       fuente_agua: 'Manantial',
-      sistema_riego: 'A presión',
+      sistema_riego: 'A presiÃ³n',
       zona_agroecologica: 'Quechua',
       disponibilidad_agua: 'Alta',
       certificacion: 'ORGANICA' as const,
@@ -673,7 +673,7 @@ async function main() {
     {
       productor_id: productores[3].id,
       codigo: 'PAR-009',
-      nombre: 'Los Ángeles',
+      nombre: 'Los Ãngeles',
       cultivo: 'Papa Nativa',
       area: 2.80,
       area_certificada: 2.80,
@@ -691,7 +691,7 @@ async function main() {
       tipo_suelo: 'Franco arcilloso',
       textura: 'Media',
       pendiente: '15-25%',
-      fuente_agua: 'Río',
+      fuente_agua: 'RÃ­o',
       sistema_riego: 'A gravedad',
       zona_agroecologica: 'Quechua',
       disponibilidad_agua: 'Media',
@@ -722,7 +722,7 @@ async function main() {
       tipo_suelo: 'Franco limoso',
       textura: 'Media',
       pendiente: '0-5%',
-      fuente_agua: 'Río Chuschi',
+      fuente_agua: 'RÃ­o Chuschi',
       sistema_riego: 'A gravedad',
       zona_agroecologica: 'Quechua',
       disponibilidad_agua: 'Alta',
@@ -735,7 +735,7 @@ async function main() {
       productor_id: productores[4].id,
       codigo: 'PAR-011',
       nombre: 'Chuschi Chico',
-      cultivo: 'Maíz',
+      cultivo: 'MaÃ­z',
       area: 1.50,
       area_certificada: null,
       area_unidad: 'ha',
@@ -753,7 +753,7 @@ async function main() {
       textura: 'Gruesa',
       pendiente: '5-15%',
       fuente_agua: 'Lluvia',
-      sistema_riego: 'Sequía',
+      sistema_riego: 'SequÃ­a',
       zona_agroecologica: 'Quechua',
       disponibilidad_agua: 'Baja',
       certificacion: 'CONVENCIONAL' as const,
@@ -784,7 +784,7 @@ async function main() {
       textura: 'Media',
       pendiente: '5-15%',
       fuente_agua: 'Manantial',
-      sistema_riego: 'A presión',
+      sistema_riego: 'A presiÃ³n',
       zona_agroecologica: 'Quechua',
       disponibilidad_agua: 'Alta',
       certificacion: 'ORGANICA' as const,
@@ -815,7 +815,7 @@ async function main() {
       textura: 'Fina',
       pendiente: '15-25%',
       fuente_agua: 'Lluvia',
-      sistema_riego: 'Sequía',
+      sistema_riego: 'SequÃ­a',
       zona_agroecologica: 'Quechua',
       disponibilidad_agua: 'Baja',
       certificacion: 'CONVENCIONAL' as const,
@@ -875,7 +875,7 @@ async function main() {
       tipo_suelo: 'Franco limoso',
       textura: 'Media',
       pendiente: '0-5%',
-      fuente_agua: 'Río',
+      fuente_agua: 'RÃ­o',
       sistema_riego: 'A gravedad',
       zona_agroecologica: 'Quechua',
       disponibilidad_agua: 'Alta',
@@ -907,7 +907,7 @@ async function main() {
       textura: 'Media',
       pendiente: '5-15%',
       fuente_agua: 'Manantial',
-      sistema_riego: 'A presión',
+      sistema_riego: 'A presiÃ³n',
       zona_agroecologica: 'Quechua',
       disponibilidad_agua: 'Alta',
       certificacion: 'ORGANICA' as const,
@@ -937,7 +937,7 @@ async function main() {
       textura: 'Fina',
       pendiente: '15-25%',
       fuente_agua: 'Lluvia',
-      sistema_riego: 'Sequía',
+      sistema_riego: 'SequÃ­a',
       zona_agroecologica: 'Quechua',
       disponibilidad_agua: 'Baja',
       certificacion: 'CONVENCIONAL' as const,
@@ -967,7 +967,7 @@ async function main() {
       tipo_suelo: 'Franco arenoso',
       textura: 'Media',
       pendiente: '5-15%',
-      fuente_agua: 'Río',
+      fuente_agua: 'RÃ­o',
       sistema_riego: 'A gravedad',
       zona_agroecologica: 'Quechua',
       disponibilidad_agua: 'Media',
@@ -980,29 +980,33 @@ async function main() {
 
   const parcelas = [];
   for (const data of parcelasData) {
-    const p = await prisma.parcelas_productor.upsert({
+    const { productor_id, ...rest } = data;
+    const p = await prisma.parcela.upsert({
       where: { codigo: data.codigo },
       update: {},
-      create: data,
+      create: {
+        ...rest,
+        productores_id: productor_id,
+      },
     });
     parcelas.push(p);
   }
 
-  console.log(`✅ ${parcelas.length} parcelas creadas`);
+  console.log(`âœ… ${parcelas.length} parcelas creadas`);
 
-  // ─── CAMPAÑAS ──────────────────────────────────────────────
+  // â”€â”€â”€ CAMPAÃ‘AS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const campaniasData = [
     {
       codigo: 'CAM-2025-001',
-      nombre: 'Campaña Quinua Orgánica 2024-2025',
+      nombre: 'CampaÃ±a Quinua OrgÃ¡nica 2024-2025',
       anio_agricola: '2024-2025',
       fecha_inicio: new Date('2024-10-01'),
       fecha_fin: new Date('2025-06-30'),
-      descripcion: 'Producción de quinua orgánica certificada de exportación',
+      descripcion: 'ProducciÃ³n de quinua orgÃ¡nica certificada de exportaciÃ³n',
       estado: 'ACTIVA' as const,
       responsable: 'Ing. Carlos Mendoza',
-      tecnico_coordinador: 'Ing. María García',
-      objetivo: 'Producir quinua orgánica certificada garantizando trazabilidad completa',
+      tecnico_coordinador: 'Ing. MarÃ­a GarcÃ­a',
+      objetivo: 'Producir quinua orgÃ¡nica certificada garantizando trazabilidad completa',
       permitir_cultivos: true,
       permitir_actividades: true,
       permitir_cosechas: true,
@@ -1016,15 +1020,15 @@ async function main() {
     },
     {
       codigo: 'CAM-2025-002',
-      nombre: 'Campaña Papa Nativa 2024-2025',
+      nombre: 'CampaÃ±a Papa Nativa 2024-2025',
       anio_agricola: '2024-2025',
       fecha_inicio: new Date('2024-11-15'),
       fecha_fin: new Date('2025-05-15'),
-      descripcion: 'Producción de papa nativa variedades tradicionales',
+      descripcion: 'ProducciÃ³n de papa nativa variedades tradicionales',
       estado: 'ACTIVA' as const,
       responsable: 'Ing. Carlos Mendoza',
-      tecnico_coordinador: 'Ing. María García',
-      objetivo: 'Recuperar variedades nativas de papa con manejo agroecológico',
+      tecnico_coordinador: 'Ing. MarÃ­a GarcÃ­a',
+      objetivo: 'Recuperar variedades nativas de papa con manejo agroecolÃ³gico',
       permitir_cultivos: true,
       permitir_actividades: true,
       permitir_cosechas: true,
@@ -1047,372 +1051,259 @@ async function main() {
     });
     campanias.push(c);
   }
-  console.log(`✅ ${campanias.length} campañas creadas`);
+  console.log(`âœ… ${campanias.length} campaÃ±as creadas`);
 
-  // ─── LOTES ─────────────────────────────────────────────────
-  const lotesData = [
-    {
-      codigo: 'LOTE-2025-001',
-      nombre: 'Quinua Orgánica San Juan',
-      campania_id: campanias[0].id,
-      cultivo: 'Quinua',
-      origen: 'San Juan de Bolognesi',
-      peso_inicial: 4500,
-      peso_disponible: 3200,
-      unidad: 'kg',
-      estado: 'DISPONIBLE' as const,
-      fecha_produccion: new Date('2025-03-15'),
-      calidad: 'Primera',
-      certificacion: 'Orgánica',
-      ubicacion: 'Almacén Central',
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'LOTE-2025-002',
-      nombre: 'Quinua Orgánica Pampa Cangallo',
-      campania_id: campanias[0].id,
-      cultivo: 'Quinua',
-      origen: 'Pampa Cangallo',
-      peso_inicial: 6200,
-      peso_disponible: 6200,
-      unidad: 'kg',
-      estado: 'REGISTRADO' as const,
-      fecha_produccion: new Date('2025-04-01'),
-      calidad: 'Primera',
-      certificacion: 'Orgánica',
-      ubicacion: 'Almacén Central',
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'LOTE-2025-003',
-      nombre: 'Papa Nativa Chuschi',
-      campania_id: campanias[1].id,
-      cultivo: 'Papa Nativa',
-      origen: 'Chuschi',
-      peso_inicial: 2800,
-      peso_disponible: 1500,
-      unidad: 'kg',
-      estado: 'EN_PROCESAMIENTO' as const,
-      fecha_produccion: new Date('2025-02-20'),
-      calidad: 'Segunda',
-      certificacion: 'En Transición',
-      ubicacion: 'Planta Procesadora',
-      activo: true,
-      created_by: admin.id,
-    },
-  ];
-
-  const lotes = [];
-  for (const data of lotesData) {
-    const l = await prisma.lotes.upsert({
-      where: { codigo: data.codigo },
-      update: {},
-      create: data,
-    });
-    lotes.push(l);
-  }
-  console.log(`✅ ${lotes.length} lotes creados`);
-
-  // ─── INVENTARIO ────────────────────────────────────────────
-  const inventarioData = [
-    {
-      codigo: 'INV-001',
-      producto: 'Guano de corral',
-      categoria: 'Fertilizante',
-      unidad: 'kg',
-      cantidad_actual: 2500,
-      cantidad_minima: 500,
-      cantidad_maxima: 5000,
-      ubicacion: 'Almacén de Insumos',
-      estado: 'DISPONIBLE' as const,
-      fecha_ingreso: new Date('2025-01-10'),
-      proveedor: 'Cooperativa Local',
-      costo_unitario: 0.80,
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'INV-002',
-      producto: 'Compost orgánico',
-      categoria: 'Fertilizante',
-      unidad: 'kg',
-      cantidad_actual: 1800,
-      cantidad_minima: 300,
-      cantidad_maxima: 4000,
-      ubicacion: 'Almacén de Insumos',
-      estado: 'DISPONIBLE' as const,
-      fecha_ingreso: new Date('2025-02-05'),
-      proveedor: 'Producción propia',
-      costo_unitario: 0.50,
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'INV-003',
-      producto: 'Aceite de neem',
-      categoria: 'Biocontrolador',
-      unidad: 'litros',
-      cantidad_actual: 50,
-      cantidad_minima: 20,
-      cantidad_maxima: 200,
-      ubicacion: 'Almacén de Insumos',
-      estado: 'DISPONIBLE' as const,
-      fecha_ingreso: new Date('2025-03-01'),
-      fecha_vencimiento: new Date('2026-03-01'),
-      proveedor: 'Biocontroladores SA',
-      costo_unitario: 15.00,
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'INV-004',
-      producto: 'Semilla de Quinua Real',
-      categoria: 'Semilla',
-      unidad: 'kg',
-      cantidad_actual: 120,
-      cantidad_minima: 50,
-      cantidad_maxima: 500,
-      ubicacion: 'Bodega de Semillas',
-      estado: 'DISPONIBLE' as const,
-      fecha_ingreso: new Date('2025-01-20'),
-      fecha_vencimiento: new Date('2025-12-31'),
-      proveedor: 'INIA',
-      costo_unitario: 8.50,
-      activo: true,
-      created_by: admin.id,
-    },
-  ];
-
-  const inventarioItems = [];
-  for (const data of inventarioData) {
-    const i = await prisma.inventario.upsert({
-      where: { codigo: data.codigo },
-      update: {},
-      create: data,
-    });
-    inventarioItems.push(i);
-  }
-  console.log(`✅ ${inventarioItems.length} items de inventario creados`);
-
-  // ─── TRAZABILIDAD ──────────────────────────────────────────
-  const trazabilidadData = [
-    {
-      codigo: 'TRZ-2025-001',
-      lote_id: lotes[0].id,
-      producto: 'Quinua Real Orgánica',
-      cultivo: 'Quinua',
-      origen: 'San Juan de Bolognesi, Acos Vinchos',
-      productor: 'Teófilo Huanca Quispe',
-      parcela: 'PAR-001 · San Juan Alto',
-      comunidad: 'San Juan de Bolognesi',
-      fecha_siembra: new Date('2024-11-10'),
-      fecha_cosecha: new Date('2025-03-10'),
-      fecha_procesamiento: new Date('2025-04-05'),
-      peso_total: 4500,
-      unidad: 'kg',
-      calidad: 'Primera',
-      certificacion: 'Orgánica',
-      destino: 'Exportación',
-      estado: 'COMPLETADO',
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'TRZ-2025-002',
-      producto: 'Quinua Orgánica Premium',
-      cultivo: 'Quinua',
-      origen: 'Pampa Cangallo, Acos Vinchos',
-      productor: 'Juana Mamani Condori',
-      parcela: 'PAR-004 · Pampa Cangallo Grande',
-      comunidad: 'Pampa Cangallo',
-      fecha_siembra: new Date('2024-11-15'),
-      fecha_cosecha: new Date('2025-03-20'),
-      peso_total: 6200,
-      unidad: 'kg',
-      calidad: 'Primera',
-      certificacion: 'Orgánica',
-      destino: 'Mercado Nacional',
-      estado: 'EN_PROCESO',
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'TRZ-2025-003',
-      producto: 'Papa Nativa Mixta',
-      cultivo: 'Papa Nativa',
-      origen: 'Chuschi, Cangallo',
-      productor: 'Valeriano Quispe Huanca',
-      parcela: 'PAR-010 · Chuschi Grande',
-      comunidad: 'Chuschi',
-      fecha_siembra: new Date('2024-12-01'),
-      fecha_cosecha: new Date('2025-04-15'),
-      peso_total: 2800,
-      unidad: 'kg',
-      calidad: 'Segunda',
-      certificacion: 'En Transición',
-      destino: 'Mercado Local',
-      estado: 'REGISTRADO',
-      activo: true,
-      created_by: admin.id,
-    },
-  ];
-
-  const trazabilidades = [];
-  for (const data of trazabilidadData) {
-    const t = await prisma.trazabilidad.upsert({
-      where: { codigo: data.codigo },
-      update: {},
-      create: data,
-    });
-    trazabilidades.push(t);
-  }
-  console.log(`✅ ${trazabilidades.length} registros de trazabilidad creados`);
-
-  // ─── CULTIVOS ──────────────────────────────────────────────
+  // â”€â”€â”€ CULTIVOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const cultivosData = [
+    // CampaÃ±a 1 - Quinua OrgÃ¡nica - Parcelas del productor 1
     {
-      codigo: 'CUL-001',
-      campania_id: campanias[0].id,
-      productor_id: productores[0].id,
+      campanias_id: campanias[0].id,
       parcela_id: parcelas[0].id,
+      codigo: 'CUL-001',
       cultivo: 'Quinua',
-      variedad: 'Real',
+      variedad: 'Negra Collana',
       area_sembrada: 5.50,
-      fecha_siembra: new Date('2024-11-10'),
+      fecha_siembra: new Date('2024-11-15'),
       metodo_siembra: 'DIRECTA' as const,
       sistema_productivo: 'ORGANICO' as const,
+      tipo_agricultura: 'TRADICIONAL' as const,
       certificacion: 'ORGANICA' as const,
+      procedencia_semilla: 'CONSERVADA_POR_AGRICULTOR' as const,
+      cantidad_semilla: 25,
+      unidad_semilla: 'kg',
       estado: 'EN_DESARROLLO' as const,
       rendimiento_esperado: 1.8,
       produccion_estimada: 9.9,
+      destino_produccion: 'VENTA_COOPERATIVA' as const,
       activo: true,
       created_by: admin.id,
     },
     {
+      campanias_id: campanias[0].id,
+      parcela_id: parcelas[1].id,
       codigo: 'CUL-002',
-      campania_id: campanias[0].id,
-      productor_id: productores[1].id,
-      parcela_id: parcelas[3].id,
-      cultivo: 'Quinua',
-      variedad: 'Negra',
-      area_sembrada: 8.00,
-      fecha_siembra: new Date('2024-11-15'),
-      metodo_siembra: 'DIRECTA' as const,
+      cultivo: 'Papa Nativa',
+      variedad: 'Huamantanga',
+      area_sembrada: 3.20,
+      fecha_siembra: new Date('2024-12-01'),
+      metodo_siembra: 'TRASPLANTE' as const,
       sistema_productivo: 'ORGANICO' as const,
+      tipo_agricultura: 'TRADICIONAL' as const,
       certificacion: 'ORGANICA' as const,
-      estado: 'EN_DESARROLLO' as const,
-      rendimiento_esperado: 1.6,
-      produccion_estimada: 12.8,
+      procedencia_semilla: 'CERTIFICADA' as const,
+      cantidad_semilla: 2000,
+      unidad_semilla: 'kg',
+      estado: 'ACTIVO' as const,
+      rendimiento_esperado: 15,
+      produccion_estimada: 48,
+      destino_produccion: 'VENTA_COOPERATIVA' as const,
       activo: true,
       created_by: admin.id,
     },
+    // CampaÃ±a 1 - Parcelas del productor 2
     {
+      campanias_id: campanias[0].id,
+      parcela_id: parcelas[3].id,
       codigo: 'CUL-003',
-      campania_id: campanias[0].id,
-      productor_id: productores[2].id,
-      parcela_id: parcelas[5].id,
       cultivo: 'Quinua',
-      variedad: 'Blanca',
-      area_sembrada: 4.00,
-      fecha_siembra: new Date('2024-11-12'),
+      variedad: 'Blanca JunÃ­n',
+      area_sembrada: 8.00,
+      fecha_siembra: new Date('2024-11-20'),
       metodo_siembra: 'DIRECTA' as const,
       sistema_productivo: 'ORGANICO' as const,
+      tipo_agricultura: 'TECNIFICADA' as const,
       certificacion: 'ORGANICA' as const,
+      procedencia_semilla: 'CERTIFICADA' as const,
+      cantidad_semilla: 36,
+      unidad_semilla: 'kg',
+      estado: 'EN_DESARROLLO' as const,
+      rendimiento_esperado: 2.0,
+      produccion_estimada: 16,
+      destino_produccion: 'VENTA_COOPERATIVA' as const,
+      activo: true,
+      created_by: admin.id,
+    },
+    // CampaÃ±a 1 - Parcelas del productor 3
+    {
+      campanias_id: campanias[0].id,
+      parcela_id: parcelas[5].id,
+      codigo: 'CUL-004',
+      cultivo: 'Quinua',
+      variedad: 'Peruanita',
+      area_sembrada: 4.00,
+      fecha_siembra: new Date('2024-11-10'),
+      metodo_siembra: 'DIRECTA' as const,
+      sistema_productivo: 'AGROECOLOGICO' as const,
+      tipo_agricultura: 'MIXTA' as const,
+      certificacion: 'EN_TRANSICION' as const,
+      procedencia_semilla: 'COMUN' as const,
+      cantidad_semilla: 18,
+      unidad_semilla: 'kg',
       estado: 'EN_DESARROLLO' as const,
       rendimiento_esperado: 1.5,
-      produccion_estimada: 6.0,
+      produccion_estimada: 6,
+      destino_produccion: 'AUTOCONSUMO' as const,
       activo: true,
       created_by: admin.id,
     },
+    // CampaÃ±a 1 - Parcelas del productor 4
     {
-      codigo: 'CUL-004',
-      campania_id: campanias[0].id,
-      productor_id: productores[3].id,
+      campanias_id: campanias[0].id,
       parcela_id: parcelas[7].id,
+      codigo: 'CUL-005',
       cultivo: 'Quinua',
-      variedad: 'Real',
+      variedad: 'Bordaleza',
       area_sembrada: 6.00,
       fecha_siembra: new Date('2024-11-18'),
       metodo_siembra: 'DIRECTA' as const,
       sistema_productivo: 'ORGANICO' as const,
+      tipo_agricultura: 'TECNIFICADA' as const,
       certificacion: 'ORGANICA' as const,
+      procedencia_semilla: 'CERTIFICADA' as const,
+      cantidad_semilla: 27,
+      unidad_semilla: 'kg',
       estado: 'ACTIVO' as const,
-      rendimiento_esperado: 1.7,
-      produccion_estimada: 10.2,
+      rendimiento_esperado: 2.2,
+      produccion_estimada: 13.2,
+      destino_produccion: 'VENTA_COOPERATIVA' as const,
       activo: true,
       created_by: admin.id,
     },
+    // CampaÃ±a 1 - Parcelas del productor 5
     {
-      codigo: 'CUL-005',
-      campania_id: campanias[0].id,
-      productor_id: productores[4].id,
+      campanias_id: campanias[0].id,
       parcela_id: parcelas[9].id,
+      codigo: 'CUL-006',
       cultivo: 'Quinua',
-      variedad: 'Híbrida',
+      variedad: 'Negra Collana',
       area_sembrada: 7.50,
-      fecha_siembra: new Date('2024-11-20'),
+      fecha_siembra: new Date('2024-11-12'),
       metodo_siembra: 'DIRECTA' as const,
-      sistema_productivo: 'EN_TRANSICION' as const,
-      certificacion: 'EN_TRANSICION' as const,
+      sistema_productivo: 'ORGANICO' as const,
+      tipo_agricultura: 'TRADICIONAL' as const,
+      certificacion: 'ORGANICA' as const,
+      procedencia_semilla: 'CONSERVADA_POR_AGRICULTOR' as const,
+      cantidad_semilla: 34,
+      unidad_semilla: 'kg',
       estado: 'EN_DESARROLLO' as const,
-      rendimiento_esperado: 1.4,
-      produccion_estimada: 10.5,
+      rendimiento_esperado: 1.8,
+      produccion_estimada: 13.5,
+      destino_produccion: 'VENTA_COOPERATIVA' as const,
       activo: true,
       created_by: admin.id,
     },
+    // CampaÃ±a 2 - Papa Nativa - Parcelas del productor 1
     {
-      codigo: 'CUL-006',
-      campania_id: campanias[0].id,
-      productor_id: productores[5].id,
-      parcela_id: parcelas[11].id,
+      campanias_id: campanias[1].id,
+      parcela_id: parcelas[1].id,
+      codigo: 'CUL-007',
+      cultivo: 'Papa Nativa',
+      variedad: 'Peruanita',
+      area_sembrada: 2.00,
+      fecha_siembra: new Date('2025-01-10'),
+      metodo_siembra: 'TRASPLANTE' as const,
+      sistema_productivo: 'AGROECOLOGICO' as const,
+      tipo_agricultura: 'TRADICIONAL' as const,
+      certificacion: 'SIN_CERTIFICAR' as const,
+      procedencia_semilla: 'PRODUCIDA_EN_CAMPO' as const,
+      cantidad_semilla: 1200,
+      unidad_semilla: 'kg',
+      estado: 'ACTIVO' as const,
+      rendimiento_esperado: 12,
+      produccion_estimada: 24,
+      destino_produccion: 'AUTOCONSUMO' as const,
+      activo: true,
+      created_by: admin.id,
+    },
+    // CampaÃ±a 2 - Parcelas del productor 3
+    {
+      campanias_id: campanias[1].id,
+      parcela_id: parcelas[6].id,
+      codigo: 'CUL-008',
+      cultivo: 'Cebada',
+      variedad: 'ComÃºn',
+      area_sembrada: 1.80,
+      fecha_siembra: new Date('2025-01-15'),
+      metodo_siembra: 'DIRECTA' as const,
+      sistema_productivo: 'CONVENCIONAL' as const,
+      tipo_agricultura: 'TRADICIONAL' as const,
+      certificacion: 'SIN_CERTIFICAR' as const,
+      procedencia_semilla: 'COMUN' as const,
+      cantidad_semilla: 40,
+      unidad_semilla: 'kg',
+      estado: 'ACTIVO' as const,
+      rendimiento_esperado: 1.2,
+      produccion_estimada: 2.16,
+      destino_produccion: 'AUTOCONSUMO' as const,
+      activo: true,
+      created_by: admin.id,
+    },
+    // CampaÃ±a 2 - Parcelas del productor 5
+    {
+      campanias_id: campanias[1].id,
+      parcela_id: parcelas[10].id,
+      codigo: 'CUL-009',
+      cultivo: 'Papa Nativa',
+      variedad: 'Andino',
+      area_sembrada: 1.50,
+      fecha_siembra: new Date('2025-01-05'),
+      metodo_siembra: 'TRASPLANTE' as const,
+      sistema_productivo: 'AGROECOLOGICO' as const,
+      tipo_agricultura: 'MIXTA' as const,
+      certificacion: 'SIN_CERTIFICAR' as const,
+      procedencia_semilla: 'CONSERVADA_POR_AGRICULTOR' as const,
+      cantidad_semilla: 900,
+      unidad_semilla: 'kg',
+      estado: 'ACTIVO' as const,
+      rendimiento_esperado: 10,
+      produccion_estimada: 15,
+      destino_produccion: 'COMERCIALIZACION_LOCAL' as const,
+      activo: true,
+      created_by: admin.id,
+    },
+    // CampaÃ±a 1 - Parcelas del productor 7
+    {
+      campanias_id: campanias[0].id,
+      parcela_id: parcelas[12].id,
+      codigo: 'CUL-010',
+      cultivo: 'Cebada',
+      variedad: 'ComÃºn',
+      area_sembrada: 4.50,
+      fecha_siembra: new Date('2024-11-25'),
+      metodo_siembra: 'DIRECTA' as const,
+      sistema_productivo: 'CONVENCIONAL' as const,
+      tipo_agricultura: 'TRADICIONAL' as const,
+      certificacion: 'SIN_CERTIFICAR' as const,
+      procedencia_semilla: 'COMUN' as const,
+      cantidad_semilla: 100,
+      unidad_semilla: 'kg',
+      estado: 'EN_DESARROLLO' as const,
+      rendimiento_esperado: 1.0,
+      produccion_estimada: 4.5,
+      destino_produccion: 'AUTOCONSUMO' as const,
+      activo: true,
+      created_by: admin.id,
+    },
+    // CampaÃ±a 1 - Parcelas del productor 8
+    {
+      campanias_id: campanias[0].id,
+      parcela_id: parcelas[14].id,
+      codigo: 'CUL-011',
       cultivo: 'Quinua',
-      variedad: 'Real',
-      area_sembrada: 3.00,
+      variedad: 'Blanco Gigante',
+      area_sembrada: 5.00,
       fecha_siembra: new Date('2024-11-22'),
       metodo_siembra: 'DIRECTA' as const,
       sistema_productivo: 'ORGANICO' as const,
-      certificacion: 'ORGANICA' as const,
-      estado: 'ACTIVO' as const,
-      rendimiento_esperado: 1.8,
-      produccion_estimada: 5.4,
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'CUL-007',
-      campania_id: campanias[0].id,
-      productor_id: productores[10].id,
-      parcela_id: parcelas[15].id,
-      cultivo: 'Quinua',
-      variedad: 'Real',
-      area_sembrada: 6.20,
-      fecha_siembra: new Date('2024-11-25'),
-      metodo_siembra: 'DIRECTA' as const,
-      sistema_productivo: 'ORGANICO' as const,
-      certificacion: 'ORGANICA' as const,
+      tipo_agricultura: 'TECNIFICADA' as const,
+      certificacion: 'EN_TRANSICION' as const,
+      procedencia_semilla: 'CERTIFICADA' as const,
+      cantidad_semilla: 22,
+      unidad_semilla: 'kg',
       estado: 'EN_DESARROLLO' as const,
-      rendimiento_esperado: 1.7,
-      produccion_estimada: 10.54,
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'CUL-008',
-      campania_id: campanias[0].id,
-      productor_id: productores[7].id,
-      parcela_id: parcelas[14].id,
-      cultivo: 'Quinua',
-      variedad: 'Blanca',
-      area_sembrada: 5.00,
-      fecha_siembra: new Date('2024-11-28'),
-      metodo_siembra: 'DIRECTA' as const,
-      sistema_productivo: 'ORGANICO' as const,
-      certificacion: 'ORGANICA' as const,
-      estado: 'ACTIVO' as const,
-      rendimiento_esperado: 1.6,
-      produccion_estimada: 8.0,
+      rendimiento_esperado: 2.0,
+      produccion_estimada: 10,
+      destino_produccion: 'VENTA_COOPERATIVA' as const,
       activo: true,
       created_by: admin.id,
     },
@@ -1420,173 +1311,222 @@ async function main() {
 
   const cultivos = [];
   for (const data of cultivosData) {
-    const c = await prisma.cultivos.upsert({
+    const c = await prisma.cultivo.upsert({
       where: { codigo: data.codigo },
       update: {},
       create: data,
     });
     cultivos.push(c);
   }
-  console.log(`✅ ${cultivos.length} cultivos creados`);
+  console.log(`âœ… ${cultivos.length} cultivos creados`);
 
-  // ─── ACTIVIDADES ──────────────────────────────────────────
+  // â”€â”€â”€ ACTIVIDADES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const actividadesData = [
+    // Actividades para CUL-001 (Quinua Negra Collana)
     {
-      codigo: 'ACT-001',
-      campania_id: campanias[0].id,
-      productor_id: productores[0].id,
-      parcela_id: parcelas[0].id,
       cultivo_id: cultivos[0].id,
-      fecha: new Date('2024-11-05'),
-      tipo_actividad: 'FERTILIZACION' as const,
-      descripcion: 'Aplicación de guano de corral pre-siembra',
+      codigo: 'ACT-001',
+      fecha: new Date('2024-11-10'),
+      tipo_actividad: 'PREPARACION_TERRENO' as const,
+      descripcion: 'PreparaciÃ³n del terreno para siembra de quinua',
       responsable_tecnico: 'Ing. Carlos Mendoza',
+      hora_inicio: '07:00',
+      hora_fin: '12:00',
+      duracion_estimada: '5 horas',
       prioridad: 'ALTA' as const,
       estado: 'COMPLETADA' as const,
       jornales: 4,
+      observaciones_tecnicas: 'Terreno limpio de malezas, laboreo profundo de 20cm',
+      objetivo: 'Preparar el suelo para la siembra de quinua orgÃ¡nica',
+      resultado: 'Terreno listo para siembra',
       activo: true,
       created_by: admin.id,
     },
     {
-      codigo: 'ACT-002',
-      campania_id: campanias[0].id,
-      productor_id: productores[0].id,
-      parcela_id: parcelas[0].id,
       cultivo_id: cultivos[0].id,
-      fecha: new Date('2024-11-10'),
-      tipo_actividad: 'SIEMBRA' as const,
-      descripcion: 'Siembra directa de quinua Real en surcos',
-      responsable_tecnico: 'Ing. María García',
-      prioridad: 'ALTA' as const,
-      estado: 'COMPLETADA' as const,
-      jornales: 6,
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'ACT-003',
-      campania_id: campanias[0].id,
-      productor_id: productores[1].id,
-      parcela_id: parcelas[3].id,
-      cultivo_id: cultivos[1].id,
+      codigo: 'ACT-002',
       fecha: new Date('2024-11-15'),
       tipo_actividad: 'SIEMBRA' as const,
-      descripcion: 'Siembra de quinua Negra variedad local',
-      responsable_tecnico: 'Ing. María García',
-      prioridad: 'ALTA' as const,
-      estado: 'COMPLETADA' as const,
-      jornales: 8,
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'ACT-004',
-      campania_id: campanias[0].id,
-      productor_id: productores[2].id,
-      parcela_id: parcelas[5].id,
-      cultivo_id: cultivos[2].id,
-      fecha: new Date('2024-12-01'),
-      tipo_actividad: 'COMPOSTAJE' as const,
-      descripcion: 'Aplicación de compostaje orgánico a parcela',
+      descripcion: 'Siembra de quinua variedad Negra Collana',
       responsable_tecnico: 'Ing. Carlos Mendoza',
-      prioridad: 'MEDIA' as const,
-      estado: 'COMPLETADA' as const,
-      jornales: 3,
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'ACT-005',
-      campania_id: campanias[0].id,
-      productor_id: productores[3].id,
-      parcela_id: parcelas[7].id,
-      cultivo_id: cultivos[3].id,
-      fecha: new Date('2024-12-10'),
-      tipo_actividad: 'CONTROL_BIOLOGICO' as const,
-      descripcion: 'Liberación de Trichograma para control de gusano blanco',
-      responsable_tecnico: 'Ing. María García',
-      prioridad: 'ALTA' as const,
-      estado: 'COMPLETADA' as const,
-      jornales: 2,
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'ACT-006',
-      campania_id: campanias[0].id,
-      productor_id: productores[4].id,
-      parcela_id: parcelas[9].id,
-      cultivo_id: cultivos[4].id,
-      fecha: new Date('2025-01-15'),
-      tipo_actividad: 'DESHIERBIE' as const,
-      descripcion: 'Control manual de malezas en etapa vegetativa',
-      responsable_tecnico: 'Ing. Carlos Mendoza',
-      prioridad: 'MEDIA' as const,
-      estado: 'EN_PROCESO' as const,
-      jornales: 10,
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'ACT-007',
-      campania_id: campanias[0].id,
-      productor_id: productores[10].id,
-      parcela_id: parcelas[15].id,
-      cultivo_id: cultivos[6].id,
-      fecha: new Date('2025-02-01'),
-      tipo_actividad: 'MANEJO_PLAGAS' as const,
-      descripcion: 'Monitoreo y control de polilla de la quinua',
-      responsable_tecnico: 'Ing. María García',
-      prioridad: 'ALTA' as const,
-      estado: 'PROGRAMADA' as const,
-      jornales: 5,
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'ACT-008',
-      campania_id: campanias[0].id,
-      productor_id: productores[7].id,
-      parcela_id: parcelas[14].id,
-      cultivo_id: cultivos[7].id,
-      fecha: new Date('2025-02-15'),
-      tipo_actividad: 'RIEGO' as const,
-      descripcion: 'Riego por gravedad en período crítico',
-      responsable_tecnico: 'Ing. Carlos Mendoza',
-      prioridad: 'MEDIA' as const,
-      estado: 'PROGRAMADA' as const,
-      jornales: 3,
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'ACT-009',
-      campania_id: campanias[0].id,
-      productor_id: productores[0].id,
-      parcela_id: parcelas[0].id,
-      cultivo_id: cultivos[0].id,
-      fecha: new Date('2025-03-10'),
-      tipo_actividad: 'COSECHA' as const,
-      descripcion: 'Cosecha mecánica y trilla de quinua Real',
-      responsable_tecnico: 'Ing. Carlos Mendoza',
-      prioridad: 'ALTA' as const,
-      estado: 'PROGRAMADA' as const,
-      jornales: 12,
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'ACT-010',
-      campania_id: campanias[1].id,
-      productor_id: productores[4].id,
-      parcela_id: parcelas[10].id,
-      fecha: new Date('2024-12-01'),
-      tipo_actividad: 'PREPARACION_TERRENO' as const,
-      descripcion: 'Arado y rastreo de terreno para papa nativa',
-      responsable_tecnico: 'Ing. María García',
+      hora_inicio: '06:00',
+      hora_fin: '14:00',
+      duracion_estimada: '8 horas',
       prioridad: 'ALTA' as const,
       estado: 'COMPLETADA' as const,
       jornales: 6,
+      observaciones_tecnicas: 'Siembra a chaki (surcos), profundidad 2-3cm, distancia 0.30m entre plantas',
+      objetivo: 'Establecer cultivo de quinua orgÃ¡nica',
+      resultado: 'Siembra completada exitosamente',
+      activo: true,
+      created_by: admin.id,
+    },
+    {
+      cultivo_id: cultivos[0].id,
+      codigo: 'ACT-003',
+      fecha: new Date('2024-12-01'),
+      tipo_actividad: 'DESHIERBIE' as const,
+      descripcion: 'Primer deshierbe manual de quinua',
+      responsable_tecnico: 'Ing. Carlos Mendoza',
+      hora_inicio: '07:00',
+      hora_fin: '13:00',
+      duracion_estimada: '6 horas',
+      prioridad: 'MEDIA' as const,
+      estado: 'COMPLETADA' as const,
+      jornales: 5,
+      observaciones_tecnicas: 'Deshierbe manual entre lÃ­neas, eliminar malezas competidoras',
+      resultado: 'Maleza controlada',
+      activo: true,
+      created_by: admin.id,
+    },
+    // Actividades para CUL-002 (Papa Nativa Huamantanga)
+    {
+      cultivo_id: cultivos[1].id,
+      codigo: 'ACT-004',
+      fecha: new Date('2024-11-25'),
+      tipo_actividad: 'PREPARACION_TERRENO' as const,
+      descripcion: 'PreparaciÃ³n de terreno para papa nativa',
+      responsable_tecnico: 'Ing. MarÃ­a GarcÃ­a',
+      hora_inicio: '06:30',
+      hora_fin: '12:30',
+      duracion_estimada: '6 horas',
+      prioridad: 'ALTA' as const,
+      estado: 'COMPLETADA' as const,
+      jornales: 3,
+      observaciones_tecnicas: 'Laboreo con arado de disco, incorporaciÃ³n de abono orgÃ¡nico',
+      resultado: 'Terreno preparado con abono incorporado',
+      activo: true,
+      created_by: admin.id,
+    },
+    {
+      cultivo_id: cultivos[1].id,
+      codigo: 'ACT-005',
+      fecha: new Date('2024-12-01'),
+      tipo_actividad: 'SIEMBRA' as const,
+      descripcion: 'Siembra de papa nativa variedad Huamantanga',
+      responsable_tecnico: 'Ing. MarÃ­a GarcÃ­a',
+      hora_inicio: '05:00',
+      hora_fin: '13:00',
+      duracion_estimada: '8 horas',
+      prioridad: 'ALTA' as const,
+      estado: 'COMPLETADA' as const,
+      jornales: 4,
+      observaciones_tecnicas: 'Siembra manual en surcos, profundidad 15-20cm',
+      resultado: 'Papa sembrada exitosamente',
+      activo: true,
+      created_by: admin.id,
+    },
+    // Actividades para CUL-003 (Quinua Blanca JunÃ­n)
+    {
+      cultivo_id: cultivos[2].id,
+      codigo: 'ACT-006',
+      fecha: new Date('2024-11-15'),
+      tipo_actividad: 'FERTILIZACION' as const,
+      descripcion: 'FertilizaciÃ³n de quinua con abono orgÃ¡nico',
+      responsable_tecnico: 'Ing. Carlos Mendoza',
+      hora_inicio: '07:00',
+      hora_fin: '11:00',
+      duracion_estimada: '4 horas',
+      prioridad: 'MEDIA' as const,
+      estado: 'COMPLETADA' as const,
+      jornales: 3,
+      observaciones_tecnicas: 'AplicaciÃ³n de compost a razÃ³n de 5 ton/ha',
+      resultado: 'FertilizaciÃ³n completada',
+      activo: true,
+      created_by: admin.id,
+    },
+    // Actividades para CUL-005 (Quinua Bordaleza)
+    {
+      cultivo_id: cultivos[4].id,
+      codigo: 'ACT-007',
+      fecha: new Date('2024-11-20'),
+      tipo_actividad: 'CONTROL_BIOLOGICO' as const,
+      descripcion: 'Control biolÃ³gico de plagas en quinua',
+      responsable_tecnico: 'Ing. MarÃ­a GarcÃ­a',
+      hora_inicio: '08:00',
+      hora_fin: '12:00',
+      duracion_estimada: '4 horas',
+      prioridad: 'MEDIA' as const,
+      estado: 'COMPLETADA' as const,
+      jornales: 2,
+      observaciones_tecnicas: 'Trampas ferromonales para polilla de la quinua',
+      resultado: 'Plaga controlada',
+      activo: true,
+      created_by: admin.id,
+    },
+    // Actividades para CUL-006 (Quinua Negra Collana - Chuschi)
+    {
+      cultivo_id: cultivos[5].id,
+      codigo: 'ACT-008',
+      fecha: new Date('2024-11-18'),
+      tipo_actividad: 'SIEMBRA' as const,
+      descripcion: 'Siembra de quinua en zona Chuschi',
+      responsable_tecnico: 'Ing. Carlos Mendoza',
+      hora_inicio: '06:00',
+      hora_fin: '15:00',
+      duracion_estimada: '9 horas',
+      prioridad: 'ALTA' as const,
+      estado: 'COMPLETADA' as const,
+      jornales: 7,
+      observaciones_tecnicas: 'Siembra en terreno con pendiente, usaræŠ€è¡“ de siembra en contorno',
+      resultado: 'Siembra completada en 7.5 hectÃ¡reas',
+      activo: true,
+      created_by: admin.id,
+    },
+    // Actividades para CUL-007 (Papa Nativa Peruanita)
+    {
+      cultivo_id: cultivos[6].id,
+      codigo: 'ACT-009',
+      fecha: new Date('2025-01-10'),
+      tipo_actividad: 'RIEGO' as const,
+      descripcion: 'Primer riego de papa nativa',
+      responsable_tecnico: 'Ing. MarÃ­a GarcÃ­a',
+      hora_inicio: '06:00',
+      hora_fin: '10:00',
+      duracion_estimada: '4 horas',
+      prioridad: 'ALTA' as const,
+      estado: 'EN_PROCESO' as const,
+      jornales: 2,
+      observaciones_tecnicas: 'Riego por gravedad, verificar distribuciÃ³n uniforme',
+      objetivo: 'Mantener humedad adecuada para establecimiento',
+      activo: true,
+      created_by: admin.id,
+    },
+    // Actividades para CUL-008 (Cebada ComÃºn)
+    {
+      cultivo_id: cultivos[7].id,
+      codigo: 'ACT-010',
+      fecha: new Date('2025-01-15'),
+      tipo_actividad: 'SIEMBRA' as const,
+      descripcion: 'Siembra de cebada variedad ComÃºn',
+      responsable_tecnico: 'Ing. Carlos Mendoza',
+      hora_inicio: '07:00',
+      hora_fin: '11:00',
+      duracion_estimada: '4 horas',
+      prioridad: 'MEDIA' as const,
+      estado: 'PROGRAMADA' as const,
+      jornales: 2,
+      observaciones_tecnicas: 'Siembra a voleo en terreno preparado',
+      objetivo: 'Establecer cultivo de cebada para forraje',
+      activo: true,
+      created_by: admin.id,
+    },
+    // Actividades para CUL-011 (Quinua Blanco Gigante)
+    {
+      cultivo_id: cultivos[10].id,
+      codigo: 'ACT-011',
+      fecha: new Date('2024-11-25'),
+      tipo_actividad: 'APORQUE' as const,
+      descripcion: 'Aporque de quinua Blanco Gigante',
+      responsable_tecnico: 'Ing. MarÃ­a GarcÃ­a',
+      hora_inicio: '07:00',
+      hora_fin: '12:00',
+      duracion_estimada: '5 horas',
+      prioridad: 'MEDIA' as const,
+      estado: 'PROGRAMADA' as const,
+      jornales: 4,
+      observaciones_tecnicas: 'Aporque manual para estabilizar plantas',
+      objetivo: 'Fortalecer el sistema radicular de la quinua',
       activo: true,
       created_by: admin.id,
     },
@@ -1601,317 +1541,198 @@ async function main() {
     });
     actividades.push(a);
   }
-  console.log(`✅ ${actividades.length} actividades creadas`);
+  console.log(`Ã¢Å“â€¦ ${actividades.length} actividades creadas`);
 
-  // ─── INSPECCIONES ──────────────────────────────────────────
-  const inspeccionesData = [
-    {
-      codigo: 'INSP-001',
-      campania_id: campanias[0].id,
-      productor_id: productores[0].id,
-      parcela_id: parcelas[0].id,
-      cultivo_id: cultivos[0].id,
-      fecha: new Date('2024-12-15'),
-      inspector: 'Ing. María García',
-      estado: 'APROBADA' as const,
-      resultado: 'CONFORME' as const,
-      observaciones: 'Parcela en buenas condiciones. Cultivo con buen desarrollo vegetativo.',
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'INSP-002',
-      campania_id: campanias[0].id,
-      productor_id: productores[1].id,
-      parcela_id: parcelas[3].id,
-      cultivo_id: cultivos[1].id,
-      fecha: new Date('2024-12-20'),
-      inspector: 'Ing. Carlos Mendoza',
-      estado: 'APROBADA' as const,
-      resultado: 'CONFORME_CON_OBSERVACIONES' as const,
-      observaciones: 'Se recomienda reforzar control de malezas en sectores orientales.',
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'INSP-003',
-      campania_id: campanias[0].id,
-      productor_id: productores[4].id,
-      parcela_id: parcelas[9].id,
-      cultivo_id: cultivos[4].id,
-      fecha: new Date('2025-01-10'),
-      inspector: 'Ing. María García',
-      estado: 'NO_CONFORME' as const,
-      resultado: 'NO_CONFORME' as const,
-      observaciones: 'Se detecta presencia de gusano blanco. Se requiere acción inmediata de control biológico.',
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'INSP-004',
-      campania_id: campanias[0].id,
-      productor_id: productores[10].id,
-      parcela_id: parcelas[15].id,
-      cultivo_id: cultivos[6].id,
-      fecha: new Date('2025-02-20'),
-      inspector: 'Ing. Carlos Mendoza',
-      estado: 'PENDIENTE' as const,
-      resultado: null,
-      observaciones: null,
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'INSP-005',
-      campania_id: campanias[1].id,
-      productor_id: productores[4].id,
-      parcela_id: parcelas[10].id,
-      fecha: new Date('2025-01-25'),
-      inspector: 'Ing. María García',
-      estado: 'PENDIENTE' as const,
-      resultado: null,
-      observaciones: null,
-      activo: true,
-      created_by: admin.id,
-    },
-  ];
-
-  const inspecciones = [];
-  for (const data of inspeccionesData) {
-    const i = await prisma.inspecciones.upsert({
-      where: { codigo: data.codigo },
-      update: {},
-      create: data,
-    });
-    inspecciones.push(i);
-  }
-  console.log(`✅ ${inspecciones.length} inspecciones creadas`);
-
-  // ─── ACOPIOS ───────────────────────────────────────────────
+  // â”€â”€â”€ ACOPIOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const acopiosData = [
+    // Acopio 1: RecolecciÃ³n de quinua de varios productores
     {
-      codigo: 'ACP-001',
-      campania_id: campanias[0].id,
-      productor_id: productores[0].id,
-      parcela_id: parcelas[0].id,
-      cultivo_id: cultivos[0].id,
+      codigo: 'ACO-2025-01',
       fecha: new Date('2025-03-15'),
-      acopiador: 'Juan Pérez',
+      acopiador: 'Juan Mamani',
       vehiculo: 'Toyota Hilux ABC-123',
-      lote_productor: 'LP-TEO-001',
-      total_sacos: 45,
-      peso_total: 2250,
+      ruta_acopio: 'San Juan de Bolognesi - AlmacÃ©n Central',
       estado: 'COMPLETADO' as const,
-      estado_producto: 'EXCELENTE' as const,
-      humedad: 12.5,
-      impurezas: 1.2,
-      observaciones: 'Quinua de excelente calidad, limpia y uniforme.',
+      observaciones: 'Acopio realizado en maÃ±ana fresca',
       activo: true,
       created_by: admin.id,
+      detalles: [
+        // Productor 1 - Quinua Negra Collana
+        {
+          productor_id: productores[0].id,
+          cultivo_id: cultivos[0].id,
+          observaciones: 'Primera entrega de quinua orgÃ¡nica',
+          sacos: [
+            { codigo: 'SAC-001', peso: 49.5 },
+            { codigo: 'SAC-002', peso: 50.2 },
+            { codigo: 'SAC-003', peso: 48.8 },
+          ],
+        },
+        // Productor 2 - Papa Nativa Huamantanga
+        {
+          productor_id: productores[1].id,
+          cultivo_id: cultivos[1].id,
+          observaciones: 'Papa de excelente calidad',
+          sacos: [
+            { codigo: 'SAC-004', peso: 52.3 },
+            { codigo: 'SAC-005', peso: 51.8 },
+          ],
+        },
+      ],
     },
+    // Acopio 2: RecolecciÃ³n de quinua Blanca JunÃ­n
     {
-      codigo: 'ACP-002',
-      campania_id: campanias[0].id,
-      productor_id: productores[1].id,
-      parcela_id: parcelas[3].id,
-      cultivo_id: cultivos[1].id,
+      codigo: 'ACO-2025-02',
       fecha: new Date('2025-03-20'),
-      acopiador: 'Carlos Ramos',
+      acopiador: 'Carlos Quispe',
       vehiculo: 'Nissan NP300 DEF-456',
-      lote_productor: 'LP-JUA-001',
-      total_sacos: 62,
-      peso_total: 3100,
-      estado: 'COMPLETADO' as const,
-      estado_producto: 'BUENO' as const,
-      humedad: 13.0,
-      impurezas: 1.8,
-      observaciones: 'Buena calidad, quelques semillas con humedad ligeramente elevada.',
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'ACP-003',
-      campania_id: campanias[0].id,
-      productor_id: productores[3].id,
-      parcela_id: parcelas[7].id,
-      cultivo_id: cultivos[3].id,
-      fecha: new Date('2025-03-25'),
-      acopiador: 'Juan Pérez',
-      vehiculo: 'Toyota Hilux ABC-123',
-      lote_productor: 'LP-ROS-001',
-      total_sacos: 50,
-      peso_total: 2500,
+      ruta_acopio: 'Pampa Cangallo Grande - Planta Procesadora',
       estado: 'EN_PLANTA' as const,
-      estado_producto: 'EXCELENTE' as const,
-      humedad: 11.8,
-      impurezas: 0.9,
-      observaciones: 'Producto de primera calidad, apto para exportación.',
+      observaciones: 'Acopio para exportaciÃ³n',
       activo: true,
       created_by: admin.id,
+      detalles: [
+        {
+          productor_id: productores[2].id,
+          cultivo_id: cultivos[2].id,
+          observaciones: 'Quinua blanca de alta calidad',
+          sacos: [
+            { codigo: 'SAC-006', peso: 50.1 },
+            { codigo: 'SAC-007', peso: 49.7 },
+            { codigo: 'SAC-008', peso: 50.3 },
+            { codigo: 'SAC-009', peso: 48.9 },
+            { codigo: 'SAC-010', peso: 51.0 },
+          ],
+        },
+      ],
     },
+    // Acopio 3: RecolecciÃ³n mixta
     {
-      codigo: 'ACP-004',
-      campania_id: campanias[0].id,
-      productor_id: productores[10].id,
-      parcela_id: parcelas[15].id,
-      cultivo_id: cultivos[6].id,
+      codigo: 'ACO-2025-03',
       fecha: new Date('2025-04-01'),
-      acopiador: 'Carlos Ramos',
-      vehiculo: 'Nissan NP300 DEF-456',
-      lote_productor: 'LP-EPI-001',
-      total_sacos: 55,
-      peso_total: 2750,
-      estado: 'EN_PROCESO' as const,
-      estado_producto: 'BUENO' as const,
-      humedad: 13.5,
-      impurezas: 2.1,
-      observaciones: 'En proceso de verificación de calidad.',
+      acopiador: 'Pedro Huanca',
+      vehiculo: 'Isuzu NHR GHI-789',
+      ruta_acopio: 'Chuschi - Mercado Mayorista',
+      estado: 'COMPLETADO' as const,
+      observaciones: 'Acopio con condiciones climÃ¡ticas adversas',
       activo: true,
       created_by: admin.id,
-    },
-    {
-      codigo: 'ACP-005',
-      campania_id: campanias[0].id,
-      productor_id: productores[7].id,
-      parcela_id: parcelas[14].id,
-      cultivo_id: cultivos[7].id,
-      fecha: new Date('2025-04-05'),
-      acopiador: 'Juan Pérez',
-      vehiculo: 'Toyota Hilux ABC-123',
-      lote_productor: 'LP-CRI-001',
-      total_sacos: 40,
-      peso_total: 2000,
-      estado: 'EN_PROCESO' as const,
-      estado_producto: 'REGULAR' as const,
-      humedad: 14.2,
-      impurezas: 3.0,
-      observaciones: 'Humedad un poco alta, requiere secado antes de procesamiento.',
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'ACP-006',
-      campania_id: campanias[1].id,
-      productor_id: productores[4].id,
-      parcela_id: parcelas[10].id,
-      fecha: new Date('2025-04-10'),
-      acopiador: 'Carlos Ramos',
-      vehiculo: 'Nissan NP300 DEF-456',
-      lote_productor: 'LP-VAL-001',
-      total_sacos: 30,
-      peso_total: 1500,
-      estado: 'EN_PROCESO' as const,
-      estado_producto: 'BUENO' as const,
-      humedad: 11.5,
-      impurezas: 1.5,
-      observaciones: 'Papa nativa de buena calidad.',
-      activo: true,
-      created_by: admin.id,
+      detalles: [
+        // Productor 5 - Quinua Bordaleza
+        {
+          productor_id: productores[4].id,
+          cultivo_id: cultivos[4].id,
+          observaciones: 'Calidad regular, algunas impurezas',
+          sacos: [
+            { codigo: 'SAC-011', peso: 48.5 },
+            { codigo: 'SAC-012', peso: 47.8 },
+            { codigo: 'SAC-013', peso: 49.2 },
+          ],
+        },
+        // Productor 8 - Cebada
+        {
+          productor_id: productores[7].id,
+          cultivo_id: cultivos[7].id,
+          observaciones: 'Primera entrega de cebada',
+          sacos: [
+            { codigo: 'SAC-014', peso: 45.0 },
+            { codigo: 'SAC-015', peso: 44.5 },
+          ],
+        },
+      ],
     },
   ];
 
   const acopios = [];
   for (const data of acopiosData) {
-    const a = await prisma.acopios.upsert({
-      where: { codigo: data.codigo },
+    const { detalles: detallesData, ...acopioData } = data;
+    const totalSacos = detallesData.reduce((sum, d) => sum + d.sacos.length, 0);
+    const pesoTotal = detallesData.reduce((sum, d) => sum + d.sacos.reduce((s, saco) => s + saco.peso, 0), 0);
+
+    const a = await prisma.acopio.upsert({
+      where: { codigo: acopioData.codigo },
       update: {},
-      create: data,
+      create: {
+        ...acopioData,
+        total_sacos: totalSacos,
+        peso_total: pesoTotal,
+        detalles: {
+          create: detallesData.map(d => ({
+            productor_id: d.productor_id,
+            cultivo_id: d.cultivo_id,
+            observaciones: d.observaciones,
+            total_sacos: d.sacos.length,
+            peso_total: d.sacos.reduce((sum, s) => sum + s.peso, 0),
+            sacos: {
+              create: d.sacos,
+            },
+          })),
+        },
+      },
     });
     acopios.push(a);
   }
-  console.log(`✅ ${acopios.length} acopios creados`);
+  console.log(`âœ… ${acopios.length} acopios creados`);
 
-  // ─── RECEPCIONES ──────────────────────────────────────────
+  // ─── RECEPCIONES ─────────────────────────────────────────
   const recepcionesData = [
+    // Recepción del primer acopio
     {
-      codigo: 'RCP-001',
-      campania_id: campanias[0].id,
       acopio_id: acopios[0].id,
-      lote_productor: 'LP-TEO-001',
+      lote_productor: 'LP-001',
       fecha: new Date('2025-03-16'),
       responsable: 'Ing. Carlos Mendoza',
-      planta: 'Planta Procesadora San Juan',
-      sacos: 45,
-      peso_campo: 2250,
-      peso_bruto: 2250,
-      tara: 225,
-      peso_neto: 2025,
-      humedad: 12.5,
-      estado_producto: 'EXCELENTE' as const,
-      categoria: 'PRIMERA' as const,
-      destino: 'PROCESAMIENTO' as const,
-      resultado: 'ACEPTADO' as const,
-      estado: 'DISPONIBLE' as const,
-      observaciones: 'Recepción sin observaciones. Producto de exportación.',
+      planta: 'Planta Procesadora Central',
+      sacos: 5,
+      peso_campo: 252.6,
+      peso_bruto: 250.0,
+      tara: 2.5,
+      peso_neto: 247.5,
+      diferencia: -5.1,
+      humedad: 12.8,
+      impurezas: 1.5,
+      estado: 'EN_CONTROL_CALIDAD' as const,
+      observaciones: 'Primera recepción de la campaña',
       activo: true,
       created_by: admin.id,
     },
+    // Recepción del segundo acopio
     {
-      codigo: 'RCP-002',
-      campania_id: campanias[0].id,
       acopio_id: acopios[1].id,
-      lote_productor: 'LP-JUA-001',
+      lote_productor: 'LP-002',
       fecha: new Date('2025-03-21'),
       responsable: 'Ing. María García',
-      planta: 'Planta Procesadora San Juan',
-      sacos: 62,
-      peso_campo: 3100,
-      peso_bruto: 3100,
-      tara: 310,
-      peso_neto: 2790,
-      humedad: 13.0,
-      estado_producto: 'BUENO' as const,
-      categoria: 'SEGUNDA' as const,
-      destino: 'PROCESAMIENTO' as const,
-      resultado: 'ACEPTADO_CON_OBSERVACIONES' as const,
-      estado: 'DISPONIBLE' as const,
-      observaciones: 'Humedad ligeramente elevada. Se recomienda secado previo.',
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'RCP-003',
-      campania_id: campanias[0].id,
-      acopio_id: acopios[2].id,
-      lote_productor: 'LP-ROS-001',
-      fecha: new Date('2025-03-26'),
-      responsable: 'Ing. Carlos Mendoza',
-      planta: 'Planta Procesadora San Juan',
-      sacos: 50,
-      peso_campo: 2500,
-      peso_bruto: 2500,
-      tara: 250,
-      peso_neto: 2250,
-      humedad: 11.8,
-      estado_producto: 'EXCELENTE' as const,
-      categoria: 'PRIMERA' as const,
-      destino: 'ALMACEN_TEMPORAL' as const,
-      resultado: 'ACEPTADO' as const,
-      estado: 'PENDIENTE_PESAJE' as const,
-      observaciones: 'Producto excelente. En espera de espacio en almacén.',
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'RCP-004',
-      campania_id: campanias[1].id,
-      acopio_id: acopios[5].id,
-      lote_productor: 'LP-VAL-001',
-      fecha: new Date('2025-04-11'),
-      responsable: 'Ing. María García',
-      planta: 'Planta Procesadora Chuschi',
-      sacos: 30,
-      peso_campo: 1500,
-      peso_bruto: 1500,
-      tara: 150,
-      peso_neto: 1350,
+      planta: 'Planta Procesadora Central',
+      sacos: 5,
+      peso_campo: 250.0,
+      peso_bruto: 248.5,
+      tara: 2.0,
+      peso_neto: 246.5,
+      diferencia: -3.5,
       humedad: 11.5,
-      estado_producto: 'BUENO' as const,
-      categoria: 'SEGUNDA' as const,
-      destino: 'PROCESAMIENTO' as const,
-      resultado: 'ACEPTADO' as const,
-      estado: 'EN_CONTROL_CALIDAD' as const,
-      observaciones: 'En proceso de control de calidad final.',
+      impurezas: 0.8,
+      estado: 'DISPONIBLE' as const,
+      observaciones: 'Producto de excelente calidad',
+      activo: true,
+      created_by: admin.id,
+    },
+    // Recepción manual (sin acopio - otra empresa)
+    {
+      acopio_id: null,
+      lote_productor: 'LP-EXT-001',
+      fecha: new Date('2025-04-05'),
+      responsable: 'Ing. Carlos Mendoza',
+      planta: 'Planta Procesadora Central',
+      sacos: 10,
+      peso_campo: 500.0,
+      peso_bruto: 498.0,
+      tara: 5.0,
+      peso_neto: 493.0,
+      diferencia: -7.0,
+      humedad: 13.2,
+      impurezas: 2.1,
+      estado: 'PENDIENTE_PESAJE' as const,
+      observaciones: 'Recepción de proveedor externo - Cooperativa San José',
       activo: true,
       created_by: admin.id,
     },
@@ -1919,299 +1740,57 @@ async function main() {
 
   const recepciones = [];
   for (const data of recepcionesData) {
-    const r = await prisma.recepciones.upsert({
-      where: { codigo: data.codigo },
-      update: {},
-      create: data,
-    });
-    recepciones.push(r);
-  }
-  console.log(`✅ ${recepciones.length} recepciones creadas`);
-
-  // ─── PROCESAMIENTOS ───────────────────────────────────────
-  const procesamientosData = [
-    {
-      codigo: 'OP-001',
-      campania_id: campanias[0].id,
-      fecha: new Date('2025-03-20'),
-      producto: 'Quinua Real Orgánica',
-      responsable: 'Ing. Carlos Mendoza',
-      planta: 'Planta Procesadora San Juan',
-      linea_procesamiento: 'GRANOS' as const,
-      estado: 'COMPLETADA' as const,
-      peso_entrada: 4275,
-      peso_salida: 4100,
-      merma: 175,
-      rendimiento: 95.9,
-      producto_base: 'Quinua pelada',
-      calidad_producto: 'PRIMERA' as const,
-      observaciones: 'Proceso de pelado y selección completado exitosamente.',
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'OP-002',
-      campania_id: campanias[0].id,
-      fecha: new Date('2025-04-01'),
-      producto: 'Quinua Orgánica Premium',
-      responsable: 'Ing. María García',
-      planta: 'Planta Procesadora San Juan',
-      linea_procesamiento: 'GRANOS' as const,
-      estado: 'EN_PROCESO' as const,
-      peso_entrada: 2790,
-      peso_salida: null,
-      merma: null,
-      rendimiento: null,
-      producto_base: 'Quinua lavada y deshidratada',
-      calidad_producto: 'PRIMERA' as const,
-      observaciones: 'En proceso de lavado y deshidratación.',
-      activo: true,
-      created_by: admin.id,
-    },
-    {
-      codigo: 'OP-003',
-      campania_id: campanias[1].id,
-      fecha: new Date('2025-04-15'),
-      producto: 'Papa Nativa Procesada',
-      responsable: 'Ing. Carlos Mendoza',
-      planta: 'Planta Procesadora Chuschi',
-      linea_procesamiento: 'TUBERCULOS' as const,
-      estado: 'REGISTRADA' as const,
-      peso_entrada: 1350,
-      peso_salida: null,
-      merma: null,
-      rendimiento: null,
-      producto_base: 'Papa seca',
-      calidad_producto: 'SEGUNDA' as const,
-      observaciones: 'Procesamiento registrado, pendiente de inicio.',
-      activo: true,
-      created_by: admin.id,
-    },
-  ];
-
-  const procesamientos = [];
-  for (const data of procesamientosData) {
-    const p = await prisma.procesamientos.upsert({
-      where: { codigo: data.codigo },
-      update: {},
-      create: data,
-    });
-    procesamientos.push(p);
-  }
-  console.log(`✅ ${procesamientos.length} procesamientos creados`);
-
-  // ─── CATÁLOGOS ─────────────────────────────────────────────
-  const catalogosData = [
-    // Departamentos
-    { tipo: 'departamentos', nombre: 'Amazonas', descripcion: 'Región Amazonas', orden: 1 },
-    { tipo: 'departamentos', nombre: 'Áncash', descripcion: 'Región Áncash', orden: 2 },
-    { tipo: 'departamentos', nombre: 'Apurímac', descripcion: 'Región Apurímac', orden: 3 },
-    { tipo: 'departamentos', nombre: 'Arequipa', descripcion: 'Región Arequipa', orden: 4 },
-    { tipo: 'departamentos', nombre: 'Ayacucho', descripcion: 'Región Ayacucho', orden: 5 },
-    { tipo: 'departamentos', nombre: 'Cajamarca', descripcion: 'Región Cajamarca', orden: 6 },
-    { tipo: 'departamentos', nombre: 'Callao', descripcion: 'Constitución del Callao', orden: 7 },
-    { tipo: 'departamentos', nombre: 'Cusco', descripcion: 'Región Cusco', orden: 8 },
-    { tipo: 'departamentos', nombre: 'Huancavelica', descripcion: 'Región Huancavelica', orden: 9 },
-    { tipo: 'departamentos', nombre: 'Huánuco', descripcion: 'Región Huánuco', orden: 10 },
-    { tipo: 'departamentos', nombre: 'Ica', descripcion: 'Región Ica', orden: 11 },
-    { tipo: 'departamentos', nombre: 'Junín', descripcion: 'Región Junín', orden: 12 },
-    { tipo: 'departamentos', nombre: 'La Libertad', descripcion: 'Región La Libertad', orden: 13 },
-    { tipo: 'departamentos', nombre: 'Lambayeque', descripcion: 'Región Lambayeque', orden: 14 },
-    { tipo: 'departamentos', nombre: 'Lima', descripcion: 'Región Lima', orden: 15 },
-    { tipo: 'departamentos', nombre: 'Loreto', descripcion: 'Región Loreto', orden: 16 },
-    { tipo: 'departamentos', nombre: 'Madre de Dios', descripcion: 'Región Madre de Dios', orden: 17 },
-    { tipo: 'departamentos', nombre: 'Moquegua', descripcion: 'Región Moquegua', orden: 18 },
-    { tipo: 'departamentos', nombre: 'Pasco', descripcion: 'Región Pasco', orden: 19 },
-    { tipo: 'departamentos', nombre: 'Piura', descripcion: 'Región Piura', orden: 20 },
-    { tipo: 'departamentos', nombre: 'Puno', descripcion: 'Región Puno', orden: 21 },
-    { tipo: 'departamentos', nombre: 'San Martín', descripcion: 'Región San Martín', orden: 22 },
-    { tipo: 'departamentos', nombre: 'Tacna', descripcion: 'Región Tacna', orden: 23 },
-    { tipo: 'departamentos', nombre: 'Tumbes', descripcion: 'Región Tumbes', orden: 24 },
-    { tipo: 'departamentos', nombre: 'Ucayali', descripcion: 'Región Ucayali', orden: 25 },
-    // Tipos de Cultivo
-    { tipo: 'tipos-cultivo', nombre: 'Quinua', descripcion: 'Chenopodium quinoa - Cultivo andino principal', orden: 1 },
-    { tipo: 'tipos-cultivo', nombre: 'Papa Nativa', descripcion: 'Solanum tuberosum - Variedades nativas andinas', orden: 2 },
-    { tipo: 'tipos-cultivo', nombre: 'Cebada', descripcion: 'Hordeum vulgare - Cereal adaptado a altitud', orden: 3 },
-    { tipo: 'tipos-cultivo', nombre: 'Maíz', descripcion: 'Zea mays - Cultivo de valles', orden: 4 },
-    { tipo: 'tipos-cultivo', nombre: 'Frijol', descripcion: 'Phaseolus vulgaris - Leguminosa proteinica', orden: 5 },
-    { tipo: 'tipos-cultivo', nombre: 'Tarwi', descripcion: 'Lupinus mutabilis - Leguminosa andina', orden: 6 },
-    { tipo: 'tipos-cultivo', nombre: 'Oca', descripcion: 'Oxalis tuberosa - Tubérculo andino', activo: false, orden: 7 },
-    { tipo: 'tipos-cultivo', nombre: 'Mashua', descripcion: 'Tropaeolum tuberosum - Tubérculo andino', activo: false, orden: 8 },
-    // Tipos de Suelo
-    { tipo: 'tipos-suelo', nombre: 'Franco arcilloso', descripcion: 'Mezcla equilibrada con predominio de arcilla', orden: 1 },
-    { tipo: 'tipos-suelo', nombre: 'Franco arenoso', descripcion: 'Mezcla equilibrada con predominio de arena', orden: 2 },
-    { tipo: 'tipos-suelo', nombre: 'Franco limoso', descripcion: 'Mezcla equilibrada con predominio de limo', orden: 3 },
-    { tipo: 'tipos-suelo', nombre: 'Arcilloso', descripcion: 'Predominio de partículas de arcilla', orden: 4 },
-    { tipo: 'tipos-suelo', nombre: 'Arenoso', descripcion: 'Predominio de partículas de arena', orden: 5 },
-    { tipo: 'tipos-suelo', nombre: 'Limoso', descripcion: 'Predominio de partículas de limo', orden: 6 },
-    // Fuentes de Agua
-    { tipo: 'fuentes-agua', nombre: 'Río', descripcion: 'Fuente de agua superficial continua', orden: 1 },
-    { tipo: 'fuentes-agua', nombre: 'Manantial', descripcion: 'Fuente de agua subterránea natural', orden: 2 },
-    { tipo: 'fuentes-agua', nombre: 'Lluvia', descripcion: 'Precipitación directa sobre el cultivo', orden: 3 },
-    { tipo: 'fuentes-agua', nombre: 'Laguna', descripcion: 'Cuerpo de agua estancada natural', orden: 4 },
-    { tipo: 'fuentes-agua', nombre: 'Naciente', descripcion: 'Punto de surgencia de agua subterránea', activo: false, orden: 5 },
-    // Sistemas de Riego
-    { tipo: 'sistemas-riego', nombre: 'A gravedad', descripcion: 'Riego por canal con pendiente natural', orden: 1 },
-    { tipo: 'sistemas-riego', nombre: 'A presión', descripcion: 'Riego por aspersión o goteo con bomba', orden: 2 },
-    { tipo: 'sistemas-riego', nombre: 'Sequía', descripcion: 'Cultivo de panasco sin riego artificial', orden: 3 },
-    { tipo: 'sistemas-riego', nombre: 'Minga', descripcion: 'Riego comunitario por turnos', orden: 4 },
-    { tipo: 'sistemas-riego', nombre: 'A gota a gota', descripcion: 'Riego por goteo con tuberías', activo: false, orden: 5 },
-    // Zonas Agroecológicas
-    { tipo: 'zonas-agroecologicas', nombre: 'Yunga', descripcion: '3,500 - 3,800 msnm - Zona templada', orden: 1 },
-    { tipo: 'zonas-agroecologicas', nombre: 'Quechua', descripcion: '3,300 - 3,500 msnm - Zona templada fría', orden: 2 },
-    { tipo: 'zonas-agroecologicas', nombre: 'Suní', descripcion: '3,800 - 4,000 msnm - Zona fría', orden: 3 },
-    { tipo: 'zonas-agroecologicas', nombre: 'Puna', descripcion: '4,000 - 4,500 msnm - Zona muy fría', orden: 4 },
-    { tipo: 'zonas-agroecologicas', nombre: 'Janca', descripcion: 'Más de 4,500 msnm - Zona de nieves perpetuas', activo: false, orden: 5 },
-    // Tipos de Actividad
-    { tipo: 'tipos-actividad', nombre: 'Fertilización', descripcion: 'Aplicación de fertilizantes orgánicos o minerales', orden: 1 },
-    { tipo: 'tipos-actividad', nombre: 'Compostaje', descripcion: 'Producción de compost orgánico', orden: 2 },
-    { tipo: 'tipos-actividad', nombre: 'Control Biológico', descripcion: 'Control de plagas con organismos benéficos', orden: 3 },
-    { tipo: 'tipos-actividad', nombre: 'Manejo de Plagas', descripcion: 'Monitoreo y control integrado de plagas', orden: 4 },
-    { tipo: 'tipos-actividad', nombre: 'Siembra', descripcion: 'Plantación y establecimiento del cultivo', orden: 5 },
-    { tipo: 'tipos-actividad', nombre: 'Cosecha', descripcion: 'Recolección del producto maduro', orden: 6 },
-    { tipo: 'tipos-actividad', nombre: 'Aplicación de Bioles', descripcion: 'Aplicación de preparados biológicos líquidos', orden: 7 },
-    { tipo: 'tipos-actividad', nombre: 'Control de Malezas', descripcion: 'Manejo de plantas adventicias', orden: 8 },
-    { tipo: 'tipos-actividad', nombre: 'Rastreo', descripcion: 'Preparación mecánica del suelo', activo: false, orden: 9 },
-    // Tipos de Documento
-    { tipo: 'tipos-documento', nombre: 'DNI', descripcion: 'Documento Nacional de Identidad', orden: 1 },
-    { tipo: 'tipos-documento', nombre: 'Certificado de Nacimiento', descripcion: 'Partida de nacimiento', orden: 2 },
-    { tipo: 'tipos-documento', nombre: 'Certificado Orgánico', descripcion: 'Certificación de producción orgánica', orden: 3 },
-    { tipo: 'tipos-documento', nombre: 'Contrato', descripcion: 'Contrato de asociación con la cooperativa', orden: 4 },
-    { tipo: 'tipos-documento', nombre: 'Acta de Asamblea', descripcion: 'Acta de reunión de socios', orden: 5 },
-    { tipo: 'tipos-documento', nombre: 'Plano de Parcela', descripcion: 'Mapa de ubicación y límites de la parcela', orden: 6 },
-    { tipo: 'tipos-documento', nombre: 'Foto', descripcion: 'Registro fotográfico', orden: 7 },
-    { tipo: 'tipos-documento', nombre: 'Otro', descripcion: 'Documentos varios no clasificados', orden: 8 },
-    // Parentescos
-    { tipo: 'parentescos', nombre: 'Esposo/a', descripcion: 'Cónyuge o pareja', orden: 1 },
-    { tipo: 'parentescos', nombre: 'Hijo/a', descripcion: 'Descendiente directo', orden: 2 },
-    { tipo: 'parentescos', nombre: 'Padre', descripcion: 'Padre del productor', orden: 3 },
-    { tipo: 'parentescos', nombre: 'Madre', descripcion: 'Madre del productor', orden: 4 },
-    { tipo: 'parentescos', nombre: 'Hermano/a', descripcion: 'Hermano o hermana', orden: 5 },
-    { tipo: 'parentescos', nombre: 'Sobrino/a', descripcion: 'Hijo/a de hermano/a', orden: 6 },
-    { tipo: 'parentescos', nombre: 'Nieto/a', descripcion: 'Descendiente de segundo grado', activo: false, orden: 7 },
-    { tipo: 'parentescos', nombre: 'Otro', descripcion: 'Otra relación familiar', orden: 8 },
-    // ─── Criterios de Checklist de Inspección (51 criterios) ───
-    // Semillas y Material Vegetal (1-2)
-    { tipo: 'criterios-checklist', nombre: '¿Las semillas utilizadas para la siembra son de origen permitido para la producción orgánica?', orden: 1 },
-    { tipo: 'criterios-checklist', nombre: '¿Las semillas utilizadas para la siembra fueron sometidas únicamente a tratamientos permitidos para la producción orgánica?', orden: 2 },
-    // Insumos y Fertilización (3-4)
-    { tipo: 'criterios-checklist', nombre: '¿Los abonos y fertilizantes utilizados en la unidad productiva son de origen permitido para la producción orgánica?', orden: 3 },
-    { tipo: 'criterios-checklist', nombre: '¿El productor utiliza únicamente insumos permitidos por el SIC para el manejo del cultivo?', orden: 4 },
-    // Control de Plagas, Enfermedades y Malezas (5-8)
-    { tipo: 'criterios-checklist', nombre: '¿El productor realiza el control de plagas mediante prácticas permitidas para la producción orgánica?', orden: 5 },
-    { tipo: 'criterios-checklist', nombre: '¿El productor realiza el control de enfermedades mediante prácticas permitidas para la producción orgánica?', orden: 6 },
-    { tipo: 'criterios-checklist', nombre: '¿El productor realiza el control de malezas mediante prácticas permitidas para la producción orgánica?', orden: 7 },
-    { tipo: 'criterios-checklist', nombre: '¿El productor evita el uso de productos no permitidos para el control de plagas, enfermedades y malezas?', orden: 8 },
-    // Fertilidad y Condiciones del Suelo (9-14)
-    { tipo: 'criterios-checklist', nombre: '¿El productor aplica prácticas destinadas a conservar y mejorar la fertilidad del suelo?', orden: 9 },
-    { tipo: 'criterios-checklist', nombre: '¿El productor aplica prácticas para mantener o mejorar las condiciones físicas del suelo?', orden: 10 },
-    { tipo: 'criterios-checklist', nombre: '¿El productor realiza rotación de cultivos en la unidad productiva?', orden: 11 },
-    { tipo: 'criterios-checklist', nombre: '¿El productor cuenta con un historial de rotación de cultivos de la unidad productiva?', orden: 12 },
-    { tipo: 'criterios-checklist', nombre: '¿La unidad productiva se encuentra libre de evidencias significativas de erosión del suelo?', orden: 13 },
-    { tipo: 'criterios-checklist', nombre: '¿El productor aplica medidas para prevenir o reducir la erosión del suelo cuando esta se presenta?', orden: 14 },
-    // Colindancia y Barreras de Protección (15-19)
-    { tipo: 'criterios-checklist', nombre: '¿La unidad productiva presenta colindancia con áreas de producción convencional?', orden: 15 },
-    { tipo: 'criterios-checklist', nombre: '¿La unidad productiva cuenta con medidas de protección frente a posibles riesgos provenientes de áreas de producción convencional colindantes?', orden: 16 },
-    { tipo: 'criterios-checklist', nombre: '¿La unidad productiva cuenta con barreras físicas o vegetales para reducir el riesgo de contaminación proveniente de áreas colindantes?', orden: 17 },
-    { tipo: 'criterios-checklist', nombre: '¿Las barreras de protección de la unidad productiva se encuentran en condiciones adecuadas para cumplir su función?', orden: 18 },
-    { tipo: 'criterios-checklist', nombre: '¿Cuando corresponde, la unidad productiva cuenta con zonas de amortiguamiento frente a áreas de producción convencional?', orden: 19 },
-    // Diversidad y Cobertura (20-22)
-    { tipo: 'criterios-checklist', nombre: '¿La unidad productiva presenta diversidad de cultivos como parte de su manejo agrícola?', orden: 20 },
-    { tipo: 'criterios-checklist', nombre: '¿La unidad productiva presenta una cobertura vegetal adecuada que proteja el suelo?', orden: 21 },
-    { tipo: 'criterios-checklist', nombre: '¿La cobertura del suelo observada contribuye a reducir la erosión y pérdida de suelo?', orden: 22 },
-    // Propiedades Físicas del Suelo (23-29)
-    { tipo: 'criterios-checklist', nombre: '¿El suelo de la unidad productiva presenta condiciones adecuadas de compactación?', orden: 23 },
-    { tipo: 'criterios-checklist', nombre: '¿El suelo presenta características físicas favorables para el desarrollo del cultivo?', orden: 24 },
-    { tipo: 'criterios-checklist', nombre: '¿El suelo presenta una estructura adecuada para favorecer la infiltración de agua y el desarrollo de las raíces?', orden: 25 },
-    { tipo: 'criterios-checklist', nombre: '¿El suelo presenta características de color compatibles con condiciones adecuadas de manejo y conservación?', orden: 26 },
-    { tipo: 'criterios-checklist', nombre: '¿El suelo presenta un olor característico de un suelo con condiciones adecuadas?', orden: 27 },
-    { tipo: 'criterios-checklist', nombre: '¿Los agregados del suelo presentan una estabilidad adecuada?', orden: 28 },
-    { tipo: 'criterios-checklist', nombre: '¿El suelo se encuentra libre de costras superficiales o capas endurecidas que afecten significativamente la infiltración de agua?', orden: 29 },
-    // Cuaderno de Registros (30-36)
-    { tipo: 'criterios-checklist', nombre: '¿El productor cuenta con su cuaderno de registros de producción?', orden: 30 },
-    { tipo: 'criterios-checklist', nombre: '¿El cuaderno de registros del productor se encuentra actualizado?', orden: 31 },
-    { tipo: 'criterios-checklist', nombre: '¿El productor registra las ventas realizadas en su cuaderno?', orden: 32 },
-    { tipo: 'criterios-checklist', nombre: '¿El productor registra las compras de insumos y materiales utilizados para la producción?', orden: 33 },
-    { tipo: 'criterios-checklist', nombre: '¿El productor registra las actividades realizadas durante el proceso de producción?', orden: 34 },
-    { tipo: 'criterios-checklist', nombre: '¿El productor registra los costos asociados a las actividades de producción?', orden: 35 },
-    { tipo: 'criterios-checklist', nombre: '¿El productor registra las cantidades cosechadas en su cuaderno?', orden: 36 },
-    // Documentación y Comprobantes (37-41)
-    { tipo: 'criterios-checklist', nombre: '¿El productor conserva los comprobantes de compra de los insumos utilizados en la producción?', orden: 37 },
-    { tipo: 'criterios-checklist', nombre: '¿El productor cuenta con una copia del contrato suscrito con la COOPAFA?', orden: 38 },
-    { tipo: 'criterios-checklist', nombre: '¿El productor cuenta con una copia o resumen del Reglamento del SIC?', orden: 39 },
-    { tipo: 'criterios-checklist', nombre: '¿El productor cuenta con la lista de insumos permitidos para la producción orgánica?', orden: 40 },
-    { tipo: 'criterios-checklist', nombre: '¿El productor comercializó la cosecha anterior de acuerdo con los procedimientos establecidos por la COOPAFA?', orden: 41 },
-    // Almacenamiento (42-49)
-    { tipo: 'criterios-checklist', nombre: '¿El productor dispone de un espacio adecuado para el almacenamiento de productos orgánicos?', orden: 42 },
-    { tipo: 'criterios-checklist', nombre: '¿El espacio destinado al almacenamiento de productos orgánicos se encuentra en condiciones adecuadas de limpieza y orden?', orden: 43 },
-    { tipo: 'criterios-checklist', nombre: '¿Los productos orgánicos se encuentran almacenados sobre pallets, madera, estantes u otra superficie que evite el contacto directo con el suelo?', orden: 44 },
-    { tipo: 'criterios-checklist', nombre: '¿El área destinada al almacenamiento de productos orgánicos se encuentra claramente identificada?', orden: 45 },
-    { tipo: 'criterios-checklist', nombre: '¿Los productos orgánicos se encuentran separados de los productos no orgánicos?', orden: 46 },
-    { tipo: 'criterios-checklist', nombre: '¿El almacenamiento de los productos orgánicos evita el riesgo de contaminación cruzada?', orden: 47 },
-    { tipo: 'criterios-checklist', nombre: '¿El almacén se encuentra protegido de fuentes potenciales de contaminación?', orden: 48 },
-    { tipo: 'criterios-checklist', nombre: '¿Los productos orgánicos se encuentran almacenados de manera que se preserve su integridad y condición?', orden: 49 },
-    // Costos de Producción (50-51)
-    { tipo: 'criterios-checklist', nombre: '¿El productor conoce los costos asociados a la producción de su cultivo?', orden: 50 },
-    { tipo: 'criterios-checklist', nombre: '¿El productor registra los costos de producción en su cuaderno de registros?', orden: 51 },
-  ];
-
-  const catalogos = [];
-  for (const data of catalogosData) {
-    const c = await prisma.catalogos.upsert({
-      where: { tipo_nombre: { tipo: data.tipo, nombre: data.nombre } },
-      update: {},
-      create: {
-        tipo: data.tipo,
-        nombre: data.nombre,
-        descripcion: data.descripcion,
-        activo: (data as any).activo ?? true,
-        orden: data.orden,
-        created_by: admin.id,
+    const r = await prisma.recepcion.create({
+      data: {
+        ...data,
+        codigo: `RCP-2025-${String(recepciones.length + 1).padStart(2, '0')}`,
       },
     });
-    catalogos.push(c);
-  }
-  console.log(`✅ ${catalogos.length} elementos de catálogo creados`);
 
-  // ─── RESUMEN ────────────────────────────────────────────────
-  console.log('\n📊 Resumen del seed:');
-  console.log(`   👤 Usuarios:      3 (admin, 2 técnicos)`);
-  console.log(`   👨‍🌾 Productores:    ${productores.length}`);
-  console.log(`   👪 Familiares:     ${cleanedFamiliares.length}`);
-  console.log(`   🌾 Parcelas:      ${parcelas.length}`);
-  console.log(`   📅 Campañas:      ${campanias.length}`);
-  console.log(`   🌱 Cultivos:      ${cultivos.length}`);
-  console.log(`   📋 Actividades:   ${actividades.length}`);
-  console.log(`   🔍 Inspecciones:  ${inspecciones.length}`);
-  console.log(`   🚛 Acopios:       ${acopios.length}`);
-  console.log(`   📥 Recepciones:   ${recepciones.length}`);
-  console.log(`   ⚙️  Procesamientos: ${procesamientos.length}`);
-  console.log(`   📦 Lotes:         ${lotes.length}`);
-  console.log(`   🏪 Inventario:    ${inventarioItems.length}`);
-  console.log(`   🔗 Trazabilidad:  ${trazabilidades.length}`);
-  console.log(`   📚 Catálogos:     ${catalogos.length}`);
+    // Crear sacos individuales para cada recepción
+    const sacosCount = data.sacos;
+    const sacosDetalle = [];
+    for (let i = 1; i <= sacosCount; i++) {
+      const pesoBase = data.peso_campo / sacosCount;
+      const peso = Number((pesoBase + (Math.random() * 4 - 2)).toFixed(2));
+      sacosDetalle.push({
+        recepcion_id: r.id,
+        codigo: `SAC-RCP-${String(recepciones.length + 1).padStart(2, '0')}-${String(i).padStart(3, '0')}`,
+        peso,
+      });
+    }
+    await prisma.recepcion_saco.createMany({ data: sacosDetalle });
+
+    recepciones.push(r);
+  }
+  console.log(`âœ… ${recepciones.length} recepciones creadas`);
+  console.log(`   ðŸ‘¤ Usuarios:       3`);
+  console.log(`   ðŸ‘¨â€ðŸŒ¾ Productores:   ${productores.length}`);
+  console.log(`   ðŸ‘¨â€ðŸ‘©â€ðŸ‘§ Familiares:   ${cleanedFamiliares.length}`);
+  console.log(`   ðŸŒ¾ Parcelas:      ${parcelas.length}`);
+  console.log(`   ðŸŽ¯ CampaÃ±as:      ${campanias.length}`);
 
   const org = parcelas.filter(p => p.certificacion === 'ORGANICA').length;
   const trans = parcelas.filter(p => p.certificacion === 'EN_TRANSICION').length;
   const conv = parcelas.filter(p => p.certificacion === 'CONVENCIONAL').length;
-  console.log(`\n   🌿 Certificación:`);
-  console.log(`      Orgánica:       ${org} parcelas`);
-  console.log(`      En transición:  ${trans} parcelas`);
+  console.log(`\n   ðŸŒ¿ CertificaciÃ³n:`);
+  console.log(`      OrgÃ¡nica:       ${org} parcelas`);
+  console.log(`      En transiciÃ³n:  ${trans} parcelas`);
   console.log(`      Convencional:   ${conv} parcelas`);
 
   const totalArea = parcelas.reduce((sum, p) => sum + Number(p.area), 0);
   const areaCert = parcelas.filter(p => p.certificacion === 'ORGANICA').reduce((sum, p) => sum + Number(p.area), 0);
-  console.log(`\n   📐 Superficie total: ${totalArea} ha`);
-  console.log(`   ✅ Área certificada: ${areaCert} ha (${((areaCert / totalArea) * 100).toFixed(1)}%)`);
+  console.log(`\n   ðŸ“ Superficie total: ${totalArea} ha`);
+  console.log(`   âœ… Ãrea certificada: ${areaCert} ha (${((areaCert / totalArea) * 100).toFixed(1)}%)`);
 }
 
 main()
   .then(async () => {
     await prisma.$disconnect();
-    console.log('\n🎉 Seed completado exitosamente.');
+    console.log('\nðŸŽ‰ Seed completado exitosamente.');
   })
   .catch(async (e) => {
-    console.error('❌ Error en seed:', e);
+    console.error('âŒ Error en seed:', e);
     await prisma.$disconnect();
     process.exit(1);
   });

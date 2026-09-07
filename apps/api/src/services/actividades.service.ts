@@ -3,7 +3,7 @@ import { createError } from '../middleware/error.middleware';
 
 const generateCodigo = async (): Promise<string> => {
   const last = await prisma.actividades.findFirst({
-    orderBy: { created_at: 'desc' },
+    orderBy: { codigo: 'desc' },
     select: { codigo: true },
   });
 
@@ -26,15 +26,14 @@ const ensureUniqueCodigo = async (codigo: string): Promise<string> => {
   throw createError('No se pudo generar un código único', 500);
 };
 
-const ensureRelationExists = async (model: string, id: string) => {
-  const exists = await (prisma as any)[model].findUnique({ where: { id }, select: { id: true } });
+const ensureRelationExists = async (model: string, id: string | number) => {
+  const numId = Number(id);
+  const lookupId = !isNaN(numId) && String(numId) === String(id) ? numId : id;
+  const exists = await (prisma as any)[model].findUnique({ where: { id: lookupId }, select: { id: true } });
   if (!exists) throw createError(`${model} no encontrado`, 404);
 };
 
 const selectIncludes = {
-  campania: { select: { id: true, nombre: true, codigo: true } },
-  productor: { select: { id: true, nombres: true, apellido_paterno: true, apellido_materno: true } },
-  parcela: { select: { id: true, nombre: true, codigo: true } },
   cultivo: { select: { id: true, cultivo: true, codigo: true } },
   insumos: true,
   mano_obra: true,
@@ -47,9 +46,7 @@ export const getAll = async (filters: {
   search?: string;
   estado?: string;
   tipo_actividad?: string;
-  campania_id?: string;
-  productor_id?: string;
-  parcela_id?: string;
+  cultivo_id?: string;
   page?: number;
   limit?: number;
 }) => {
@@ -57,15 +54,13 @@ export const getAll = async (filters: {
 
   if (filters.estado) where.estado = filters.estado;
   if (filters.tipo_actividad) where.tipo_actividad = filters.tipo_actividad;
-  if (filters.campania_id) where.campania_id = filters.campania_id;
-  if (filters.productor_id) where.productor_id = filters.productor_id;
-  if (filters.parcela_id) where.parcela_id = filters.parcela_id;
+  if (filters.cultivo_id) where.cultivo_id = Number(filters.cultivo_id);
 
   if (filters.search) {
     where.OR = [
-      { codigo: { contains: filters.search } },
-      { descripcion: { contains: filters.search } },
-      { responsable_tecnico: { contains: filters.search } },
+      { codigo: { contains: filters.search, mode: 'insensitive' } },
+      { descripcion: { contains: filters.search, mode: 'insensitive' } },
+      { responsable_tecnico: { contains: filters.search, mode: 'insensitive' } },
     ];
   }
 
@@ -76,9 +71,6 @@ export const getAll = async (filters: {
     prisma.actividades.findMany({
       where,
       include: {
-        campania: { select: { id: true, nombre: true, codigo: true } },
-        productor: { select: { id: true, nombres: true, apellido_paterno: true, apellido_materno: true } },
-        parcela: { select: { id: true, nombre: true, codigo: true } },
         cultivo: { select: { id: true, cultivo: true, codigo: true } },
         _count: { select: { insumos: true, mano_obra: true, maquinaria: true } },
       },
@@ -94,7 +86,7 @@ export const getAll = async (filters: {
 
 export const getById = async (id: string) => {
   const actividad = await prisma.actividades.findFirst({
-    where: { id, activo: true },
+    where: { id: Number(id), activo: true },
     include: selectIncludes,
   });
 
@@ -108,16 +100,13 @@ export const getById = async (id: string) => {
 export const create = async (data: Record<string, unknown>, userId?: string) => {
   let codigo = (data.codigo as string) || '';
   if (!codigo.trim()) {
-    codigo = await generateCodigo();
+    codigo = await ensureUniqueCodigo(await generateCodigo());
   } else {
     const exists = await prisma.actividades.findUnique({ where: { codigo } });
     if (exists) throw createError(`El código ${codigo} ya está en uso`, 409);
   }
 
-  await ensureRelationExists('campanias', data.campania_id as string);
-  await ensureRelationExists('productores', data.productor_id as string);
-  await ensureRelationExists('parcelas_productor', data.parcela_id as string);
-  if (data.cultivo_id) await ensureRelationExists('cultivos', data.cultivo_id as string);
+  await ensureRelationExists('cultivo', Number(data.cultivo_id));
 
   const insumos = (data.insumos as any[]) || [];
   const manoObra = (data.mano_obra as any[]) || [];
@@ -126,10 +115,7 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
   return prisma.actividades.create({
     data: {
       codigo,
-      campania_id: data.campania_id as string,
-      productor_id: Number(data.productor_id),
-      parcela_id: Number(data.parcela_id),
-      cultivo_id: (data.cultivo_id as string) || null,
+      cultivo_id: Number(data.cultivo_id),
       fecha: new Date(data.fecha as string),
       tipo_actividad: data.tipo_actividad as any,
       descripcion: (data.descripcion as string) || null,
@@ -159,7 +145,7 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
 };
 
 export const update = async (id: string, data: Record<string, unknown>, userId?: string) => {
-  const existing = await prisma.actividades.findFirst({ where: { id, activo: true } });
+  const existing = await prisma.actividades.findFirst({ where: { id: Number(id), activo: true } });
   if (!existing) throw createError('Actividad no encontrada', 404);
 
   const updateData: Record<string, unknown> = {};
@@ -169,10 +155,7 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
     if (data[field] !== undefined) updateData[field] = (data[field] as string) || null;
   }
 
-  const uuidFields = ['campania_id', 'productor_id', 'parcela_id', 'cultivo_id'];
-  for (const field of uuidFields) {
-    if (data[field] !== undefined) updateData[field] = data[field] || null;
-  }
+  if (data.cultivo_id !== undefined) updateData.cultivo_id = data.cultivo_id ? Number(data.cultivo_id) : null;
 
   const enumFields = ['tipo_actividad', 'prioridad', 'estado'];
   for (const field of enumFields) {
@@ -190,81 +173,84 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
 
   return prisma.$transaction(async (tx: PrismaTransaction) => {
     const updated = await tx.actividades.update({
-      where: { id },
+      where: { id: Number(id) },
       data: updateData,
     });
 
     // Replace insumos if provided
     if (hasInsumosUpdate) {
-      await tx.actividad_insumos.deleteMany({ where: { actividad_id: id } });
+      await tx.insumo_has_actividades.deleteMany({ where: { actividades_id: Number(id) } });
       const insumos = (data.insumos as any[]) || [];
       if (insumos.length) {
-        await tx.actividad_insumos.createMany({
-          data: insumos.map((i) => ({
-            actividad_id: id,
-            producto: i.producto,
-            categoria: i.categoria || null,
-            fabricante: i.fabricante || null,
-            cantidad: i.cantidad ? Number(i.cantidad) : null,
-            unidad: i.unidad || null,
-            lote: i.lote || null,
-            costo_unitario: i.costo_unitario ? Number(i.costo_unitario) : null,
-            costo_total: i.costo_total ? Number(i.costo_total) : null,
-            observaciones: i.observaciones || null,
-          })),
-        });
+        for (const i of insumos) {
+          const insumo = await tx.insumo.create({
+            data: {
+              producto: i.nombre || i.producto,
+              cantidad: i.cantidad ? Number(i.cantidad) : null,
+              unidad: i.unidad || null,
+              costo_unitario: i.costo ? Number(i.costo) : null,
+            },
+          });
+          await tx.insumo_has_actividades.create({
+            data: { insumo_id: insumo.id, actividades_id: Number(id) },
+          });
+        }
       }
     }
 
     // Replace mano_obra if provided
     if (hasManoObraUpdate) {
-      await tx.actividad_manobra.deleteMany({ where: { actividad_id: id } });
+      await tx.mano_de_obra_has_actividades.deleteMany({ where: { actividades_id: Number(id) } });
       const manoObra = (data.mano_obra as any[]) || [];
       if (manoObra.length) {
-        await tx.actividad_manobra.createMany({
-          data: manoObra.map((m) => ({
-            actividad_id: id,
-            trabajador: m.trabajador,
-            funcion: m.funcion || null,
-            jornales: m.jornales ? Number(m.jornales) : null,
-            horas: m.horas ? Number(m.horas) : null,
-            observaciones: m.observaciones || null,
-          })),
-        });
+        for (const m of manoObra) {
+          const mo = await tx.mano_de_obra.create({
+            data: {
+              trabajador: m.nombre || m.trabajador,
+              horas: m.horas ? Number(m.horas) : null,
+              jornales: m.tarifa ? Number(m.tarifa) : null,
+            },
+          });
+          await tx.mano_de_obra_has_actividades.create({
+            data: { mano_de_obra_id: mo.id, actividades_id: Number(id) },
+          });
+        }
       }
     }
 
     // Replace maquinaria if provided
     if (hasMaquinariaUpdate) {
-      await tx.actividad_maquinaria.deleteMany({ where: { actividad_id: id } });
+      await tx.maquinaria_has_actividades.deleteMany({ where: { actividades_id: Number(id) } });
       const maquinaria = (data.maquinaria as any[]) || [];
       if (maquinaria.length) {
-        await tx.actividad_maquinaria.createMany({
-          data: maquinaria.map((m) => ({
-            actividad_id: id,
-            equipo: m.equipo,
-            operador: m.operador || null,
-            horas_uso: m.horas_uso ? Number(m.horas_uso) : null,
-            combustible: m.combustible ? Number(m.combustible) : null,
-            observaciones: m.observaciones || null,
-          })),
-        });
+        for (const m of maquinaria) {
+          const mq = await tx.maquinaria.create({
+            data: {
+              equipo: m.nombre || m.equipo,
+              horas_uso: m.horas ? Number(m.horas) : null,
+              combustible: m.costo ? Number(m.costo) : null,
+            },
+          });
+          await tx.maquinaria_has_actividades.create({
+            data: { maquinaria_id: mq.id, actividades_id: Number(id) },
+          });
+        }
       }
     }
 
     return tx.actividades.findFirst({
-      where: { id },
+      where: { id: Number(id) },
       include: selectIncludes,
     });
   });
 };
 
 export const remove = async (id: string) => {
-  const existing = await prisma.actividades.findFirst({ where: { id, activo: true } });
+  const existing = await prisma.actividades.findFirst({ where: { id: Number(id), activo: true } });
   if (!existing) throw createError('Actividad no encontrada', 404);
 
   await prisma.actividades.update({
-    where: { id },
+    where: { id: Number(id) },
     data: { activo: false },
   });
 

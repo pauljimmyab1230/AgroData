@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { CalendarDays, Pencil } from "lucide-react";
 import { Breadcrumb, Button, Card, LoadingSpinner } from "../../components/ui";
@@ -12,7 +11,7 @@ import { DatosGeneralesCard } from "../../components/campanias/DatosGeneralesCar
 import { CampaniaStatusCard } from "../../components/campanias/CampaniaStatusCard";
 import { ConfiguracionCard } from "../../components/campanias/ConfiguracionCard";
 import { ObservacionesCard } from "../../components/campanias/ObservacionesCard";
-import { fetchCampania, fetchCampaniaStats, type Campania, type CampaniaStats } from "../../services/campanias";
+import { useCampania, useCampaniaStats } from "../../hooks/queries";
 
 const formatFecha = (fecha: string) => {
   if (!fecha) return "—";
@@ -23,31 +22,18 @@ const formatFecha = (fecha: string) => {
 
 interface CampaniaViewProps {
   inModal?: boolean;
-  campaniaId?: string;
+  campaniaId?: number;
 }
 
 export default function CampaniaView({ inModal, campaniaId: propId }: CampaniaViewProps) {
   const { id: paramId } = useParams();
-  const id = propId || paramId;
-  const [campania, setCampania] = useState<Campania | null>(null);
-  const [stats, setStats] = useState<CampaniaStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const numId = paramId ? Number(paramId) : null;
+  const id = propId ?? (numId && !Number.isNaN(numId) ? numId : null);
 
-  useEffect(() => {
-    if (!id) return;
-    Promise.all([
-      fetchCampania(id),
-      fetchCampaniaStats(id).catch(() => null),
-    ])
-      .then(([c, s]) => {
-        setCampania(c);
-        setStats(s);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [id]);
+  const { data: campania, isLoading: loadingCampania } = useCampania(id);
+  const { data: stats } = useCampaniaStats(id);
 
-  if (loading) {
+  if (loadingCampania) {
     return (
       <div className="flex items-center justify-center py-20">
         <LoadingSpinner />
@@ -119,7 +105,7 @@ export default function CampaniaView({ inModal, campaniaId: propId }: CampaniaVi
       <CampaniaKPIResumen campaniaId={campania.id} />
 
       <div className="mb-6 grid gap-6 lg:grid-cols-2">
-        <ResumenProductivoCard stats={stats} />
+        <ResumenProductivoCard stats={stats ?? null} />
         <CalendarioAgricolaCard fechaInicio={campania.fechaInicio} fechaFin={campania.fechaFin} />
       </div>
 

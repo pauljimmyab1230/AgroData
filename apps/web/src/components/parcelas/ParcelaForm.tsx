@@ -9,6 +9,7 @@ import { UbicacionCard } from "./UbicacionCard";
 import { PoligonoCard } from "./PoligonoCard";
 import { useParcelaForm } from "../../contexts/ParcelaFormContext";
 import { createParcela, updateParcela } from "../../services/parcelas";
+import { toast } from "../../utils/toast";
 import type { FormMode } from "../shared/formControls";
 
 const totalTabs = 3;
@@ -76,7 +77,7 @@ export default function ParcelaForm({ mode, parcelaId, inModal, onSave }: Parcel
         }
       }
 
-      alert(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }

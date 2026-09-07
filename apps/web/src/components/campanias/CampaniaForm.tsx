@@ -7,7 +7,8 @@ import { DatosGeneralesCard } from "./DatosGeneralesCard";
 import { CampaniaStatusCard } from "./CampaniaStatusCard";
 import { ConfiguracionCard } from "./ConfiguracionCard";
 import { ObservacionesCard } from "./ObservacionesCard";
-import { createCampania, updateCampania, type Campania, type CampaniaFormData } from "../../services/campanias";
+import { useCreateCampania, useUpdateCampania } from "../../hooks/queries";
+import type { Campania, CampaniaFormData } from "../../services/campanias";
 import { toast } from "../../utils/toast";
 
 const pasos: StepperStep[] = [
@@ -77,9 +78,11 @@ export function CampaniaForm({ mode, values, inModal, onSave }: CampaniaFormProp
   const [formData, setFormData] = useState<CampaniaFormData>(() =>
     values ? campaniaToForm(values) : { ...emptyForm },
   );
-  const [saving, setSaving] = useState(false);
-  const [_errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
+  const createMutation = useCreateCampania();
+  const updateMutation = useUpdateCampania();
+  const saving = createMutation.isPending || updateMutation.isPending;
 
   const update = (patch: Partial<CampaniaFormData>) => {
     setFormData((prev) => ({ ...prev, ...patch }));
@@ -93,37 +96,52 @@ export function CampaniaForm({ mode, values, inModal, onSave }: CampaniaFormProp
     });
   };
 
-  const validate = (): boolean => {
+  const validatePaso = (p: number): boolean => {
     const newErrors: Record<string, string> = {};
-    if (!formData.nombre.trim()) newErrors.nombre = "El nombre es obligatorio";
-    if (!formData.anioAgricola) newErrors.anioAgricola = "El año agrícola es obligatorio";
-    if (!formData.fechaInicio) newErrors.fechaInicio = "La fecha de inicio es obligatoria";
-    if (!formData.fechaFin) newErrors.fechaFin = "La fecha de fin es obligatoria";
-    if (!formData.responsable.trim()) newErrors.responsable = "El responsable es obligatorio";
-    if (!formData.tecnicoCoordinador) newErrors.tecnicoCoordinador = "El técnico coordinador es obligatorio";
-    if (!formData.objetivo.trim()) newErrors.objetivo = "El objetivo es obligatorio";
-    if (formData.fechaInicio && formData.fechaFin && formData.fechaInicio > formData.fechaFin) {
-      newErrors.fechaFin = "La fecha de fin debe ser posterior a la de inicio";
+
+    if (p === 1) {
+      if (!formData.nombre.trim()) newErrors.nombre = "El nombre es obligatorio";
+      if (!formData.anioAgricola) newErrors.anioAgricola = "El año agrícola es obligatorio";
+      if (!formData.fechaInicio) newErrors.fechaInicio = "La fecha de inicio es obligatoria";
+      if (!formData.fechaFin) newErrors.fechaFin = "La fecha de fin es obligatoria";
+      if (!formData.responsable.trim()) newErrors.responsable = "El responsable es obligatorio";
+      if (!formData.tecnicoCoordinador) newErrors.tecnicoCoordinador = "El técnico coordinador es obligatorio";
+      if (!formData.objetivo.trim()) newErrors.objetivo = "El objetivo es obligatorio";
+      if (formData.fechaInicio && formData.fechaFin && formData.fechaInicio > formData.fechaFin) {
+        newErrors.fechaFin = "La fecha de fin debe ser posterior a la de inicio";
+      }
     }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  const validate = (): boolean => {
+    return validatePaso(1);
+  };
+
+  const handleNext = () => {
+    if (paso === 1 && !validatePaso(1)) return;
+    setPaso((p) => Math.min(totalPasos, p + 1));
+  };
+
   const handleSave = async () => {
     if (!validate()) return;
-    setSaving(true);
     try {
       if (mode === "create") {
-        await createCampania(formData);
+        await createMutation.mutateAsync(formData);
+        toast.success("Campaña creada exitosamente");
         if (!inModal) {
           navigate("/campanias");
         } else {
           onSave?.();
         }
       } else {
-        await updateCampania(values!.id, formData);
+        if (!values?.id) return;
+        await updateMutation.mutateAsync({ id: values.id, data: formData });
+        toast.success("Campaña actualizada exitosamente");
         if (!inModal) {
-          navigate(`/campanias/${values!.id}`);
+          navigate(`/campanias/${values.id}`);
         } else {
           onSave?.();
         }
@@ -132,17 +150,20 @@ export function CampaniaForm({ mode, values, inModal, onSave }: CampaniaFormProp
       console.error(err);
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Error al guardar. Verifique los datos.";
       toast.error(msg);
-    } finally {
-      setSaving(false);
     }
   };
 
+  const stepErrors = paso === 1 ? errors : {};
+
   return (
     <div>
-      <Stepper steps={pasos} active={paso} onChange={setPaso} />
+      <Stepper steps={pasos} active={paso} onChange={(p) => {
+        if (p > paso && paso === 1 && !validatePaso(1)) return;
+        setPaso(p);
+      }} />
 
       <div className="space-y-6">
-        {paso === 1 && <DatosGeneralesCard mode={mode} value={formData} onChange={update} />}
+        {paso === 1 && <DatosGeneralesCard mode={mode} value={formData} onChange={update} errors={stepErrors} />}
         {paso === 2 && <CampaniaStatusCard mode={mode} value={formData} onChange={update} />}
         {paso === 3 && <ConfiguracionCard mode={mode} value={formData} onChange={update} />}
         {paso === 4 && <ObservacionesCard mode={mode} value={formData} onChange={update} />}
@@ -168,10 +189,7 @@ export function CampaniaForm({ mode, values, inModal, onSave }: CampaniaFormProp
             {saving ? "Guardando..." : mode === "create" ? "Crear Campaña" : "Guardar Cambios"}
           </Button>
         ) : (
-          <Button
-            onClick={() => setPaso((p) => Math.min(totalPasos, p + 1))}
-            iconRight={<ArrowRight className="h-4 w-4" />}
-          >
+          <Button onClick={handleNext} iconRight={<ArrowRight className="h-4 w-4" />}>
             Siguiente
           </Button>
         )}

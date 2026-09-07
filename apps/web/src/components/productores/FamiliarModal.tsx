@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Save, X } from "lucide-react";
 import { Button, DatePicker, FormField, Input, Modal, Select } from "../ui";
 import type { Familiar } from "../../services/productores";
 
-type FamiliarFormData = {
+export type FamiliarFormData = {
   nombres: string;
   parentesco: string;
   dni: string;
@@ -87,6 +87,19 @@ type FamiliarModalProps = {
 export function FamiliarModal({ open, onClose, onSave, familiar, saving }: FamiliarModalProps) {
   const [form, setForm] = useState<FamiliarFormData>(familiar ? fromFamiliar(familiar) : emptyForm);
   const [errors, setErrors] = useState<Partial<Record<keyof FamiliarFormData, string>>>({});
+  const prevFamiliarRef = useRef<Familiar | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      if (familiar !== prevFamiliarRef.current) {
+        setForm(familiar ? fromFamiliar(familiar) : emptyForm);
+        setErrors({});
+        prevFamiliarRef.current = familiar;
+      }
+    } else {
+      prevFamiliarRef.current = null;
+    }
+  }, [open, familiar]);
 
   const setField = (patch: Partial<FamiliarFormData>) => {
     setForm((prev) => ({ ...prev, ...patch }));
@@ -106,7 +119,7 @@ export function FamiliarModal({ open, onClose, onSave, familiar, saving }: Famil
     if (!form.parentesco) next.parentesco = "El parentesco es obligatorio";
     if (!form.sexo) next.sexo = "El sexo es obligatorio";
     if (!form.fechaNacimiento) next.fechaNacimiento = "La fecha de nacimiento es obligatoria";
-    if (form.dni && form.dni.length !== 8) next.dni = "El DNI debe tener 8 dígitos";
+    if (form.dni && (!/^\d{8}$/.test(form.dni))) next.dni = "El DNI debe tener exactamente 8 dígitos numéricos";
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -141,10 +154,14 @@ export function FamiliarModal({ open, onClose, onSave, familiar, saving }: Famil
           <FormField label="DNI" error={errors.dni}>
             <Input
               type="text"
+              inputMode="numeric"
               placeholder="Ej. 44876321"
               maxLength={8}
               value={form.dni}
-              onChange={(e) => setField({ dni: e.target.value })}
+              onChange={(e) => {
+                const filtered = e.target.value.replace(/\D/g, '').slice(0, 8);
+                setField({ dni: filtered });
+              }}
             />
           </FormField>
 

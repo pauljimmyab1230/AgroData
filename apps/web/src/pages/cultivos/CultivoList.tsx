@@ -1,11 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Plus, X } from "lucide-react";
 import { Button, ConfirmDialog, LoadingSpinner, SearchInput, Select } from "../../components/ui";
 import CultivoHeader from "../../components/cultivos/CultivoHeader";
 import CultivoKPI from "../../components/cultivos/CultivoKPI";
 import CultivoTable from "../../components/cultivos/CultivoTable";
-import { fetchCultivos, deleteCultivo, fetchCultivoGlobalStats, type Cultivo, type CultivoGlobalStats, estadosCultivoValues } from "../../services/cultivos";
+import { useCultivos, useDeleteCultivo, useCultivoGlobalStats } from "../../hooks/queries";
+import { type Cultivo, estadosCultivoValues } from "../../services/cultivos";
 import CultivoModal from "../../components/cultivos/CultivoModal";
+import { toast } from "../../utils/toast";
 
 const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: item }));
 
@@ -31,44 +33,27 @@ function FilterSelect({
 }
 
 export default function CultivoList() {
-  const [cultivos, setCultivos] = useState<Cultivo[]>([]);
-  const [globalStats, setGlobalStats] = useState<CultivoGlobalStats>({ total: 0, estados: {}, areaSembrada: 0, campaniasActivas: 0 });
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [viewId, setViewId] = useState<string | null>(null);
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const filters = {
-        search: search || undefined,
-        estado: filtroEstado || undefined,
-      };
-      const [result, stats] = await Promise.all([
-        fetchCultivos({ ...filters, page, limit: 10 }),
-        fetchCultivoGlobalStats(filters),
-      ]);
-      setCultivos(result.data);
-      setGlobalStats(stats);
-      setTotalPages(result.totalPages);
-      setTotal(result.total);
-    } catch {
-      // handled silently
-    } finally {
-      setLoading(false);
-    }
-  };
+  const filters = useMemo(() => ({
+    search: search || undefined,
+    estado: filtroEstado || undefined,
+  }), [search, filtroEstado]);
 
-  useEffect(() => {
-    loadData();
-  }, [page, filtroEstado, search]);
+  const { data: result, isLoading } = useCultivos({ ...filters, page, limit: 10 });
+  const { data: globalStats } = useCultivoGlobalStats(filters);
+  const deleteMutation = useDeleteCultivo();
+
+  const cultivos = result?.data ?? [];
+  const totalPages = result?.totalPages ?? 1;
+  const total = result?.total ?? 0;
+  const stats = globalStats ?? { total: 0, estados: {}, areaSembrada: 0, campaniasActivas: 0 };
 
   const hasFilters = Boolean(search) || Boolean(filtroEstado);
 
@@ -82,12 +67,11 @@ export default function CultivoList() {
     setShowCreateModal(false);
     setEditId(null);
     setViewId(null);
-    loadData();
   };
 
   const cultivoAEliminar = cultivos.find((c) => c.id === deleteId);
 
-  if (loading && cultivos.length === 0) {
+  if (isLoading && cultivos.length === 0) {
     return (
       <div className="flex items-center justify-center py-20">
         <LoadingSpinner />
@@ -108,7 +92,7 @@ export default function CultivoList() {
         }
       />
 
-      <CultivoKPI stats={globalStats} />
+      <CultivoKPI stats={stats} />
 
       <div className="mb-6 flex flex-wrap items-end gap-3">
         <div className="max-w-md min-w-[200px] flex-1">
@@ -153,11 +137,11 @@ export default function CultivoList() {
         onConfirm={async () => {
           if (!deleteId) return;
           try {
-            await deleteCultivo(deleteId);
+            await deleteMutation.mutateAsync(deleteId);
             setDeleteId(null);
-            loadData();
+            toast.success("Cultivo eliminado correctamente");
           } catch {
-            // handled silently
+            toast.error("Error al eliminar el cultivo");
           }
         }}
         title="Eliminar Cultivo"

@@ -146,6 +146,8 @@ function toBackend(data: Partial<Productor>): Record<string, unknown> {
   if (data.fechaIngreso !== undefined) out.fecha_ingreso = data.fechaIngreso;
   if (data.organizacion !== undefined) out.organizacion = data.organizacion;
   if (data.cargo !== undefined) out.cargo = data.cargo;
+  if (data.fotoUrl !== undefined) out.foto_url = data.fotoUrl || null;
+  if (data.firmaUrl !== undefined) out.firma_url = data.firmaUrl || null;
   return out;
 }
 
@@ -293,7 +295,7 @@ export interface Parcela {
   ubicacion: string;
   certificacion: string;
   estado: string;
-  productor_id?: string;
+  productor_id?: number;
 }
 
 interface ParcelaDTO {
@@ -367,6 +369,18 @@ export interface Documento {
   id: number;
   tipo: string;
   categoria: string;
+  nombreArchivo: string;
+  rutaArchivo: string;
+  tamanoBytes: number;
+  mimeType: string;
+  estado: string;
+  createdAt: string;
+}
+
+interface DocumentoDTO {
+  id: number;
+  tipo: string;
+  categoria: string;
   nombre_archivo: string;
   ruta_archivo: string;
   tamano_bytes: number;
@@ -375,9 +389,23 @@ export interface Documento {
   created_at: string;
 }
 
+function documentoToFrontend(dto: DocumentoDTO): Documento {
+  return {
+    id: dto.id,
+    tipo: dto.tipo,
+    categoria: dto.categoria,
+    nombreArchivo: dto.nombre_archivo,
+    rutaArchivo: dto.ruta_archivo,
+    tamanoBytes: dto.tamano_bytes,
+    mimeType: dto.mime_type,
+    estado: dto.estado,
+    createdAt: dto.created_at,
+  };
+}
+
 export async function fetchDocumentos(productorId: number): Promise<Documento[]> {
   const res = await api.get(`/productores/${productorId}/documentos`);
-  return res.data.data ?? [];
+  return (res.data.data ?? []).map(documentoToFrontend);
 }
 
 export async function createDocumento(
@@ -385,7 +413,7 @@ export async function createDocumento(
   data: { tipo: string; categoria: string; nombre_archivo: string; ruta_archivo: string; tamano_bytes: number; mime_type: string }
 ): Promise<Documento> {
   const res = await api.post(`/productores/${productorId}/documentos`, data);
-  return res.data.data;
+  return documentoToFrontend(res.data.data);
 }
 
 export async function deleteDocumento(productorId: number, documentoId: number): Promise<void> {
@@ -407,4 +435,106 @@ export async function uploadArchivo(
 export async function fetchComunidades(): Promise<string[]> {
   const res = await api.get('/productores/comunidades');
   return res.data.data;
+}
+
+// ─── Stats ───────────────────────────────────────────────
+
+export interface ProductorStats {
+  total: number;
+  activos: number;
+  inactivos: number;
+  suspendidos: number;
+  mujeres: number;
+  varones: number;
+}
+
+export async function fetchProductorStats(): Promise<ProductorStats> {
+  const res = await api.get('/productores/stats');
+  return res.data.data;
+}
+
+// ─── Documento Estado ────────────────────────────────────
+
+export async function updateDocumentoEstado(
+  productorId: number,
+  documentoId: number,
+  estado: 'PENDIENTE' | 'VERIFICADO' | 'RECHAZADO',
+): Promise<Documento> {
+  const res = await api.put(`/productores/${productorId}/documentos/${documentoId}/estado`, { estado });
+  return res.data.data;
+}
+
+// ─── Fetch all for CSV ───────────────────────────────────
+
+function buildProductoresQuery(params?: {
+  search?: string;
+  estado?: string;
+  cargo?: string;
+  sexo?: string;
+  comunidad?: string;
+  page?: number;
+  limit?: number;
+}): string {
+  const query = new URLSearchParams();
+  if (params?.search) query.set('search', params.search);
+  if (params?.estado) query.set('estado', params.estado);
+  if (params?.cargo) query.set('cargo', params.cargo);
+  if (params?.sexo) query.set('sexo', params.sexo);
+  if (params?.comunidad) query.set('comunidad', params.comunidad);
+  if (params?.page) query.set('page', String(params.page));
+  if (params?.limit) query.set('limit', String(params.limit));
+  const qs = query.toString();
+  return `/productores${qs ? `?${qs}` : ''}`;
+}
+
+async function fetchPage(
+  params: { search?: string; estado?: string; cargo?: string; sexo?: string; comunidad?: string },
+  page: number,
+  limit: number,
+): Promise<{ data: Productor[]; totalPages: number }> {
+  const url = buildProductoresQuery({ ...params, page, limit });
+  const res = await api.get(url);
+  return {
+    data: (res.data.data ?? []).map(toFrontend),
+    totalPages: res.data.totalPages,
+  };
+}
+
+export async function fetchAllProductoresForCsv(params?: {
+  search?: string;
+  estado?: string;
+  cargo?: string;
+  sexo?: string;
+  comunidad?: string;
+}): Promise<Productor[]> {
+  const limit = 100;
+  const firstPage = await fetchPage(params || {}, 1, limit);
+  const totalPages = firstPage.totalPages;
+
+  if (totalPages <= 1) {
+    return firstPage.data;
+  }
+
+  const allProductores = [...firstPage.data];
+  const CONCURRENCY = 3;
+
+  for (let batchStart = 2; batchStart <= totalPages; batchStart += CONCURRENCY) {
+    const batchEnd = Math.min(batchStart + CONCURRENCY - 1, totalPages);
+    const batchPromises: Promise<{ data: Productor[] }>[] = [];
+
+    for (let p = batchStart; p <= batchEnd; p++) {
+      batchPromises.push(fetchPage(params || {}, p, limit));
+    }
+
+    const batchResults = await Promise.allSettled(batchPromises);
+    for (const result of batchResults) {
+      if (result.status === "fulfilled") {
+        allProductores.push(...result.value.data);
+      } else {
+        throw new Error("Error al obtener datos de productores. Intente de nuevo.");
+      }
+    }
+  }
+
+  return allProductores;
 }

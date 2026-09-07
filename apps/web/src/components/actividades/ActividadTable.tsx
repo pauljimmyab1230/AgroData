@@ -5,9 +5,9 @@ import { formatearFecha, tipoActividadLabels, type Actividad } from "../../servi
 
 type ActividadTableProps = {
   data: Actividad[];
-  onView: (id: string) => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onView: (id: number) => void;
+  onEdit: (id: number) => void;
+  onDelete: (id: number) => void;
   currentPage?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
@@ -25,8 +25,6 @@ export function ActividadTable({
   const columns = [
     { key: "codigo", label: "Código", sortable: true, className: "font-medium text-forest-700" },
     { key: "fecha", label: "Fecha", sortable: true, render: (a: Actividad) => formatearFecha(a.fecha) },
-    { key: "productorNombre", label: "Productor", sortable: true },
-    { key: "parcelaNombre", label: "Parcela", sortable: true },
     { key: "cultivoNombre", label: "Cultivo", sortable: true },
     {
       key: "tipoActividad",

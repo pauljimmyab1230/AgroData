@@ -21,21 +21,6 @@ export const estadosOpciones: ParcelaSelectOption[] = [
   { value: "INACTIVA", label: "Inactiva" },
 ];
 
-export const certificacionOpciones: ParcelaSelectOption[] = [
-  { value: "ORGANICA", label: "Orgánica" },
-  { value: "EN_TRANSICION", label: "En Transición" },
-  { value: "CONVENCIONAL", label: "Convencional" },
-];
-
-export const tipoSueloOpciones = [
-  "Franco",
-  "Franco Arenoso",
-  "Franco Arcilloso",
-  "Arcilloso",
-  "Arenoso",
-  "Limoso",
-];
-
 export const texturaOpciones = ["Fina", "Media", "Gruesa"];
 
 export const pendienteOpciones = [
@@ -44,12 +29,6 @@ export const pendienteOpciones = [
   "Moderada (8-15%)",
   "Fuerte (15-30%)",
 ];
-
-export const fuenteAguaOpciones = ["Río", "Manantial", "Laguna", "Canal de Riego", "Precipitación (Lluvia)"];
-
-export const sistemaRiegoOpciones = ["Secano", "Gravedad", "Aspersión", "Goteo", "Inundación"];
-
-export const zonaAgroecologicaOpciones = ["Quechua", "Suni", "Puna", "Yunga"];
 
 export const disponibilidadAguaOpciones = ["Permanente", "Estacional", "Escasa", "No Dispone"];
 

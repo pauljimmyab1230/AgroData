@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import {
   ClipboardList,
   MapPin,
@@ -10,7 +9,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Card, LoadingSpinner } from "../ui";
-import { fetchCampaniaStats, type CampaniaStats } from "../../services/campanias";
+import { useCampaniaStats } from "../../hooks/queries";
 
 type KPI = { label: string; value: string; hint: string };
 
@@ -27,22 +26,13 @@ const iconos: Record<string, LucideIcon> = {
 const iconosClase = ["bg-forest-600/10 text-forest-600", "bg-sun-100 text-sun-700"];
 
 interface CampaniaKPIResumenProps {
-  campaniaId: string;
+  campaniaId: number;
 }
 
 export function CampaniaKPIResumen({ campaniaId }: CampaniaKPIResumenProps) {
-  const [stats, setStats] = useState<CampaniaStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: stats, isLoading } = useCampaniaStats(campaniaId);
 
-  useEffect(() => {
-    if (!campaniaId) return;
-    fetchCampaniaStats(campaniaId)
-      .then(setStats)
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [campaniaId]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="mb-6 flex justify-center py-8">
         <LoadingSpinner />
