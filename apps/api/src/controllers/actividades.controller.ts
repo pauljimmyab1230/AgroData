@@ -1,8 +1,12 @@
-import { Response, NextFunction } from 'express';
+import type { Response, NextFunction } from 'express';
 import * as actividadesService from '../services/actividades.service';
-import { AuthRequest } from '../middleware/auth.middleware';
+import type { AuthRequest } from '../middleware/auth.middleware';
 
-export const getAll = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const getAll = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const result = await actividadesService.getAll({
       search: req.query.search as string | undefined,
@@ -18,7 +22,11 @@ export const getAll = async (req: AuthRequest, res: Response, next: NextFunction
   }
 };
 
-export const getById = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const getById = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const actividad = await actividadesService.getById(req.params.id);
     res.status(200).json({ success: true, data: actividad });
@@ -27,7 +35,11 @@ export const getById = async (req: AuthRequest, res: Response, next: NextFunctio
   }
 };
 
-export const create = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const create = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const actividad = await actividadesService.create(req.body, req.user?.id);
     res.status(201).json({ success: true, message: 'Actividad registrada exitosamente', data: actividad });
@@ -36,7 +48,11 @@ export const create = async (req: AuthRequest, res: Response, next: NextFunction
   }
 };
 
-export const update = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const update = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const actividad = await actividadesService.update(req.params.id, req.body, req.user?.id);
     res.status(200).json({ success: true, message: 'Actividad actualizada exitosamente', data: actividad });
@@ -45,7 +61,11 @@ export const update = async (req: AuthRequest, res: Response, next: NextFunction
   }
 };
 
-export const remove = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const remove = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const result = await actividadesService.remove(req.params.id);
     res.status(200).json({ success: true, ...result });

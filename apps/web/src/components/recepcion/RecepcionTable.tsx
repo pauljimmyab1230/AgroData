@@ -40,16 +40,16 @@ export default function RecepcionTable({
       render: (recepcion: Recepcion) => <Badge variant="purple">{recepcion.loteProductor}</Badge>,
     },
     {
-      key: "campaniaNombre",
-      label: "Campaña",
+      key: "acopioCodigo",
+      label: "Acopio",
       render: (recepcion: Recepcion) => (
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-forest-600/10 text-forest-700">
             <UserRound className="h-4 w-4" />
           </div>
           <div>
-            <p className="font-medium text-[#111827]">{recepcion.campaniaNombre || "—"}</p>
-            <p className="text-xs text-gray-500">{recepcion.acopioCodigo}</p>
+            <p className="font-medium text-[#111827]">{recepcion.acopioCodigo || "—"}</p>
+            <p className="text-xs text-gray-500">{recepcion.responsable}</p>
           </div>
         </div>
       ),

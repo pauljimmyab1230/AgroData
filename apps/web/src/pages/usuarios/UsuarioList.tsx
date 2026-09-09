@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Plus, Pencil, Eye, Trash2, Settings, UserCheck, UserX } from "lucide-react";
 import {
   Badge,
-  Breadcrumb,
   Button,
   Card,
   ConfirmDialog,
@@ -195,8 +194,6 @@ export default function UsuarioList() {
 
   return (
     <div>
-      <Breadcrumb items={[{ label: "Usuarios" }]} />
-
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <SectionHeader
           title="Usuarios"

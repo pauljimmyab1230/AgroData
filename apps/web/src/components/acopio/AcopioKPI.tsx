@@ -1,4 +1,4 @@
-import { Boxes, Scale, Warehouse } from "lucide-react";
+import { Boxes, Scale, Warehouse, TrendingUp } from "lucide-react";
 import { Card } from "../ui";
 
 export interface AcopioKpiItem {
@@ -11,6 +11,7 @@ const icons: Record<string, typeof Boxes> = {
   warehouse: Warehouse,
   boxes: Boxes,
   scale: Scale,
+  trending: TrendingUp,
 };
 
 interface AcopioKPIProps {

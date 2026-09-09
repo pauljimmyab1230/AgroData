@@ -27,8 +27,8 @@ export default function CultivoKPI({ stats }: CultivoKPIProps) {
       iconClass: "bg-forest-600/10 text-forest-600",
     },
     {
-      label: "Cultivos Activos",
-      value: String(stats.estados.ACTIVO ?? 0),
+      label: "En Crecimiento",
+      value: String(stats.estados.EN_CRECIMIENTO ?? 0),
       icon: BadgeCheck,
       iconClass: "bg-sun-100 text-sun-700",
     },

@@ -4,7 +4,6 @@ import { EmptyState, FormField, ImageUpload, Input, Select, Textarea, DatePicker
 import { CardHeader, CardShell, type FormMode } from "../shared/formControls";
 import {
   formatFecha,
-  responsablesOpciones,
   tiposEvidenciaOpciones,
   type Evidencia,
   type Inspeccion,
@@ -80,11 +79,12 @@ export function EvidenciasCard({ mode, values }: EvidenciasCardProps) {
                       />
                     </FormField>
                     <FormField label="Responsable">
-                      <Select
-                        options={toOptions(responsablesOpciones)}
-                        placeholder="Seleccione"
+                      <input
+                        type="text"
+                        placeholder="Nombre del responsable"
                         value={evidencia.responsable}
-                        onChange={(value) => setCampo(index, "responsable", value)}
+                        onChange={(e) => setCampo(index, "responsable", e.target.value)}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                       />
                     </FormField>
                     <FormField label="Tipo de evidencia" className="sm:col-span-2">
@@ -123,7 +123,7 @@ export function EvidenciasCard({ mode, values }: EvidenciasCardProps) {
 
               <ImageUpload
                 readOnly={!editable}
-                value={evidencia.preview}
+                value={evidencia.rutaArchivo}
                 onChange={(file, preview) => handleChange(index, file, preview)}
                 accept="image/png,image/jpeg,image/webp"
                 placeholder={

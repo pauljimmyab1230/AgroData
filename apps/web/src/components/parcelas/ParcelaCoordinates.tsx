@@ -1,4 +1,5 @@
-import { Crosshair } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Crosshair, AlertTriangle } from "lucide-react";
 import { Input } from "../ui";
 import { Field, type FormMode } from "../shared/formControls";
 
@@ -14,8 +15,84 @@ interface ParcelaCoordinatesProps {
   onChange?: (field: "latitud" | "longitud" | "precisionGps" | "altitud" | "utmEste" | "utmNorte" | "utmZona", value: string) => void;
 }
 
-export function ParcelaCoordinates({ mode, latitud, longitud, precisionGps, altitud, utmEste, utmNorte, utmZona, onChange }: ParcelaCoordinatesProps) {
+function validateLat(value: string): string | null {
+  if (!value) return null;
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "Debe ser un número";
+  if (n < -90 || n > 90) return "Rango: -90 a 90";
+  return null;
+}
+
+function validateLng(value: string): string | null {
+  if (!value) return null;
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "Debe ser un número";
+  if (n < -180 || n > 180) return "Rango: -180 a 180";
+  return null;
+}
+
+function CoordField({
+  label,
+  value,
+  placeholder,
+  suffix,
+  onChange,
+  disabled,
+  error,
+}: {
+  label: string;
+  value: string;
+  placeholder: string;
+  suffix: string;
+  onChange?: (val: string) => void;
+  disabled: boolean;
+  error?: string | null;
+}) {
+  return (
+    <div>
+      <label className="mb-1 block text-xs font-medium text-gray-500">{label}</label>
+      <div className="relative">
+        <Input
+          type="text"
+          placeholder={placeholder}
+          value={value}
+          onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+          disabled={disabled}
+          className={`pr-14 ${error ? "border-red-300 focus:border-red-500 focus:ring-red-500/20" : ""}`}
+        />
+        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-400">
+          {suffix}
+        </span>
+      </div>
+      {error && (
+        <p className="mt-1 flex items-center gap-1 text-xs text-red-500">
+          <AlertTriangle className="h-3 w-3" />
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+export function ParcelaCoordinates({
+  mode,
+  latitud,
+  longitud,
+  precisionGps,
+  altitud,
+  utmEste,
+  utmNorte,
+  utmZona,
+  onChange,
+}: ParcelaCoordinatesProps) {
   const editable = mode !== "view";
+  const [latError, setLatError] = useState<string | null>(null);
+  const [lngError, setLngError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLatError(validateLat(latitud ?? ""));
+    setLngError(validateLng(longitud ?? ""));
+  }, [latitud, longitud]);
 
   return (
     <div>
@@ -30,37 +107,25 @@ export function ParcelaCoordinates({ mode, latitud, longitud, precisionGps, alti
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2">
-        <Field label="Latitud" mode={mode} value={latitud}>
-          <div className="relative">
-            <Input
-              type="text"
-              placeholder="Ej. -13.6532"
-              value={editable ? latitud ?? "" : undefined}
-              onChange={editable && onChange ? (e) => onChange("latitud", e.target.value) : undefined}
-              disabled={!editable}
-              className="pr-14"
-            />
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-400">
-              S
-            </span>
-          </div>
-        </Field>
+        <CoordField
+          label="Latitud"
+          value={latitud ?? ""}
+          placeholder="Ej. -13.6532"
+          suffix="S"
+          onChange={editable && onChange ? (val) => onChange("latitud", val) : undefined}
+          disabled={!editable}
+          error={editable ? latError : null}
+        />
 
-        <Field label="Longitud" mode={mode} value={longitud}>
-          <div className="relative">
-            <Input
-              type="text"
-              placeholder="Ej. -73.8741"
-              value={editable ? longitud ?? "" : undefined}
-              onChange={editable && onChange ? (e) => onChange("longitud", e.target.value) : undefined}
-              disabled={!editable}
-              className="pr-14"
-            />
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-400">
-              W
-            </span>
-          </div>
-        </Field>
+        <CoordField
+          label="Longitud"
+          value={longitud ?? ""}
+          placeholder="Ej. -73.8741"
+          suffix="W"
+          onChange={editable && onChange ? (val) => onChange("longitud", val) : undefined}
+          disabled={!editable}
+          error={editable ? lngError : null}
+        />
 
         <Field label="Precisión GPS" mode={mode} value={precisionGps}>
           <Input

@@ -1,8 +1,12 @@
-import { Response, NextFunction } from 'express';
+import type { Response, NextFunction } from 'express';
 import * as kardexService from '../services/kardex.service';
-import { AuthRequest } from '../middleware/auth.middleware';
+import type { AuthRequest } from '../middleware/auth.middleware';
 
-export const getAll = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const getAll = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const result = await kardexService.getAll({
       search: req.query.search as string | undefined,
@@ -20,7 +24,11 @@ export const getAll = async (req: AuthRequest, res: Response, next: NextFunction
   }
 };
 
-export const getById = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const getById = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const item = await kardexService.getById(req.params.id);
     res.status(200).json({
@@ -32,7 +40,11 @@ export const getById = async (req: AuthRequest, res: Response, next: NextFunctio
   }
 };
 
-export const create = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const create = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const item = await kardexService.create(req.body, req.user?.id);
     res.status(201).json({
@@ -45,7 +57,11 @@ export const create = async (req: AuthRequest, res: Response, next: NextFunction
   }
 };
 
-export const update = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const update = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const item = await kardexService.update(req.params.id, req.body, req.user?.id);
     res.status(200).json({
@@ -58,7 +74,11 @@ export const update = async (req: AuthRequest, res: Response, next: NextFunction
   }
 };
 
-export const remove = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const remove = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const result = await kardexService.remove(req.params.id);
     res.status(200).json({
@@ -70,7 +90,31 @@ export const remove = async (req: AuthRequest, res: Response, next: NextFunction
   }
 };
 
-export const addMovimiento = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const getMovimientos = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const result = await kardexService.getMovimientos(
+      req.params.id,
+      parseInt(req.query.page as string) || 1,
+      parseInt(req.query.limit as string) || 50,
+    );
+    res.status(200).json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const addMovimiento = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const movimiento = await kardexService.addMovimiento(req.params.id, req.body);
     res.status(201).json({
@@ -83,12 +127,33 @@ export const addMovimiento = async (req: AuthRequest, res: Response, next: NextF
   }
 };
 
-export const removeMovimiento = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const removeMovimiento = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const result = await kardexService.removeMovimiento(req.params.id, req.params.movimientoId);
     res.status(200).json({
       success: true,
       ...result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const recomputeStock = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const result = await kardexService.recomputeStock(req.params.id);
+    res.status(200).json({
+      success: true,
+      message: 'Stock recalculado exitosamente',
+      data: result,
     });
   } catch (error) {
     next(error);

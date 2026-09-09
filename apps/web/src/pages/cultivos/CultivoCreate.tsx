@@ -12,8 +12,7 @@ export default function CultivoCreate({ inModal, onSave }: CultivoCreateProps) {
       {!inModal && (
         <CultivoHeader
           title="Nuevo Cultivo"
-          description="Registra un nuevo cultivo mediante las tarjetas del formulario"
-          crumbs={[{ label: "Cultivos", to: "/cultivos" }, { label: "Nuevo Cultivo" }]}
+          description="Registra un nuevo cultivo a través de los siguientes pasos."
           backTo="/cultivos"
         />
       )}

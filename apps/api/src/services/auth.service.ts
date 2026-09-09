@@ -1,27 +1,51 @@
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import jwt, { type SignOptions } from 'jsonwebtoken';
 import prisma from '../config/database';
 import { env } from '../config/env';
 import { createError } from '../middleware/error.middleware';
+import type {
+  RegisterInput,
+  LoginInput,
+  AuthResponse,
+  UserProfile,
+  JwtPayload,
+  JwtToken,
+} from '../types/auth.types';
+import type { UserId, UserEmail } from '@agrodata/types';
 
-interface RegisterInput {
-  nombre: string;
-  email: string;
-  password: string;
-}
+const SALT_ROUNDS = 10;
 
-interface LoginInput {
-  email: string;
-  password: string;
-}
-
-const generateToken = (id: string, email: string, rol: string): string => {
-  return jwt.sign({ id, email, rol }, env.JWT_SECRET, {
-    expiresIn: env.JWT_EXPIRES_IN as string,
-  } as jwt.SignOptions);
+// ─── Helpers ────────────────────────────────────────────────
+const generateToken = (id: string, email: string, rol: string): JwtToken => {
+  const payload: JwtPayload = {
+    id: id as UserId,
+    email: email as UserEmail,
+    rol: rol as JwtPayload['rol'],
+  };
+  const options: SignOptions = {
+    expiresIn: env.JWT_EXPIRES_IN as SignOptions['expiresIn'],
+  };
+  return jwt.sign(payload, env.JWT_SECRET, options) as JwtToken;
 };
 
-export const register = async (data: RegisterInput) => {
+const toUserProfile = (user: {
+  id: string;
+  nombre: string;
+  email: string;
+  rol: string;
+  rol_sic?: string | null;
+  activo: boolean;
+}): UserProfile => ({
+  id: user.id as UserId,
+  nombre: user.nombre,
+  email: user.email as UserEmail,
+  rol: user.rol as UserProfile['rol'],
+  rol_sic: (user.rol_sic as UserProfile['rol_sic']) ?? null,
+  activo: user.activo,
+});
+
+// ─── Service ────────────────────────────────────────────────
+export const register = async (data: RegisterInput): Promise<AuthResponse> => {
   const existingUser = await prisma.usuarios.findUnique({
     where: { email: data.email },
   });
@@ -30,7 +54,7 @@ export const register = async (data: RegisterInput) => {
     throw createError('El email ya está registrado', 409);
   }
 
-  const hashedPassword = await bcrypt.hash(data.password, 10);
+  const hashedPassword = await bcrypt.hash(data.password, SALT_ROUNDS);
 
   const user = await prisma.usuarios.create({
     data: {
@@ -43,18 +67,12 @@ export const register = async (data: RegisterInput) => {
   const token = generateToken(user.id, user.email, user.rol);
 
   return {
-    user: {
-      id: user.id,
-      nombre: user.nombre,
-      email: user.email,
-      rol: user.rol,
-      activo: user.activo,
-    },
+    user: toUserProfile(user),
     token,
   };
 };
 
-export const login = async (data: LoginInput) => {
+export const login = async (data: LoginInput): Promise<AuthResponse> => {
   const user = await prisma.usuarios.findUnique({
     where: { email: data.email },
   });
@@ -64,7 +82,7 @@ export const login = async (data: LoginInput) => {
   }
 
   if (!user.activo) {
-    throw createError('La cuenta está desactivada', 403);
+    throw createError('La cuenta está desactivada. Contacte al administrador', 403);
   }
 
   const validPassword = await bcrypt.compare(data.password, user.password);
@@ -76,18 +94,12 @@ export const login = async (data: LoginInput) => {
   const token = generateToken(user.id, user.email, user.rol);
 
   return {
-    user: {
-      id: user.id,
-      nombre: user.nombre,
-      email: user.email,
-      rol: user.rol,
-      activo: user.activo,
-    },
+    user: toUserProfile(user),
     token,
   };
 };
 
-export const getProfile = async (userId: string) => {
+export const getProfile = async (userId: string): Promise<UserProfile> => {
   const user = await prisma.usuarios.findUnique({
     where: { id: userId },
     select: {
@@ -95,6 +107,7 @@ export const getProfile = async (userId: string) => {
       nombre: true,
       email: true,
       rol: true,
+      rol_sic: true,
       activo: true,
       created_at: true,
       updated_at: true,
@@ -105,5 +118,5 @@ export const getProfile = async (userId: string) => {
     throw createError('Usuario no encontrado', 404);
   }
 
-  return user;
+  return toUserProfile(user);
 };

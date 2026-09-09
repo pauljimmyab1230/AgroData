@@ -6,22 +6,31 @@ const estadoEnum = ['PROGRAMADA', 'EN_PROCESO', 'COMPLETADA'];
 const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 const insumoSchema = Joi.object({
-  nombre: Joi.string().max(150).required(),
+  producto: Joi.string().max(150).required(),
+  categoria: Joi.string().max(100).allow('', null),
+  fabricante: Joi.string().max(150).allow('', null),
   cantidad: Joi.number().min(0).allow(null),
   unidad: Joi.string().max(20).allow('', null),
-  costo: Joi.number().min(0).allow(null),
+  lote: Joi.string().max(100).allow('', null),
+  costo_unitario: Joi.number().min(0).allow(null),
+  costo_total: Joi.number().min(0).allow(null),
+  observaciones: Joi.string().allow('', null),
 });
 
 const trabajadorSchema = Joi.object({
-  nombre: Joi.string().max(150).required(),
+  trabajador: Joi.string().max(150).required(),
+  funcion: Joi.string().max(100).allow('', null),
+  jornales: Joi.number().min(0).allow(null),
   horas: Joi.number().min(0).allow(null),
-  tarifa: Joi.number().min(0).allow(null),
+  observaciones: Joi.string().allow('', null),
 });
 
 const maquinariaSchema = Joi.object({
-  nombre: Joi.string().max(150).required(),
-  horas: Joi.number().min(0).allow(null),
-  costo: Joi.number().min(0).allow(null),
+  equipo: Joi.string().max(150).required(),
+  operador: Joi.string().max(150).allow('', null),
+  horas_uso: Joi.number().min(0).allow(null),
+  combustible: Joi.number().min(0).allow(null),
+  observaciones: Joi.string().allow('', null),
 });
 
 export const createActividadSchema = Joi.object({

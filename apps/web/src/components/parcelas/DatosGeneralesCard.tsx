@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Tractor } from "lucide-react";
 import { Input, Select } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
-import { useParcelaForm } from "../../contexts/ParcelaFormContext";
+import { useOptionalParcelaForm } from "../../contexts/ParcelaFormContext";
 import {
   cultivosOpciones,
   estadosOpciones,
@@ -19,7 +19,11 @@ type DatosGeneralesCardProps = {
 
 export function DatosGeneralesCard({ mode, values }: DatosGeneralesCardProps) {
   const editable = mode !== "view";
-  const { data, updateData, errors, clearFieldError } = useParcelaForm();
+  const formCtx = useOptionalParcelaForm();
+  const data = formCtx?.data;
+  const updateData = formCtx?.updateData;
+  const errors = formCtx?.errors;
+  const clearFieldError = formCtx?.clearFieldError;
   const [productores, setProductores] = useState<ParcelaSelectOption[]>([]);
 
   useEffect(() => {

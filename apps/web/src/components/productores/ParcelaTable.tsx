@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { MapPin, Plus, Pencil, Trash2, Ruler, ShieldCheck, Sprout, Layers, Loader2 } from "lucide-react";
 import { Badge, Button, Card, ConfirmDialog, DataTable } from "../ui";
 import { CardHeader, CardShell, type FormMode } from "../shared/formControls";
@@ -9,18 +9,20 @@ import {
   updateParcela,
   deleteParcela,
   type Parcela,
+  type ProductorId,
+  type CertificacionParcela,
 } from "../../services/productores";
 import { ParcelaModal, type ParcelaFormData } from "./ParcelaModal";
 import { toast } from "../../utils/toast";
 
 type ParcelaTableProps = {
   mode: FormMode;
-  productorId?: number;
+  productorId?: ProductorId;
 };
 
-const certificacionLabel: Record<string, string> = {
-  ORGANICA: "Orgánica",
-  EN_TRANSICION: "En Transición",
+const certificacionLabel: Record<CertificacionParcela, string> = {
+  ORGANICO: "Orgánico",
+  TRANSICION: "En Transición",
   CONVENCIONAL: "Convencional",
 };
 
@@ -96,7 +98,7 @@ export function ParcelaTable({ mode, productorId }: ParcelaTableProps) {
     },
   ];
 
-  const handleSave = async (form: ParcelaFormData) => {
+  const handleSave = useCallback(async (form: ParcelaFormData) => {
     setSaving(true);
     try {
       if (editTarget) {
@@ -122,9 +124,9 @@ export function ParcelaTable({ mode, productorId }: ParcelaTableProps) {
     } finally {
       setSaving(false);
     }
-  };
+  }, [editTarget, mode, productorId, parcelas, setParcelas]);
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     if (!deleteTarget) return;
     try {
       if (mode === "create") {
@@ -138,7 +140,7 @@ export function ParcelaTable({ mode, productorId }: ParcelaTableProps) {
       console.error("Error al eliminar parcela:", error);
       toast.error("Error al eliminar la parcela.");
     }
-  };
+  }, [deleteTarget, mode, parcelas, setParcelas]);
 
   const columns = [
     { key: "codigo", label: "Código", className: "font-medium text-forest-700" },

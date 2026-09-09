@@ -1,5 +1,55 @@
 import prisma, { type PrismaTransaction } from '../config/database';
 import { createError } from '../middleware/error.middleware';
+import type { EstadoAcopio } from '@agrodata/types';
+
+// ─── Types ──────────────────────────────────────────────────
+
+interface AcopioFilters {
+  search?: string;
+  estado?: string;
+  page?: number;
+  limit?: number;
+}
+
+interface AcopioDetalleInput {
+  productor_id: number;
+  cultivo_id: number;
+  parcela_id?: number | null;
+  observaciones?: string | null;
+  sacos: Array<{
+    codigo: string;
+    peso: number;
+    observaciones?: string | null;
+  }>;
+}
+
+interface AcopioCreateInput {
+  codigo?: string;
+  fecha: string;
+  acopiador: string;
+  vehiculo?: string | null;
+  ruta_acopio?: string | null;
+  peso_bruto?: number;
+  tara?: number;
+  estado?: EstadoAcopio;
+  observaciones?: string | null;
+  detalles: AcopioDetalleInput[];
+}
+
+interface AcopioUpdateInput {
+  codigo?: string;
+  fecha?: string;
+  acopiador?: string;
+  vehiculo?: string | null;
+  ruta_acopio?: string | null;
+  peso_bruto?: number;
+  tara?: number;
+  estado?: EstadoAcopio;
+  observaciones?: string | null;
+  detalles?: AcopioDetalleInput[];
+}
+
+// ─── Helpers ────────────────────────────────────────────────
 
 const generateCodigo = async (): Promise<string> => {
   const year = new Date().getFullYear();
@@ -29,7 +79,35 @@ const ensureUniqueCodigo = async (codigo: string): Promise<string> => {
   throw createError('No se pudo generar un código único', 500);
 };
 
-const calcularResumenDetalles = (detalles: Array<{ sacos: Array<{ peso: number }> }>) => {
+const ensureEntitiesExist = async (detalles: AcopioDetalleInput[]): Promise<void> => {
+  const productorIds = [...new Set(detalles.map((d) => d.productor_id))];
+  const cultivoIds = [...new Set(detalles.map((d) => d.cultivo_id))];
+  const parcelaIds = [...new Set(detalles.map((d) => d.parcela_id).filter((id): id is number => id != null))];
+
+  const [productores, cultivos, parcelas] = await Promise.all([
+    prisma.productor.findMany({ where: { id: { in: productorIds } }, select: { id: true } }),
+    prisma.cultivo.findMany({ where: { id: { in: cultivoIds } }, select: { id: true } }),
+    parcelaIds.length > 0
+      ? prisma.parcela.findMany({ where: { id: { in: parcelaIds } }, select: { id: true } })
+      : Promise.resolve([]),
+  ]);
+
+  const foundProductores = new Set(productores.map((p) => p.id));
+  const foundCultivos = new Set(cultivos.map((c) => c.id));
+  const foundParcelas = new Set(parcelas.map((p) => p.id));
+
+  for (const id of productorIds) {
+    if (!foundProductores.has(id)) throw createError(`Productor con ID ${id} no encontrado`, 404);
+  }
+  for (const id of cultivoIds) {
+    if (!foundCultivos.has(id)) throw createError(`Cultivo con ID ${id} no encontrado`, 404);
+  }
+  for (const id of parcelaIds) {
+    if (!foundParcelas.has(id)) throw createError(`Parcela con ID ${id} no encontrada`, 404);
+  }
+};
+
+const calcularResumenDetalles = (detalles: AcopioDetalleInput[]) => {
   let total_sacos = 0;
   let peso_total = 0;
 
@@ -40,28 +118,48 @@ const calcularResumenDetalles = (detalles: Array<{ sacos: Array<{ peso: number }
     }
   }
 
-  return { total_sacos, peso_total };
+  return { total_sacos, peso_total: Math.round(peso_total * 100) / 100 };
 };
+
+const calcularPesoNeto = (pesoBruto: number, tara: number): number => {
+  return Math.round((pesoBruto - tara) * 100) / 100;
+};
+
+const buildSearchWhere = (search: string) => ({
+  OR: [
+    { codigo: { contains: search } },
+    { acopiador: { contains: search } },
+    { observaciones: { contains: search } },
+  ],
+});
+
+const ACOPIO_INCLUDE = {
+  detalles: {
+    include: {
+      productor: {
+        select: { id: true, nombres: true, apellido_paterno: true, apellido_materno: true, codigo: true },
+      },
+      cultivo: {
+        select: { id: true, codigo: true, cultivo: true, variedad: true },
+      },
+      parcela: {
+        select: { id: true, nombre: true, codigo: true, area: true },
+      },
+      sacos: {
+        orderBy: { codigo: 'asc' as const },
+      },
+    },
+    orderBy: { id: 'asc' as const },
+  },
+} as const;
 
 // ─── CRUD ──────────────────────────────────────────────────
 
-export const getAll = async (filters: {
-  search?: string;
-  estado?: string;
-  page?: number;
-  limit?: number;
-}) => {
+export const getAll = async (filters: AcopioFilters) => {
   const where: Record<string, unknown> = { activo: true };
 
   if (filters.estado) where.estado = filters.estado;
-
-  if (filters.search) {
-    where.OR = [
-      { codigo: { contains: filters.search, mode: 'insensitive' } },
-      { acopiador: { contains: filters.search, mode: 'insensitive' } },
-      { observaciones: { contains: filters.search, mode: 'insensitive' } },
-    ];
-  }
+  if (filters.search) Object.assign(where, buildSearchWhere(filters.search));
 
   const page = filters.page || 1;
   const limit = filters.limit || 20;
@@ -72,15 +170,7 @@ export const getAll = async (filters: {
       orderBy: { created_at: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
-      include: {
-        detalles: {
-          include: {
-            productor: { select: { id: true, nombres: true, apellido_paterno: true, apellido_materno: true } },
-            cultivo: { select: { id: true, codigo: true, cultivo: true } },
-            sacos: true,
-          },
-        },
-      },
+      include: ACOPIO_INCLUDE,
     }),
     prisma.acopio.count({ where }),
   ]);
@@ -91,16 +181,7 @@ export const getAll = async (filters: {
 export const getById = async (id: string) => {
   const acopio = await prisma.acopio.findFirst({
     where: { id: Number(id), activo: true },
-    include: {
-      detalles: {
-        include: {
-          productor: { select: { id: true, nombres: true, apellido_paterno: true, apellido_materno: true, codigo: true } },
-          cultivo: { select: { id: true, codigo: true, cultivo: true, variedad: true } },
-          sacos: { orderBy: { codigo: 'asc' } },
-        },
-        orderBy: { id: 'asc' },
-      },
-    },
+    include: ACOPIO_INCLUDE,
   });
 
   if (!acopio) {
@@ -113,16 +194,7 @@ export const getById = async (id: string) => {
 export const getByCodigo = async (codigo: string) => {
   const acopio = await prisma.acopio.findFirst({
     where: { codigo, activo: true },
-    include: {
-      detalles: {
-        include: {
-          productor: { select: { id: true, nombres: true, apellido_paterno: true, apellido_materno: true, codigo: true } },
-          cultivo: { select: { id: true, codigo: true, cultivo: true, variedad: true } },
-          sacos: { orderBy: { codigo: 'asc' } },
-        },
-        orderBy: { id: 'asc' },
-      },
-    },
+    include: ACOPIO_INCLUDE,
   });
 
   if (!acopio) {
@@ -132,8 +204,8 @@ export const getByCodigo = async (codigo: string) => {
   return acopio;
 };
 
-export const create = async (data: Record<string, unknown>, userId?: string) => {
-  let codigo = (data.codigo as string) || '';
+export const create = async (data: AcopioCreateInput, userId?: string) => {
+  let codigo = data.codigo || '';
   if (!codigo.trim()) {
     codigo = await ensureUniqueCodigo(await generateCodigo());
   } else {
@@ -143,51 +215,51 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
     }
   }
 
-  const detallesData = (data.detalles as Array<Record<string, unknown>>) || [];
-  const resumen = calcularResumenDetalles(detallesData as any);
+  await ensureEntitiesExist(data.detalles);
+
+  const resumen = calcularResumenDetalles(data.detalles);
+  const pesoBruto = data.peso_bruto ?? resumen.peso_total;
+  const tara = data.tara ?? 0;
+  const pesoNeto = calcularPesoNeto(pesoBruto, tara);
 
   return prisma.acopio.create({
     data: {
       codigo,
-      fecha: new Date(data.fecha as string),
-      acopiador: data.acopiador as string,
-      vehiculo: (data.vehiculo as string) || null,
-      ruta_acopio: (data.ruta_acopio as string) || null,
+      fecha: new Date(data.fecha),
+      acopiador: data.acopiador,
+      vehiculo: data.vehiculo || null,
+      ruta_acopio: data.ruta_acopio || null,
       total_sacos: resumen.total_sacos,
       peso_total: resumen.peso_total,
-      estado: (data.estado as 'EN_PROCESO' | 'COMPLETADO' | 'EN_PLANTA') || 'EN_PROCESO',
-      observaciones: (data.observaciones as string) || null,
+      peso_bruto: pesoBruto,
+      tara,
+      peso_neto: pesoNeto,
+      estado: (data.estado || 'EN_CAMPO') as EstadoAcopio,
+      observaciones: data.observaciones || null,
       created_by: userId || null,
       detalles: {
-        create: detallesData.map((d: any) => ({
-          productor_id: Number(d.productor_id),
-          cultivo_id: Number(d.cultivo_id),
+        create: data.detalles.map((d) => ({
+          productor_id: d.productor_id,
+          cultivo_id: d.cultivo_id,
+          parcela_id: d.parcela_id ?? null,
           observaciones: d.observaciones || null,
-          total_sacos: d.sacos?.length || 0,
-          peso_total: d.sacos?.reduce((sum: number, s: any) => sum + Number(s.peso), 0) || 0,
+          total_sacos: d.sacos.length,
+          peso_total: Math.round(d.sacos.reduce((sum, s) => sum + s.peso, 0) * 100) / 100,
           sacos: {
-            create: (d.sacos || []).map((s: any) => ({
-              codigo: s.codigo as string,
-              peso: Number(s.peso),
+            create: d.sacos.map((s) => ({
+              codigo: s.codigo,
+              peso: s.peso,
               observaciones: s.observaciones || null,
             })),
           },
         })),
       },
     },
-    include: {
-      detalles: {
-        include: {
-          productor: { select: { id: true, nombres: true, apellido_paterno: true, apellido_materno: true } },
-          cultivo: { select: { id: true, codigo: true, cultivo: true } },
-          sacos: true,
-        },
-      },
-    },
+    include: ACOPIO_INCLUDE,
   });
 };
 
-export const update = async (id: string, data: Record<string, unknown>, userId?: string) => {
+export const update = async (id: string, data: AcopioUpdateInput, userId?: string) => {
   const existing = await prisma.acopio.findFirst({ where: { id: Number(id), activo: true } });
 
   if (!existing) {
@@ -196,77 +268,83 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
 
   const updateData: Record<string, unknown> = {};
 
-  if (data.codigo !== undefined) updateData.codigo = data.codigo;
-  if (data.fecha !== undefined) updateData.fecha = new Date(data.fecha as string);
+  if (data.codigo !== undefined) {
+    if (data.codigo.trim()) {
+      const existingCodigo = await prisma.acopio.findFirst({
+        where: { codigo: data.codigo, id: { not: Number(id) } },
+        select: { id: true },
+      });
+      if (existingCodigo) {
+        throw createError(`El código ${data.codigo} ya está en uso`, 409);
+      }
+      updateData.codigo = data.codigo;
+    }
+  }
+  if (data.fecha !== undefined) updateData.fecha = new Date(data.fecha);
   if (data.acopiador !== undefined) updateData.acopiador = data.acopiador;
-  if (data.vehiculo !== undefined) updateData.vehiculo = (data.vehiculo as string) || null;
-  if (data.ruta_acopio !== undefined) updateData.ruta_acopio = (data.ruta_acopio as string) || null;
+  if (data.vehiculo !== undefined) updateData.vehiculo = data.vehiculo || null;
+  if (data.ruta_acopio !== undefined) updateData.ruta_acopio = data.ruta_acopio || null;
+  if (data.peso_bruto !== undefined) updateData.peso_bruto = data.peso_bruto;
+  if (data.tara !== undefined) updateData.tara = data.tara;
   if (data.estado !== undefined) updateData.estado = data.estado;
-  if (data.observaciones !== undefined) updateData.observaciones = (data.observaciones as string) || null;
+  if (data.observaciones !== undefined) updateData.observaciones = data.observaciones || null;
   if (userId) updateData.updated_by = userId;
 
   return prisma.$transaction(async (tx: PrismaTransaction) => {
     if (data.detalles !== undefined) {
-      const detallesData = (data.detalles as Array<Record<string, unknown>>) || [];
-      const resumen = calcularResumenDetalles(detallesData as any);
+      await ensureEntitiesExist(data.detalles);
+
+      const resumen = calcularResumenDetalles(data.detalles);
       updateData.total_sacos = resumen.total_sacos;
       updateData.peso_total = resumen.peso_total;
 
-      // Delete existing detalles and their sacos
+      const pesoBruto = data.peso_bruto ?? existing.peso_bruto;
+      const tara = data.tara ?? existing.tara;
+      updateData.peso_bruto = pesoBruto;
+      updateData.tara = tara;
+      updateData.peso_neto = calcularPesoNeto(Number(pesoBruto), Number(tara));
+
       await tx.saco.deleteMany({ where: { acopio_detalle: { acopio_id: Number(id) } } });
       await tx.acopio_detalle.deleteMany({ where: { acopio_id: Number(id) } });
 
-      // Create new detalles with sacos
-      if (detallesData.length > 0) {
-        await tx.acopio_detalle.createMany({
-          data: detallesData.map((d: any) => ({
-            acopio_id: Number(id),
-            productor_id: Number(d.productor_id),
-            cultivo_id: Number(d.cultivo_id),
-            observaciones: d.observaciones || null,
-            total_sacos: d.sacos?.length || 0,
-            peso_total: d.sacos?.reduce((sum: number, s: any) => sum + Number(s.peso), 0) || 0,
-          })),
-        });
+      if (data.detalles.length > 0) {
+        for (const d of data.detalles) {
+          const detalle = await tx.acopio_detalle.create({
+            data: {
+              acopio_id: Number(id),
+              productor_id: d.productor_id,
+              cultivo_id: d.cultivo_id,
+              parcela_id: d.parcela_id ?? null,
+              observaciones: d.observaciones || null,
+              total_sacos: d.sacos.length,
+              peso_total: Math.round(d.sacos.reduce((sum, s) => sum + s.peso, 0) * 100) / 100,
+            },
+          });
 
-        // Get the created detalles to link sacos
-        const createdDetalles = await tx.acopio_detalle.findMany({
-          where: { acopio_id: Number(id) },
-          select: { id: true, productor_id: true, cultivo_id: true },
-        });
-
-        // Create sacos for each detalle
-        for (const d of detallesData) {
-          const sacosArray = d.sacos as Array<Record<string, unknown>> | undefined;
-          const detalle = createdDetalles.find(
-            (cd) => cd.productor_id === Number(d.productor_id) && cd.cultivo_id === Number(d.cultivo_id)
-          );
-          if (detalle && sacosArray && sacosArray.length > 0) {
+          if (d.sacos.length > 0) {
             await tx.saco.createMany({
-              data: sacosArray.map((s: any) => ({
+              data: d.sacos.map((s) => ({
                 acopio_detalle_id: detalle.id,
-                codigo: s.codigo as string,
-                peso: Number(s.peso),
+                codigo: s.codigo,
+                peso: s.peso,
                 observaciones: s.observaciones || null,
               })),
             });
           }
         }
       }
+    } else if (data.peso_bruto !== undefined || data.tara !== undefined) {
+      const pesoBruto = data.peso_bruto ?? existing.peso_bruto;
+      const tara = data.tara ?? existing.tara;
+      updateData.peso_bruto = pesoBruto;
+      updateData.tara = tara;
+      updateData.peso_neto = calcularPesoNeto(Number(pesoBruto), Number(tara));
     }
 
     return tx.acopio.update({
       where: { id: Number(id) },
       data: updateData,
-      include: {
-        detalles: {
-          include: {
-            productor: { select: { id: true, nombres: true, apellido_paterno: true, apellido_materno: true } },
-            cultivo: { select: { id: true, codigo: true, cultivo: true } },
-            sacos: true,
-          },
-        },
-      },
+      include: ACOPIO_INCLUDE,
     });
   });
 };
@@ -289,15 +367,32 @@ export const remove = async (id: string) => {
 export const getStats = async () => {
   const where: Record<string, unknown> = { activo: true };
 
-  const [totalAcopios, totalSacos, pesoTotalResult] = await Promise.all([
+  const [totalAcopios, totalSacos, pesoTotalResult, pesoNetoResult, porEstado] = await Promise.all([
     prisma.acopio.count({ where }),
     prisma.acopio.aggregate({ where, _sum: { total_sacos: true } }),
     prisma.acopio.aggregate({ where, _sum: { peso_total: true } }),
+    prisma.acopio.aggregate({ where, _sum: { peso_neto: true } }),
+    prisma.acopio.groupBy({
+      by: ['estado'],
+      where,
+      _count: { id: true },
+    }),
   ]);
+
+  const estados: Record<EstadoAcopio, number> = {
+    EN_CAMPO: 0,
+    EN_TRANSITO: 0,
+    RECIBIDO: 0,
+  };
+  for (const item of porEstado) {
+    estados[item.estado as EstadoAcopio] = item._count.id;
+  }
 
   return {
     total_acopios: totalAcopios,
     sacos_recibidos: Number(totalSacos._sum.total_sacos || 0),
     kilogramos_acopiados: Number(pesoTotalResult._sum.peso_total || 0),
+    kilogramos_neto: Number(pesoNetoResult._sum.peso_neto || 0),
+    por_estado: estados,
   };
 };

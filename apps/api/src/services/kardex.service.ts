@@ -1,6 +1,12 @@
 import prisma, { type PrismaTransaction } from '../config/database';
 import { createError } from '../middleware/error.middleware';
 
+// ─── Types ─────────────────────────────────────────────────
+
+type TipoMovimiento = 'ENTRADA' | 'SALIDA' | 'TRANSFERENCIA' | 'AJUSTE';
+
+// ─── Helpers ───────────────────────────────────────────────
+
 const generateCodigo = async (): Promise<string> => {
   const year = new Date().getFullYear();
   const last = await prisma.kardex.findFirst({
@@ -28,6 +34,29 @@ const ensureUniqueCodigo = async (codigo: string): Promise<string> => {
   }
   throw createError('No se pudo generar un código único', 500);
 };
+
+function calcularNuevoSaldo(saldoActual: number, tipo: TipoMovimiento, cantidad: number): number {
+  switch (tipo) {
+    case 'ENTRADA':
+      return saldoActual + cantidad;
+    case 'SALIDA':
+    case 'TRANSFERENCIA':
+      return saldoActual - cantidad;
+    case 'AJUSTE':
+      return saldoActual + cantidad;
+    default: {
+      const _exhaustive: never = tipo;
+      throw new Error(`Tipo de movimiento no soportado: ${_exhaustive}`);
+    }
+  }
+}
+
+function validarSaldoNegativo(nuevoSaldo: number, tipo: TipoMovimiento): void {
+  if (nuevoSaldo < 0) {
+    const etiqueta = tipo === 'TRANSFERENCIA' ? 'la transferencia' : tipo === 'SALIDA' ? 'la salida' : 'el ajuste';
+    throw createError(`La operación de ${etiqueta} resultaría en un saldo negativo`, 400);
+  }
+}
 
 // ─── CRUD ──────────────────────────────────────────────────
 
@@ -87,15 +116,37 @@ export const getById = async (id: string) => {
   return item;
 };
 
+export const getMovimientos = async (kardexId: string, page = 1, limit = 50) => {
+  const kardex = await prisma.kardex.findFirst({
+    where: { id: Number(kardexId), activo: true },
+    select: { id: true },
+  });
+
+  if (!kardex) {
+    throw createError('Item de kardex no encontrado', 404);
+  }
+
+  const where = { kardex_id: Number(kardexId) };
+
+  const [data, total] = await Promise.all([
+    prisma.kardex_movimiento.findMany({
+      where,
+      orderBy: { fecha: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.kardex_movimiento.count({ where }),
+  ]);
+
+  return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+};
+
 export const create = async (data: Record<string, unknown>, userId?: string) => {
   let codigo = (data.codigo as string) || '';
   if (!codigo.trim()) {
     codigo = await generateCodigo();
   } else {
-    const exists = await prisma.kardex.findUnique({ where: { codigo } });
-    if (exists) {
-      throw createError(`El código ${codigo} ya está en uso`, 409);
-    }
+    codigo = await ensureUniqueCodigo(codigo.trim());
   }
 
   const cantidadInicial = Number(data.cantidad_actual) || 0;
@@ -194,22 +245,22 @@ export const addMovimiento = async (kardexId: string, data: Record<string, unkno
     throw createError('Item de kardex no encontrado', 404);
   }
 
-  const cantidad = Number(data.cantidad);
-  const tipo = data.tipo as 'ENTRADA' | 'SALIDA' | 'TRANSFERENCIA' | 'AJUSTE';
+  const tipo = data.tipo as TipoMovimiento;
+  const cantidad = Math.abs(Number(data.cantidad));
   const saldoActual = Number(kardex.cantidad_actual);
 
-  if (tipo === 'SALIDA') {
+  if (cantidad === 0) {
+    throw createError('La cantidad debe ser distinta de cero', 400);
+  }
+
+  if (tipo === 'SALIDA' || tipo === 'TRANSFERENCIA') {
     if (cantidad > saldoActual) {
       throw createError('La cantidad excede el saldo disponible', 400);
     }
   }
 
-  let nuevoSaldo = saldoActual;
-  if (tipo === 'ENTRADA') {
-    nuevoSaldo = saldoActual + cantidad;
-  } else if (tipo === 'SALIDA') {
-    nuevoSaldo = saldoActual - cantidad;
-  }
+  const nuevoSaldo = calcularNuevoSaldo(saldoActual, tipo, cantidad);
+  validarSaldoNegativo(nuevoSaldo, tipo);
 
   const movimiento = await prisma.$transaction(async (tx: PrismaTransaction) => {
     const mov = await tx.kardex_movimiento.create({
@@ -253,20 +304,17 @@ export const removeMovimiento = async (kardexId: string, movimientoId: string) =
     throw createError('Movimiento no encontrado', 404);
   }
 
+  const tipo = movimiento.tipo as TipoMovimiento;
+  const cantidad = Math.abs(Number(movimiento.cantidad));
+  const saldoActual = Number(kardex.cantidad_actual);
+
+  const saldoRevertido = calcularNuevoSaldo(saldoActual, tipo, -cantidad);
+  validarSaldoNegativo(saldoRevertido, tipo);
+
   await prisma.$transaction(async (tx: PrismaTransaction) => {
-    const saldoActual = Number(kardex.cantidad_actual);
-    const cantidad = Number(movimiento.cantidad);
-    let nuevoSaldo = saldoActual;
-
-    if (movimiento.tipo === 'ENTRADA') {
-      nuevoSaldo = saldoActual - cantidad;
-    } else if (movimiento.tipo === 'SALIDA') {
-      nuevoSaldo = saldoActual + cantidad;
-    }
-
     await tx.kardex.update({
       where: { id: Number(kardexId) },
-      data: { cantidad_actual: nuevoSaldo },
+      data: { cantidad_actual: saldoRevertido },
     });
 
     await tx.kardex_movimiento.delete({
@@ -275,4 +323,33 @@ export const removeMovimiento = async (kardexId: string, movimientoId: string) =
   });
 
   return { message: 'Movimiento eliminado exitosamente' };
+};
+
+// ─── Recomputar stock desde movimientos ───────────────────
+
+export const recomputeStock = async (kardexId: string) => {
+  const kardex = await prisma.kardex.findFirst({ where: { id: Number(kardexId), activo: true } });
+
+  if (!kardex) {
+    throw createError('Item de kardex no encontrado', 404);
+  }
+
+  const movimientos = await prisma.kardex_movimiento.findMany({
+    where: { kardex_id: Number(kardexId) },
+    orderBy: { fecha: 'asc' },
+  });
+
+  let saldo = 0;
+  for (const mov of movimientos) {
+    const tipo = mov.tipo as TipoMovimiento;
+    const cantidad = Math.abs(Number(mov.cantidad));
+    saldo = calcularNuevoSaldo(saldo, tipo, cantidad);
+  }
+
+  await prisma.kardex.update({
+    where: { id: Number(kardexId) },
+    data: { cantidad_actual: saldo },
+  });
+
+  return { stock_recalculado: saldo, movimientos_procesados: movimientos.length };
 };

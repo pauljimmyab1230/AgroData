@@ -18,14 +18,17 @@ import { DocumentoUploader } from "../../components/productores/DocumentoUploade
 import { useProductor, useParcelasByProductor, useDocumentos } from "../../hooks/queries";
 import { ProductorFormProvider } from "../../contexts/ProductorFormContext";
 import { formatFecha, getEstadoProductorBadgeVariant, getEstadoProductorLabel } from "../../utils/formatters";
+import { toProductorId } from "../../services/productores";
+import type { ProductorId } from "../../services/productores";
 
 export default function ProductorView() {
   const { id } = useParams();
   const numId = Number(id);
   const isValidId = !isNaN(numId) && numId > 0;
-  const { data: productor, isLoading, error } = useProductor(isValidId ? numId : null);
-  const { data: parcelas = [] } = useParcelasByProductor(isValidId ? numId : null);
-  const { data: documentos = [] } = useDocumentos(isValidId ? numId : null);
+  const productorId: ProductorId | null = isValidId ? toProductorId(numId) : null;
+  const { data: productor, isLoading, error } = useProductor(productorId);
+  const { data: parcelas = [] } = useParcelasByProductor(productorId);
+  const { data: documentos = [] } = useDocumentos(productorId);
 
   if (isLoading) {
     return (
@@ -157,10 +160,10 @@ export default function ProductorView() {
           <ContactoUbicacionCard mode="view" values={productor} />
           <SocioculturalCard mode="view" values={productor} />
           <OrganizacionCard mode="view" values={productor} />
-          <FamiliarTable mode="view" productorId={productor.id} />
-          <ParcelaTable mode="view" productorId={productor.id} />
+          <FamiliarTable mode="view" productorId={productorId} />
+          <ParcelaTable mode="view" productorId={productorId} />
         </ProductorFormProvider>
-        <DocumentoUploader mode="view" productorId={productor.id} />
+        <DocumentoUploader mode="view" productorId={productorId} />
       </div>
     </div>
   );

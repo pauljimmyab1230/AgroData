@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { Breadcrumb, Button, SectionHeader, LoadingSpinner } from "../../components/ui";
+import { Button, SectionHeader, LoadingSpinner } from "../../components/ui";
 import InspeccionForm from "../../components/inspecciones/InspeccionForm";
 import { fetchInspeccion, type Inspeccion } from "../../services/inspecciones";
 
@@ -42,14 +42,6 @@ export default function InspeccionEdit({ inModal, inspeccionId: propId, onSave }
     <div>
       {!inModal && (
         <>
-          <Breadcrumb
-            items={[
-              { label: "Inspecciones", to: "/inspecciones" },
-              { label: inspeccion.codigo, to: `/inspecciones/${inspeccion.id}` },
-              { label: "Editar Inspección" },
-            ]}
-          />
-
           <div className="mb-8 flex items-center gap-4">
             <Button
               variant="ghost"

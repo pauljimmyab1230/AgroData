@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ArrowLeft, Pencil, Scale, Package } from "lucide-react";
-import { Breadcrumb, Button } from "../../components/ui";
+import { Button } from "../../components/ui";
 import { CardHeader, CardShell, Field } from "../../components/shared/formControls";
 import {
   type Recepcion,
@@ -58,17 +58,12 @@ export default function RecepcionView({ inModal, recepcionId: propId, onEdit }: 
   }
 
   const pesoNeto = (recepcion.pesoBruto || 0) - (recepcion.tara || 0);
+  const pesoTotalSacos = recepcion.pesoTotal || recepcion.sacosDetalle?.reduce((sum, s) => sum + s.peso, 0) || 0;
 
   return (
     <div className="space-y-6">
       {!inModal && (
         <>
-          <Breadcrumb
-            items={[
-              { label: "Recepción", to: "/recepcion" },
-              { label: recepcion.codigo, to: `/recepcion/${recepcion.id}` },
-            ]}
-          />
           <div className="mb-8 flex items-center gap-4">
             <Button variant="ghost" as="link" to="/recepcion" iconLeft={<ArrowLeft className="h-4 w-4" />}>
               Volver

@@ -3,7 +3,6 @@ import { useParams } from "react-router-dom";
 import { Plus, Pencil, Trash2, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import {
   Badge,
-  Breadcrumb,
   Button,
   Card,
   ConfirmDialog,
@@ -227,13 +226,6 @@ export default function CatalogPage() {
 
   return (
     <div>
-      <Breadcrumb
-        items={[
-          { label: "Catálogos", to: "/catalogos/departamentos" },
-          { label: config.titulo },
-        ]}
-      />
-
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <SectionHeader title={config.titulo} description={config.descripcion} />
         <Button onClick={handleOpenCreate} iconLeft={<Plus className="h-4 w-4" />}>

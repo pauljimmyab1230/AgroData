@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Plus, Pencil, Eye, Trash2, Download, Users, UserCheck, User } from "lucide-react";
 import {
   Badge,
@@ -12,7 +12,8 @@ import {
   Select,
 } from "../../components/ui";
 import { useProductores, useComunidades, useDeleteProductor, useProductorStats } from "../../hooks/queries";
-import { fetchAllProductoresForCsv, type Productor } from "../../services/productores";
+import { fetchAllProductoresForCsv, getApiErrorMessage, type Productor, toProductorId } from "../../services/productores";
+import type { ProductorId } from "../../services/productores";
 import ProductorModal from "../../components/productores/ProductorModal";
 import ProductorViewModal from "../../components/productores/ProductorViewModal";
 import { toast } from "../../utils/toast";
@@ -25,10 +26,10 @@ export default function ProductorList() {
   const [sexoFilter, setSexoFilter] = useState("");
   const [comunidadFilter, setComunidadFilter] = useState("");
   const [page, setPage] = useState(1);
-  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleteId, setDeleteId] = useState<ProductorId | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editId, setEditId] = useState<number | null>(null);
-  const [viewId, setViewId] = useState<number | null>(null);
+  const [editId, setEditId] = useState<ProductorId | null>(null);
+  const [viewId, setViewId] = useState<ProductorId | null>(null);
 
   const filters = useMemo(() => ({
     search: search || undefined,
@@ -47,6 +48,31 @@ export default function ProductorList() {
 
   const productores = data?.data ?? [];
   const totalPages = data?.totalPages ?? 1;
+
+  const handleSearchChange = useCallback((val: string) => {
+    setSearch(val);
+    setPage(1);
+  }, []);
+
+  const handleEstadoChange = useCallback((val: string) => {
+    setEstadoFilter(val);
+    setPage(1);
+  }, []);
+
+  const handleCargoChange = useCallback((val: string) => {
+    setCargoFilter(val);
+    setPage(1);
+  }, []);
+
+  const handleSexoChange = useCallback((val: string) => {
+    setSexoFilter(val);
+    setPage(1);
+  }, []);
+
+  const handleComunidadChange = useCallback((val: string) => {
+    setComunidadFilter(val);
+    setPage(1);
+  }, []);
 
   const kpis = useMemo(() => [
     {
@@ -178,7 +204,7 @@ export default function ProductorList() {
       toast.success(`CSV exportado: ${allProductores.length} registros`);
     } catch (error) {
       console.error("Error al exportar CSV:", error);
-      toast.error("Error al exportar el CSV");
+      toast.error(getApiErrorMessage(error, "Error al exportar el CSV"));
     }
   };
 
@@ -237,7 +263,7 @@ export default function ProductorList() {
           <SearchInput
             placeholder="Buscar por código, DNI o nombres..."
             value={search}
-            onChange={(val) => { setSearch(val); setPage(1); }}
+            onChange={handleSearchChange}
           />
         </div>
         <div className="w-40">
@@ -251,7 +277,7 @@ export default function ProductorList() {
             ]}
             placeholder="Todos"
             value={estadoFilter}
-            onChange={(val) => { setEstadoFilter(val); setPage(1); }}
+            onChange={handleEstadoChange}
           />
         </div>
         <div className="w-40">
@@ -270,7 +296,7 @@ export default function ProductorList() {
             ]}
             placeholder="Todos"
             value={cargoFilter}
-            onChange={(val) => { setCargoFilter(val); setPage(1); }}
+            onChange={handleCargoChange}
           />
         </div>
         <div className="w-36">
@@ -283,7 +309,7 @@ export default function ProductorList() {
             ]}
             placeholder="Todos"
             value={sexoFilter}
-            onChange={(val) => { setSexoFilter(val); setPage(1); }}
+            onChange={handleSexoChange}
           />
         </div>
         <div className="w-48">
@@ -295,7 +321,7 @@ export default function ProductorList() {
             ]}
             placeholder="Todas"
             value={comunidadFilter}
-            onChange={(val) => { setComunidadFilter(val); setPage(1); }}
+            onChange={handleComunidadChange}
           />
         </div>
         {hasActiveFilters && (
@@ -331,8 +357,8 @@ export default function ProductorList() {
             await deleteMutation.mutateAsync(deleteId);
             setDeleteId(null);
             toast.success("Productor eliminado correctamente");
-          } catch {
-            toast.error("Error al eliminar el productor");
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, "Error al eliminar el productor"));
           }
         }}
         title="Eliminar Productor"
@@ -353,13 +379,13 @@ export default function ProductorList() {
         onClose={() => setEditId(null)}
         onSave={() => setEditId(null)}
         mode="edit"
-        productorId={editId || undefined}
+        productorId={editId ?? undefined}
       />
 
       <ProductorViewModal
         open={viewId !== null}
         onClose={() => setViewId(null)}
-        productorId={viewId || undefined}
+        productorId={viewId ?? undefined}
       />
     </div>
   );

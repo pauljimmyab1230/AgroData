@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ClipboardList } from "lucide-react";
-import { DatePicker, Input, Select } from "../ui";
+import { DatePicker, Select } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import type { Recepcion } from "../../services/recepciones";
-import { fetchCampanias } from "../../services/campanias";
 import { useUsuariosBasic } from "../../services/usuarios";
 
 type InformacionGeneralCardProps = {
@@ -23,26 +22,7 @@ const plantasOpciones = [
 export function InformacionGeneralCard({ mode, values, onChange }: InformacionGeneralCardProps) {
   const editable = mode !== "view";
   const [fecha, setFecha] = useState<Date | null>(parseDate(values?.fecha));
-  const [campanias, setCampanias] = useState<{ value: string; label: string }[]>([]);
   const { usuarios: responsables } = useUsuariosBasic();
-
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const result = await fetchCampanias({ limit: 100 });
-        if (!cancelled) {
-          setCampanias(
-            result.data.map((c) => ({ value: c.id, label: c.nombre }))
-          );
-        }
-      } catch {
-        setCampanias([]);
-      }
-    };
-    load();
-    return () => { cancelled = true; };
-  }, []);
 
   return (
     <CardShell>
@@ -54,7 +34,13 @@ export function InformacionGeneralCard({ mode, values, onChange }: InformacionGe
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <Field label="Código de Recepción" mode={mode} value={values?.codigo}>
-          <Input placeholder="Se genera automáticamente" disabled defaultValue={editable ? values?.codigo : undefined} />
+          <input
+            type="text"
+            placeholder="Se genera automáticamente"
+            disabled
+            defaultValue={values?.codigo}
+            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500"
+          />
         </Field>
 
         <Field label="Fecha" mode={mode} value={values?.fecha}>
@@ -65,15 +51,6 @@ export function InformacionGeneralCard({ mode, values, onChange }: InformacionGe
               onChange?.("fecha", date ? date.toISOString().split("T")[0] : "");
             }}
             disabled={!editable}
-          />
-        </Field>
-
-        <Field label="Campaña" mode={mode} value={values?.campaniaNombre}>
-          <Select
-            options={campanias}
-            placeholder="Seleccione la campaña"
-            value={values?.campaniaId ?? ""}
-            onChange={(val) => onChange?.("campaniaId", val)}
           />
         </Field>
 

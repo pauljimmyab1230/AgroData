@@ -1,13 +1,19 @@
-import { forwardRef, type InputHTMLAttributes } from "react";
+import { forwardRef, useId, type InputHTMLAttributes } from "react";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string;
 }
 
-const Input = forwardRef<HTMLInputElement, InputProps>(({ className = "", error, ...props }, ref) => {
+const Input = forwardRef<HTMLInputElement, InputProps>(({ className = "", error, id: externalId, ...props }, ref) => {
+  const generatedId = useId();
+  const errorId = `${externalId || generatedId}-error`;
+
   return (
     <input
       ref={ref}
+      id={externalId || generatedId}
+      aria-invalid={!!error || undefined}
+      aria-describedby={error ? errorId : undefined}
       className={`w-full rounded-xl border bg-gray-50/50 px-4 py-2.5 text-sm text-[#111827] outline-none transition-all ${
         error
           ? "border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"

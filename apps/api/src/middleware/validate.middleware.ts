@@ -1,21 +1,51 @@
-import { Request, Response, NextFunction } from 'express';
+import { type Request, type Response, type NextFunction } from 'express';
 import Joi from 'joi';
+import { createError } from './error.middleware';
 
-export const validate = (schema: Joi.ObjectSchema, property: 'body' | 'query' | 'params' = 'body') => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const { error, value } = schema.validate(req[property], { abortEarly: false, stripUnknown: true });
+type RequestProperty = 'body' | 'query' | 'params';
+
+export const validate = (schema: Joi.ObjectSchema, property: RequestProperty = 'body') => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const { error, value } = schema.validate(req[property], {
+      abortEarly: false,
+      stripUnknown: true,
+    });
 
     if (error) {
-      const messages = error.details.map((detail) => detail.message);
-      res.status(400).json({
-        success: false,
-        message: 'Error de validación',
-        errors: messages,
-      });
+      const errors = error.details.map((detail) => ({
+        field: detail.path.join('.'),
+        message: detail.message,
+      }));
+
+      const err = createError('Error de validación', 422);
+      err.errors = errors;
+      next(err);
       return;
     }
 
-    req[property] = value;
+    // Type-safe assignment
+    switch (property) {
+      case 'body':
+        req.body = value;
+        break;
+      case 'query':
+        req.query = value;
+        break;
+      case 'params':
+        req.params = value;
+        break;
+    }
+
     next();
   };
 };
+
+// ─── Validation schemas for common params ───────────────────
+export const paginationSchema = Joi.object({
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(20),
+});
+
+export const searchSchema = Joi.object({
+  search: Joi.string().max(200).allow('', null),
+});

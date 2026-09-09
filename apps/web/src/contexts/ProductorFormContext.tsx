@@ -1,17 +1,31 @@
-import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo } from "react";
 import type { ReactNode } from "react";
-import type { Productor, Familiar, Parcela } from "../services/productores";
+import type { Productor, Familiar, Parcela, Sexo, EstadoCivil, NivelEducativo, Idioma, EstadoProductor, CargoProductor } from "../services/productores";
+import { SexoEnum, EstadoCivilEnum, NivelEducativoEnum, IdiomaEnum, EstadoProductorEnum, CargoProductorEnum } from "../services/productores";
 import { toast } from "../utils/toast";
 
 type ProductorFormData = Partial<Productor>;
 
 type FieldErrors = Partial<Record<keyof Productor, string>>;
 
-type ProductorFormContextType = {
+// ─── Data Context (re-renders only when data changes) ─────
+
+type ProductorFormDataType = {
   data: ProductorFormData;
-  errors: FieldErrors;
   familiares: Familiar[];
   parcelas: Parcela[];
+};
+
+const ProductorFormDataContext = createContext<ProductorFormDataType>({
+  data: {},
+  familiares: [],
+  parcelas: [],
+});
+
+// ─── Actions Context (never re-renders consumers) ─────────
+
+type ProductorFormActionsType = {
+  errors: FieldErrors;
   updateData: (patch: ProductorFormData) => void;
   resetData: (initial: ProductorFormData) => void;
   setFamiliares: (list: Familiar[]) => void;
@@ -20,7 +34,7 @@ type ProductorFormContextType = {
   clearFieldError: (field: keyof Productor) => void;
 };
 
-const ProductorFormContext = createContext<ProductorFormContextType | null>(null);
+const ProductorFormActionsContext = createContext<ProductorFormActionsType | null>(null);
 
 const REQUIRED_STEP1: Array<keyof Productor> = [
   "dni",
@@ -122,14 +136,12 @@ export function ProductorFormProvider({
   const [errors, setErrors] = useState<FieldErrors>({});
   const [familiares, setFamiliares] = useState<Familiar[]>([]);
   const [parcelas, setParcelas] = useState<Parcela[]>([]);
-  const initialRef = useRef(initial);
   const initialJsonRef = useRef(JSON.stringify(initial));
 
   useEffect(() => {
     const newJson = JSON.stringify(initial);
     if (newJson !== initialJsonRef.current && Object.keys(initial).length > 0) {
       setData(initial);
-      initialRef.current = initial;
       initialJsonRef.current = newJson;
     }
   }, [initial]);
@@ -179,17 +191,29 @@ export function ProductorFormProvider({
     });
   }, []);
 
+  const dataValue = useMemo(() => ({ data, familiares, parcelas }), [data, familiares, parcelas]);
+  const actionsValue = useMemo(() => ({
+    errors,
+    updateData,
+    resetData,
+    setFamiliares,
+    setParcelas,
+    validateStep,
+    clearFieldError,
+  }), [errors, updateData, resetData, setFamiliares, setParcelas, validateStep, clearFieldError]);
+
   return (
-    <ProductorFormContext.Provider
-      value={{ data, errors, familiares, parcelas, updateData, resetData, setFamiliares, setParcelas, validateStep, clearFieldError }}
-    >
-      {children}
-    </ProductorFormContext.Provider>
+    <ProductorFormDataContext.Provider value={dataValue}>
+      <ProductorFormActionsContext.Provider value={actionsValue}>
+        {children}
+      </ProductorFormActionsContext.Provider>
+    </ProductorFormDataContext.Provider>
   );
 }
 
 export function useProductorForm() {
-  const ctx = useContext(ProductorFormContext);
-  if (!ctx) throw new Error("useProductorForm must be used within ProductorFormProvider");
-  return ctx;
+  const dataCtx = useContext(ProductorFormDataContext);
+  const actionsCtx = useContext(ProductorFormActionsContext);
+  if (!actionsCtx) throw new Error("useProductorForm must be used within ProductorFormProvider");
+  return { ...dataCtx, ...actionsCtx };
 }

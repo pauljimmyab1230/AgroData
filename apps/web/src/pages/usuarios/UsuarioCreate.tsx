@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Save } from "lucide-react";
 import {
-  Breadcrumb,
   Button,
   Card,
   Input,
@@ -63,13 +62,6 @@ export default function UsuarioCreate() {
 
   return (
     <div>
-      <Breadcrumb
-        items={[
-          { label: "Usuarios", to: "/usuarios" },
-          { label: "Nuevo Usuario" },
-        ]}
-      />
-
       <div className="mb-8 flex items-center justify-between">
         <SectionHeader
           title="Nuevo Usuario"

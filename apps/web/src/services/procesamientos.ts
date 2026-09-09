@@ -1,5 +1,6 @@
 import api from "./api";
 
+// ─── Types ─────────────────────────────────────────────────
 export interface OperacionProcesamiento {
   id?: string;
   nombre: string;
@@ -11,16 +12,23 @@ export interface OperacionProcesamiento {
   observaciones: string;
 }
 
+export interface RecepcionInfo {
+  id: number;
+  codigo: string;
+  peso_neto: number | null;
+  categoria: string | null;
+}
+
 export interface OrdenProcesamiento {
   id: string;
   codigo: string;
-  campaniaId: string;
-  campaniaNombre: string;
-  fecha: string;
+  fechaInicio: string;
+  fechaFin: string;
   producto: string;
   responsable: string;
   planta: string;
   lineaProcesamiento: string;
+  tipoProceso: string;
   estado: string;
   observaciones: string;
   pesoEntrada: number;
@@ -31,6 +39,8 @@ export interface OrdenProcesamiento {
   calidadProducto: string;
   pesoFinal: number;
   humedadFinal: number;
+  recepcionId: number | null;
+  recepcion: RecepcionInfo | null;
   lotes: string[];
   operaciones: OperacionProcesamiento[];
   createdAt: string;
@@ -40,40 +50,52 @@ export interface OrdenProcesamiento {
 interface OrdenProcesamientoDTO {
   id: string;
   codigo: string;
-  campania_id: string;
-  campania: { id: string; codigo: string; nombre: string } | null;
-  fecha: string;
+  fecha_inicio: string;
+  fecha_fin: string;
   producto: string;
   responsable: string;
   planta: string;
   linea_procesamiento: string;
+  tipo_proceso: string;
   estado: string;
   observaciones: string | null;
-  peso_entrada: number;
-  peso_salida: number;
-  merma: number;
-  rendimiento: number;
+  peso_entrada: number | null;
+  peso_salida: number | null;
+  merma: number | null;
+  rendimiento: number | null;
   producto_base: string | null;
   calidad_producto: string | null;
   peso_final: number | null;
   humedad_final: number | null;
+  recepcion_id: number | null;
+  recepcion: RecepcionInfo | null;
   lotes: string[];
-  operaciones: Array<{ id: string; nombre: string; tipo: string; estado: string; fecha_inicio: string | null; fecha_fin: string | null; responsable: string; observaciones: string | null }>;
+  operaciones: Array<{
+    id: string;
+    nombre: string;
+    tipo: string;
+    estado: string;
+    fecha_inicio: string | null;
+    fecha_fin: string | null;
+    responsable: string;
+    observaciones: string | null;
+  }>;
   created_at: string;
   updated_at: string;
 }
 
+// ─── Transform Functions ───────────────────────────────────
 function toFrontend(dto: OrdenProcesamientoDTO): OrdenProcesamiento {
   return {
     id: dto.id,
     codigo: dto.codigo,
-    campaniaId: dto.campania_id,
-    campaniaNombre: dto.campania?.nombre ?? "",
-    fecha: dto.fecha?.split("T")[0] ?? "",
+    fechaInicio: dto.fecha_inicio?.split("T")[0] ?? "",
+    fechaFin: dto.fecha_fin?.split("T")[0] ?? "",
     producto: dto.producto,
     responsable: dto.responsable,
     planta: dto.planta,
     lineaProcesamiento: dto.linea_procesamiento,
+    tipoProceso: dto.tipo_proceso,
     estado: dto.estado,
     observaciones: dto.observaciones ?? "",
     pesoEntrada: Number(dto.peso_entrada) || 0,
@@ -84,6 +106,8 @@ function toFrontend(dto: OrdenProcesamientoDTO): OrdenProcesamiento {
     calidadProducto: dto.calidad_producto ?? "",
     pesoFinal: Number(dto.peso_final) || 0,
     humedadFinal: Number(dto.humedad_final) || 0,
+    recepcionId: dto.recepcion_id,
+    recepcion: dto.recepcion ?? null,
     lotes: (dto.lotes ?? []).map((l: unknown) => {
       if (typeof l === "string") return l;
       const lot = l as { lote_productor?: string; id?: string };
@@ -107,12 +131,13 @@ function toFrontend(dto: OrdenProcesamientoDTO): OrdenProcesamiento {
 function toBackend(data: Partial<OrdenProcesamiento>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   if (data.codigo !== undefined) out.codigo = data.codigo;
-  if (data.campaniaId !== undefined) out.campania_id = data.campaniaId;
-  if (data.fecha !== undefined) out.fecha = data.fecha || null;
+  if (data.fechaInicio !== undefined) out.fecha_inicio = data.fechaInicio || null;
+  if (data.fechaFin !== undefined) out.fecha_fin = data.fechaFin || null;
   if (data.producto !== undefined) out.producto = data.producto;
   if (data.responsable !== undefined) out.responsable = data.responsable;
   if (data.planta !== undefined) out.planta = data.planta;
   if (data.lineaProcesamiento !== undefined) out.linea_procesamiento = data.lineaProcesamiento;
+  if (data.tipoProceso !== undefined) out.tipo_proceso = data.tipoProceso;
   if (data.estado !== undefined) out.estado = data.estado;
   if (data.observaciones !== undefined) out.observaciones = data.observaciones || null;
   if (data.pesoEntrada !== undefined) out.peso_entrada = data.pesoEntrada;
@@ -123,21 +148,22 @@ function toBackend(data: Partial<OrdenProcesamiento>): Record<string, unknown> {
   if (data.calidadProducto !== undefined) out.calidad_producto = data.calidadProducto || null;
   if (data.pesoFinal !== undefined) out.peso_final = data.pesoFinal;
   if (data.humedadFinal !== undefined) out.humedad_final = data.humedadFinal;
+  if (data.recepcionId !== undefined) out.recepcion_id = data.recepcionId;
   if (data.lotes !== undefined) out.lotes = data.lotes;
   if (data.operaciones !== undefined) out.operaciones = data.operaciones;
   return out;
 }
 
-// ─── Types ─────────────────────────────────────────────────
-
+// ─── Form Types ────────────────────────────────────────────
 export interface OrdenProcesamientoFormData {
   codigo: string;
-  campaniaId: string;
-  fecha: string;
+  fechaInicio: string;
+  fechaFin: string;
   producto: string;
   responsable: string;
   planta: string;
   lineaProcesamiento: string;
+  tipoProceso: string;
   estado: string;
   observaciones: string;
   pesoEntrada: number;
@@ -148,19 +174,21 @@ export interface OrdenProcesamientoFormData {
   calidadProducto: string;
   pesoFinal: number;
   humedadFinal: number;
+  recepcionId: number | null;
   lotes: string[];
   operaciones: OperacionProcesamiento[];
 }
 
 export const emptyOrdenProcesamientoForm: OrdenProcesamientoFormData = {
   codigo: "",
-  campaniaId: "",
-  fecha: new Date().toISOString().split("T")[0],
+  fechaInicio: new Date().toISOString().split("T")[0],
+  fechaFin: "",
   producto: "",
   responsable: "",
   planta: "",
   lineaProcesamiento: "",
-  estado: "PENDIENTE",
+  tipoProceso: "",
+  estado: "REGISTRADA",
   observaciones: "",
   pesoEntrada: 0,
   pesoSalida: 0,
@@ -170,30 +198,41 @@ export const emptyOrdenProcesamientoForm: OrdenProcesamientoFormData = {
   calidadProducto: "",
   pesoFinal: 0,
   humedadFinal: 0,
+  recepcionId: null,
   lotes: [],
   operaciones: [],
 };
 
-export const procesamientoEstados = ["REGISTRADA", "EN_PROCESO", "COMPLETADA", "PAUSADA", "CANCELADA"] as const;
-export const procesamientoLineas = ["LIMPIEZA", "SECADO", "MOLIENDA", "TOSTADO", "EMPAQUE"] as const;
+// ─── Constants ─────────────────────────────────────────────
+export const procesamientoEstados = ["REGISTRADA", "EN_PROCESO", "FINALIZADO", "PAUSADA", "CANCELADA"] as const;
+export const procesamientoLineas = ["GRANOS", "TUBERCULOS", "LEGUMBRES", "SEMILLAS"] as const;
+export const tiposProceso = ["SECADO", "LIMPIEZA", "MOLIENDA", "TOSTADO", "EMPAQUE", "TRANSFORMACION"] as const;
 
+// ─── Query Types ───────────────────────────────────────────
 export interface ProcesamientosQuery {
   search?: string;
   estado?: string;
-  campania_id?: string;
-  planta?: string;
+  tipo_proceso?: string;
   linea_procesamiento?: string;
+  recepcion_id?: number;
   page?: number;
   limit?: number;
 }
 
-export async function fetchProcesamientos(params?: ProcesamientosQuery): Promise<{ data: OrdenProcesamiento[]; total: number; page: number; limit: number; totalPages: number }> {
+// ─── API Functions ─────────────────────────────────────────
+export async function fetchProcesamientos(params?: ProcesamientosQuery): Promise<{
+  data: OrdenProcesamiento[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}> {
   const query: Record<string, string> = {};
   if (params?.search) query.search = params.search;
   if (params?.estado) query.estado = params.estado;
-  if (params?.campania_id) query.campania_id = params.campania_id;
-  if (params?.planta) query.planta = params.planta;
+  if (params?.tipo_proceso) query.tipo_proceso = params.tipo_proceso;
   if (params?.linea_procesamiento) query.linea_procesamiento = params.linea_procesamiento;
+  if (params?.recepcion_id) query.recepcion_id = String(params.recepcion_id);
   if (params?.page) query.page = String(params.page);
   if (params?.limit) query.limit = String(params.limit);
 
@@ -226,6 +265,7 @@ export async function deleteProcesamiento(id: string): Promise<void> {
   await api.delete(`/procesamientos/${id}`);
 }
 
+// ─── Utility Functions ─────────────────────────────────────
 export function formatearFecha(fecha: string): string {
   if (!fecha) return "";
   return new Date(fecha).toLocaleDateString("es-PE", {
@@ -241,17 +281,19 @@ export function formatearPeso(peso: number): string {
 
 export function calcularRendimiento(pesoEntrada: number, pesoSalida: number): number {
   if (pesoEntrada === 0) return 0;
-  return ((pesoSalida / pesoEntrada) * 100);
+  return (pesoSalida / pesoEntrada) * 100;
 }
 
 export const formatKg = formatearPeso;
 export const formatFecha = formatearFecha;
+
 export function formatPct(pct: number): string {
   return `${pct.toFixed(1)}%`;
 }
 
+// ─── Options ───────────────────────────────────────────────
 export const calidadesOpciones = ["PRIMERA", "SEGUNDA", "TERCERA", "DESCARTE"] as const;
-export const lineasOpciones = ["GRANOS", "TUBERCULOS", "LEGUMBRES", "SEmillAS"] as const;
+export const lineasOpciones = ["GRANOS", "TUBERCULOS", "LEGUMBRES", "SEMILLAS"] as const;
 
 export type TipoEventoHistorial = string;
 export type Operacion = OperacionProcesamiento;
@@ -265,10 +307,12 @@ export interface LoteProductorProcesado {
 }
 
 export const campaniasOpciones = ["Campaña Quinua Orgánica 2024-2025", "Campaña Papa Nativa 2024-2025"] as const;
-export const lineasProcesamientoOpciones = ["GRANOS", "TUBERCULOS", "LEGUMBRES", "SEmillAS"] as const;
+export const lineasProcesamientoOpciones = ["GRANOS", "TUBERCULOS", "LEGUMBRES", "SEMILLAS"] as const;
 export const plantasOpciones = ["Planta Procesadora San Juan", "Planta Procesadora Chuschi"] as const;
 export const productosOpciones = ["Quinua", "Papa Nativa", "Cebada", "Frijol", "Tarwi", "Maíz"] as const;
 export const responsablesOpciones = ["Ing. Carlos Mendoza", "Ing. María García"] as const;
+export const tiposProcesoOpciones = ["SECADO", "LIMPIEZA", "MOLIENDA", "TOSTADO", "EMPAQUE", "TRANSFORMACION"] as const;
+
 export const lotesProductorDisponibles: LoteProductorProcesado[] = [
   { loteProductor: "LP-TEO-001", productor: "Teófilo Huanca", parcela: "PAR-001", cultivo: "Quinua", pesoRecepcionado: 2025 },
   { loteProductor: "LP-JUA-001", productor: "Juana Mamani", parcela: "PAR-004", cultivo: "Quinua", pesoRecepcionado: 2790 },

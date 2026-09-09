@@ -1,68 +1,111 @@
 import prisma from '../config/database';
 import { createError } from '../middleware/error.middleware';
-
-// ─── WKT / Geometry helpers ──────────────────────────────────
+import { polygon as turfPolygon } from '@turf/helpers';
+import turfArea from '@turf/area';
 
 type Coord = [number, number];
 
-/** Convert [lat, lng][] → MULTIPOLYGON WKT (lng lat order for WKT) */
-function coordsToWkt(coords: Coord[]): string {
-  const ring = [...coords, coords[0]].map(([lat, lng]) => `${lng} ${lat}`).join(',');
-  return `MULTIPOLYGON(((${ring})))`;
-}
+type CoordInput = [number, number] | number[];
 
-/** Convert MULTIPOLYGON WKT → [lat, lng][] */
-function wktToCoords(wkt: string): Coord[] | null {
-  if (!wkt) return null;
-  const inner = wkt.replace(/^MULTIPOLYGON\(\(\(/, '').replace(/\)\)\)$/, '');
-  if (!inner) return null;
-  return inner.split(',').map((pair) => {
-    const [lng, lat] = pair.trim().split(' ').map(Number);
-    return [lat, lng] as Coord;
-  });
-}
-
-async function savePoligono(parcelaId: number, coords: Coord[] | null): Promise<void> {
-  if (!coords || coords.length < 3) {
-    await prisma.$executeRawUnsafe(
-      'UPDATE parcela SET poligono = NULL WHERE id = ?',
-      parcelaId,
-    );
-    return;
-  }
-  const wkt = coordsToWkt(coords);
-  await prisma.$executeRawUnsafe(
-    'UPDATE parcela SET poligono = ST_GeomFromText(?, 4326) WHERE id = ?',
-    wkt,
-    parcelaId,
+function isValidCoordArray(coords: unknown): coords is Coord[] {
+  return (
+    Array.isArray(coords) &&
+    coords.length >= 3 &&
+    coords.every(
+      (c): c is Coord =>
+        Array.isArray(c) &&
+        c.length === 2 &&
+        typeof c[0] === 'number' &&
+        typeof c[1] === 'number' &&
+        Number.isFinite(c[0]) &&
+        Number.isFinite(c[1]),
+    )
   );
 }
 
-async function fetchPoligono(parcelaId: number): Promise<Coord[] | null> {
+function sanitizeCoords(coords: unknown): Coord[] | null {
+  if (!isValidCoordArray(coords)) return null;
+  return coords.map((c) => [c[0], c[1]] as Coord);
+}
+
+function validatePolygon(coords: Coord[]): { valid: boolean; error?: string } {
+  if (coords.length < 3) {
+    return { valid: false, error: 'El polígono debe tener al menos 3 vértices' };
+  }
+
+  for (let i = 0; i < coords.length; i++) {
+    const [lat, lng] = coords[i];
+    if (lat < -90 || lat > 90) {
+      return { valid: false, error: `Latitud ${lat} fuera de rango [-90, 90] en vértice ${i + 1}` };
+    }
+    if (lng < -180 || lng > 180) {
+      return { valid: false, error: `Longitud ${lng} fuera de rango [-180, 180] en vértice ${i + 1}` };
+    }
+  }
+
+  const closed = coords[0][0] === coords[coords.length - 1][0] && coords[0][1] === coords[coords.length - 1][1];
+  const ring = closed ? coords : [...coords, coords[0]];
+
   try {
-    const rows = await prisma.$queryRaw<{ poligono: string }[]>`
-      SELECT ST_AsWKT(poligono) AS poligono FROM parcela WHERE id = ${parcelaId}
-    `;
-    if (!rows.length || !rows[0].poligono) return null;
-    return wktToCoords(rows[0].poligono);
+    const geom = turfPolygon([ring]);
+    const area = turfArea(geom);
+    if (area <= 0) {
+      return { valid: false, error: 'El polígono tiene área cero o negativa' };
+    }
+  } catch {
+    return { valid: false, error: 'Geometría del polígono inválida' };
+  }
+
+  const seen = new Set<string>();
+  for (const [lat, lng] of coords) {
+    const key = `${lat.toFixed(8)},${lng.toFixed(8)}`;
+    if (seen.has(key)) {
+      return { valid: false, error: 'El polígono tiene vértices duplicados consecutivos' };
+    }
+    seen.add(key);
+  }
+
+  return { valid: true };
+}
+
+function coordsToJson(coords: Coord[] | null): string | null {
+  if (!coords || coords.length < 3) return null;
+  const closed = coords[0][0] === coords[coords.length - 1][0] && coords[0][1] === coords[coords.length - 1][1];
+  const ring = closed ? coords : [...coords, coords[0]];
+  return JSON.stringify(ring);
+}
+
+function jsonToCoords(json: string | null): Coord[] | null {
+  if (!json) return null;
+  try {
+    const parsed: unknown = JSON.parse(json);
+    if (!isValidCoordArray(parsed)) return null;
+    return parsed.map((c) => [c[0], c[1]] as Coord);
   } catch {
     return null;
   }
 }
 
-// ─── End helpers ─────────────────────────────────────────────
+function calculatePolygonMetrics(coords: Coord[]): { areaHa: number; perimeterM: number } {
+  const closed = coords[0][0] === coords[coords.length - 1][0] && coords[0][1] === coords[coords.length - 1][1];
+  const ring = closed ? coords : [...coords, coords[0]];
+  const geom = turfPolygon([ring]);
+  const areaHa = turfArea(geom) / 10000;
 
-const generateCodigoParcela = async (): Promise<string> => {
-  const last = await prisma.parcela.findFirst({
-    orderBy: { codigo: 'desc' },
-    select: { codigo: true },
-  });
+  let perimeterM = 0;
+  for (let i = 0; i < ring.length - 1; i++) {
+    const [lat1, lng1] = ring[i];
+    const [lat2, lng2] = ring[i + 1];
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLng = ((lng2 - lng1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+    perimeterM += 2 * 6371000 * Math.asin(Math.sqrt(a));
+  }
 
-  if (!last) return 'PAR-001';
-
-  const num = parseInt(last.codigo.replace('PAR-', ''), 10) + 1;
-  return `PAR-${String(num).padStart(3, '0')}`;
-};
+  return { areaHa, perimeterM };
+}
 
 const productorSelect = {
   id: true,
@@ -72,7 +115,58 @@ const productorSelect = {
   apellido_materno: true,
 } as const;
 
-// ─── Parcelas ───────────────────────────────────────────────
+export const getStats = async (filters: {
+  search?: string;
+  comunidad?: string;
+  cultivo?: string;
+  estado?: string;
+  productores_id?: string;
+}) => {
+  const where: Record<string, unknown> = { activo: true };
+  if (filters.comunidad) where.comunidad = filters.comunidad;
+  if (filters.cultivo) where.cultivo = filters.cultivo;
+  if (filters.estado) where.estado = filters.estado;
+  if (filters.productores_id) where.productores_id = Number(filters.productores_id);
+  if (filters.search) {
+    const searchTerm = filters.search.toLowerCase();
+    where.OR = [
+      { codigo: { contains: searchTerm, mode: 'insensitive' } },
+      { nombre: { contains: searchTerm, mode: 'insensitive' } },
+      { cultivo: { contains: searchTerm, mode: 'insensitive' } },
+      { comunidad: { contains: searchTerm, mode: 'insensitive' } },
+    ];
+  }
+  const [total, areaResult, productoresResult, certificadasResult] = await Promise.all([
+    prisma.parcela.count({ where }),
+    prisma.parcela.aggregate({ where, _sum: { area: true } }),
+    prisma.parcela.findMany({
+      where,
+      select: { productores_id: true },
+      distinct: ['productores_id'],
+    }),
+    prisma.parcela.count({
+      where: { ...where, certificacion: 'ORGANICA' },
+    }),
+  ]);
+  return {
+    total,
+    areaTotal: Number(areaResult._sum.area ?? 0),
+    productoresUnicos: productoresResult.length,
+    certificadas: certificadasResult,
+  };
+};
+
+const generateCodigoParcela = async (): Promise<string> => {
+  return prisma.$transaction(async (tx) => {
+    const last = await tx.parcela.findFirst({
+      orderBy: { codigo: 'desc' },
+      select: { codigo: true },
+    });
+    if (!last) return 'PAR-001';
+    const num = parseInt(last.codigo.replace('PAR-', ''), 10) + 1;
+    return `PAR-${String(num).padStart(3, '0')}`;
+  });
+};
 
 export const getAll = async (filters: {
   search?: string;
@@ -84,24 +178,21 @@ export const getAll = async (filters: {
   limit?: number;
 }) => {
   const where: Record<string, unknown> = { activo: true };
-
   if (filters.comunidad) where.comunidad = filters.comunidad;
   if (filters.cultivo) where.cultivo = filters.cultivo;
   if (filters.estado) where.estado = filters.estado;
   if (filters.productores_id) where.productores_id = Number(filters.productores_id);
-
   if (filters.search) {
+    const searchTerm = filters.search.toLowerCase();
     where.OR = [
-      { codigo: { contains: filters.search, mode: 'insensitive' } },
-      { nombre: { contains: filters.search, mode: 'insensitive' } },
-      { cultivo: { contains: filters.search, mode: 'insensitive' } },
-      { comunidad: { contains: filters.search, mode: 'insensitive' } },
+      { codigo: { contains: searchTerm, mode: 'insensitive' } },
+      { nombre: { contains: searchTerm, mode: 'insensitive' } },
+      { cultivo: { contains: searchTerm, mode: 'insensitive' } },
+      { comunidad: { contains: searchTerm, mode: 'insensitive' } },
     ];
   }
-
   const page = filters.page || 1;
   const limit = filters.limit || 20;
-
   const [parcelas, total] = await Promise.all([
     prisma.parcela.findMany({
       where,
@@ -115,27 +206,10 @@ export const getAll = async (filters: {
     }),
     prisma.parcela.count({ where }),
   ]);
-
-  let polyMap = new Map<number, Coord[] | null>();
-  if (parcelas.length > 0) {
-    try {
-      const poligonos = await prisma.$queryRaw<{ id: number; wkt: string }[]>`
-        SELECT id, ST_AsWKT(poligono) AS wkt
-        FROM parcela
-        WHERE id IN (${parcelas.map((p) => p.id)})
-          AND poligono IS NOT NULL
-      `;
-      polyMap = new Map(poligonos.map((r) => [r.id, wktToCoords(r.wkt)]));
-    } catch {
-      // poligono column may not support ST_AsWKT
-    }
-  }
-
   const data = parcelas.map((p) => ({
     ...p,
-    poligono: polyMap.get(p.id) ?? null,
+    poligono: jsonToCoords(p.poligono),
   }));
-
   return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
 };
 
@@ -148,14 +222,10 @@ export const getById = async (id: number) => {
       fotos: true,
     },
   });
-
   if (!parcela) {
     throw createError('Parcela no encontrada', 404);
   }
-
-  const poligono = await fetchPoligono(id);
-
-  return { ...parcela, poligono };
+  return { ...parcela, poligono: jsonToCoords(parcela.poligono) };
 };
 
 const buildCreateData = (data: Record<string, unknown>) => ({
@@ -217,62 +287,64 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
     if (ubigeoRecord) ubigeoId = ubigeoRecord.id;
   }
 
-  const parcela = await prisma.parcela.create({
-    data: {
-      productores_id: productorId,
-      codigo,
-      ...buildCreateData(data),
-      created_by: userId || null,
-    },
-    include: { productor: { select: productorSelect } },
-  });
+  const rawCoords = sanitizeCoords(data.poligono);
+  let areaCalculada: string | null = null;
+  let perimetro: string | null = null;
+  let verticesCount: number | null = null;
 
-  const poligono = data.poligono as Coord[] | null | undefined;
-  if (poligono !== undefined) {
-    await savePoligono(parcela.id, poligono);
+  if (rawCoords) {
+    const validation = validatePolygon(rawCoords);
+    if (!validation.valid) {
+      throw createError(validation.error!, 422);
+    }
+    const metrics = calculatePolygonMetrics(rawCoords);
+    areaCalculada = `${metrics.areaHa.toFixed(2)} ha`;
+    perimetro = `${metrics.perimeterM.toFixed(0)} m`;
+    verticesCount = rawCoords.length;
   }
 
-  return { ...parcela, poligono: poligono ?? null };
+  const parcela = await prisma.$transaction(async (tx) => {
+    const result = await tx.parcela.create({
+      data: {
+        productores_id: productorId,
+        ubigeo_id: ubigeoId,
+        codigo,
+        ...buildCreateData(data),
+        poligono: coordsToJson(rawCoords),
+        area_calculada: (areaCalculada ?? (data.area_calculada as string)) || null,
+        perimetro: (perimetro ?? (data.perimetro as string)) || null,
+        vertices: verticesCount ?? (data.vertices !== undefined ? Number(data.vertices) : null),
+        created_by: userId || null,
+      },
+      include: { productor: { select: productorSelect } },
+    });
+    return result;
+  });
+
+  await createHistorial(parcela.id, {
+    tipo: 'registro',
+    titulo: 'Parcela registrada',
+    descripcion: `Se registró la parcela ${parcela.codigo} (${parcela.nombre})`,
+    usuario: userId || undefined,
+  });
+
+  return { ...parcela, poligono: rawCoords };
 };
 
 export const update = async (id: number, data: Record<string, unknown>, userId?: string) => {
   const existing = await prisma.parcela.findFirst({ where: { id, activo: true } });
-
   if (!existing) {
     throw createError('Parcela no encontrada', 404);
   }
 
   const updateData: Record<string, unknown> = {};
-
   const stringFields = [
-    'ubicacion',
-    'comunidad',
-    'sector',
-    'altitud',
-    'acreditacion',
-    'departamento',
-    'provincia',
-    'distrito',
-    'centro_poblado',
-    'ubigeo',
-    'latitud',
-    'longitud',
-    'precision_gps',
-    'utm_este',
-    'utm_norte',
-    'utm_zona',
-    'tipo_suelo',
-    'textura',
-    'pendiente',
-    'fuente_agua',
-    'sistema_riego',
-    'zona_agroecologica',
-    'disponibilidad_agua',
-    'observaciones',
-    'area_calculada',
-    'perimetro',
-    'responsable',
-    'area_unidad',
+    'ubicacion', 'comunidad', 'sector', 'altitud', 'acreditacion',
+    'departamento', 'provincia', 'distrito', 'centro_poblado', 'ubigeo',
+    'latitud', 'longitud', 'precision_gps', 'utm_este', 'utm_norte', 'utm_zona',
+    'tipo_suelo', 'textura', 'pendiente', 'fuente_agua', 'sistema_riego',
+    'zona_agroecologica', 'disponibilidad_agua', 'observaciones',
+    'area_calculada', 'perimetro', 'responsable', 'area_unidad',
   ];
   for (const field of stringFields) {
     if (data[field] !== undefined) updateData[field] = (data[field] as string) || null;
@@ -283,6 +355,8 @@ export const update = async (id: number, data: Record<string, unknown>, userId?:
   } else if (data.ubigeo !== undefined && data.ubigeo) {
     const ubigeoRecord = await prisma.ubigeo.findUnique({ where: { ubigeo: data.ubigeo as string } });
     updateData.ubigeo_id = ubigeoRecord?.id ?? null;
+  } else if (data.ubigeo !== undefined && !data.ubigeo) {
+    updateData.ubigeo_id = null;
   }
 
   if (data.nombre !== undefined) updateData.nombre = data.nombre;
@@ -291,7 +365,13 @@ export const update = async (id: number, data: Record<string, unknown>, userId?:
   if (data.area_total !== undefined) updateData.area = Number(data.area_total);
   if (data.area !== undefined) updateData.area = Number(data.area);
   if (data.area_certificada !== undefined) {
-    updateData.area_certificada = data.area_certificada === '' || data.area_certificada === null ? null : Number(data.area_certificada);
+    const val = data.area_certificada;
+    if (val === '' || val === null || val === undefined) {
+      updateData.area_certificada = null;
+    } else {
+      const num = Number(val);
+      updateData.area_certificada = num >= 0 ? num : null;
+    }
   }
   if (data.vertices !== undefined) {
     updateData.vertices = data.vertices === null ? null : Number(data.vertices);
@@ -306,8 +386,27 @@ export const update = async (id: number, data: Record<string, unknown>, userId?:
     await ensureProductorExists(Number(data.productores_id));
     updateData.productores_id = Number(data.productores_id);
   }
-
   if (userId) updateData.updated_by = userId;
+
+  if (data.poligono !== undefined) {
+    const rawCoords = sanitizeCoords(data.poligono);
+    if (rawCoords) {
+      const validation = validatePolygon(rawCoords);
+      if (!validation.valid) {
+        throw createError(validation.error!, 422);
+      }
+      const metrics = calculatePolygonMetrics(rawCoords);
+      updateData.poligono = coordsToJson(rawCoords);
+      updateData.area_calculada = `${metrics.areaHa.toFixed(2)} ha`;
+      updateData.perimetro = `${metrics.perimeterM.toFixed(0)} m`;
+      updateData.vertices = rawCoords.length;
+    } else if (data.poligono === null) {
+      updateData.poligono = null;
+      updateData.area_calculada = null;
+      updateData.perimetro = null;
+      updateData.vertices = null;
+    }
+  }
 
   const updated = await prisma.parcela.update({
     where: { id },
@@ -315,35 +414,39 @@ export const update = async (id: number, data: Record<string, unknown>, userId?:
     include: { productor: { select: productorSelect } },
   });
 
-  if (data.poligono !== undefined) {
-    await savePoligono(id, data.poligono as Coord[] | null);
-  }
+  await createHistorial(id, {
+    tipo: 'actualizacion',
+    titulo: 'Parcela actualizada',
+    descripcion: `Se actualizó la parcela ${updated.codigo}`,
+    usuario: userId || undefined,
+  });
 
-  const poligono = await fetchPoligono(id);
-
-  return { ...updated, poligono };
+  return { ...updated, poligono: jsonToCoords(updated.poligono) };
 };
 
 export const remove = async (id: number) => {
   const existing = await prisma.parcela.findFirst({ where: { id, activo: true } });
-
   if (!existing) {
     throw createError('Parcela no encontrada', 404);
   }
-
   await prisma.parcela.update({
     where: { id },
     data: { activo: false, estado: 'INACTIVA' },
   });
 
+  await createHistorial(id, {
+    tipo: 'baja',
+    titulo: 'Parcela eliminada',
+    descripcion: `Se eliminó la parcela ${existing.codigo}`,
+  });
+
   return { message: 'Parcela eliminada exitosamente' };
 };
 
-// ─── Documentos ─────────────────────────────────────────────
+// --- Documentos ---
 
 export const getDocumentos = async (parcelaId: number) => {
   await ensureParcelaExists(parcelaId);
-
   return prisma.parcela_documentos.findMany({
     where: { parcela_id: parcelaId },
     orderBy: { created_at: 'desc' },
@@ -352,7 +455,6 @@ export const getDocumentos = async (parcelaId: number) => {
 
 export const createDocumento = async (parcelaId: number, data: Record<string, unknown>) => {
   await ensureParcelaExists(parcelaId);
-
   return prisma.parcela_documentos.create({
     data: {
       parcela_id: parcelaId,
@@ -368,21 +470,17 @@ export const createDocumento = async (parcelaId: number, data: Record<string, un
 
 export const updateDocumento = async (parcelaId: number, documentoId: number, data: Record<string, unknown>) => {
   await ensureParcelaExists(parcelaId);
-
   const existing = await prisma.parcela_documentos.findFirst({
     where: { id: documentoId, parcela_id: parcelaId },
   });
-
   if (!existing) {
     throw createError('Documento no encontrado', 404);
   }
-
   const updateData: Record<string, unknown> = {};
   const fields = ['tipo', 'nombre_archivo', 'ruta_archivo', 'tamano_bytes', 'mime_type', 'estado'];
   for (const field of fields) {
     if (data[field] !== undefined) updateData[field] = data[field];
   }
-
   return prisma.parcela_documentos.update({
     where: { id: documentoId },
     data: updateData,
@@ -391,25 +489,20 @@ export const updateDocumento = async (parcelaId: number, documentoId: number, da
 
 export const removeDocumento = async (parcelaId: number, documentoId: number) => {
   await ensureParcelaExists(parcelaId);
-
   const existing = await prisma.parcela_documentos.findFirst({
     where: { id: documentoId, parcela_id: parcelaId },
   });
-
   if (!existing) {
     throw createError('Documento no encontrado', 404);
   }
-
   await prisma.parcela_documentos.delete({ where: { id: documentoId } });
-
   return { message: 'Documento eliminado exitosamente' };
 };
 
-// ─── Fotos ──────────────────────────────────────────────────
+// --- Fotos ---
 
 export const getFotos = async (parcelaId: number) => {
   await ensureParcelaExists(parcelaId);
-
   return prisma.parcela_fotos.findMany({
     where: { parcela_id: parcelaId },
     orderBy: { created_at: 'asc' },
@@ -418,7 +511,6 @@ export const getFotos = async (parcelaId: number) => {
 
 export const createFoto = async (parcelaId: number, data: Record<string, unknown>) => {
   await ensureParcelaExists(parcelaId);
-
   return prisma.parcela_fotos.create({
     data: {
       parcela_id: parcelaId,
@@ -434,15 +526,12 @@ export const createFoto = async (parcelaId: number, data: Record<string, unknown
 
 export const updateFoto = async (parcelaId: number, fotoId: number, data: Record<string, unknown>) => {
   await ensureParcelaExists(parcelaId);
-
   const existing = await prisma.parcela_fotos.findFirst({
     where: { id: fotoId, parcela_id: parcelaId },
   });
-
   if (!existing) {
     throw createError('Fotografía no encontrada', 404);
   }
-
   const updateData: Record<string, unknown> = {};
   const stringFields = ['titulo', 'descripcion', 'autor', 'observaciones', 'ruta_archivo'];
   for (const field of stringFields) {
@@ -451,7 +540,6 @@ export const updateFoto = async (parcelaId: number, fotoId: number, data: Record
   if (data.fecha !== undefined) {
     updateData.fecha = data.fecha ? new Date(data.fecha as string) : null;
   }
-
   return prisma.parcela_fotos.update({
     where: { id: fotoId },
     data: updateData,
@@ -460,21 +548,43 @@ export const updateFoto = async (parcelaId: number, fotoId: number, data: Record
 
 export const removeFoto = async (parcelaId: number, fotoId: number) => {
   await ensureParcelaExists(parcelaId);
-
   const existing = await prisma.parcela_fotos.findFirst({
     where: { id: fotoId, parcela_id: parcelaId },
   });
-
   if (!existing) {
     throw createError('Fotografía no encontrada', 404);
   }
-
   await prisma.parcela_fotos.delete({ where: { id: fotoId } });
-
   return { message: 'Fotografía eliminada exitosamente' };
 };
 
-// ─── Helpers ────────────────────────────────────────────────
+// --- Historial ---
+
+export const getHistorial = async (parcelaId: number) => {
+  await ensureParcelaExists(parcelaId);
+  return prisma.parcela_historial.findMany({
+    where: { parcela_id: parcelaId },
+    orderBy: { created_at: 'desc' },
+  });
+};
+
+export const createHistorial = async (
+  parcelaId: number,
+  data: { tipo: string; titulo: string; descripcion?: string; usuario?: string },
+) => {
+  await ensureParcelaExists(parcelaId);
+  return prisma.parcela_historial.create({
+    data: {
+      parcela_id: parcelaId,
+      tipo: data.tipo,
+      titulo: data.titulo,
+      descripcion: data.descripcion || null,
+      usuario: data.usuario || null,
+    },
+  });
+};
+
+// --- Helpers ---
 
 const ensureProductorExists = async (id: number) => {
   const exists = await prisma.productor.findUnique({ where: { id }, select: { id: true } });

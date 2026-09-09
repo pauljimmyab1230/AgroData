@@ -8,9 +8,27 @@ import { fetchAcopioByCodigo } from "../../services/acopios";
 import api from "../../services/api";
 import { toast } from "../../utils/toast";
 
+interface RecepcionFormData {
+  id?: string;
+  acopioId?: number;
+  acopioCodigo?: string;
+  loteProductor?: string;
+  fecha?: string;
+  responsable?: string;
+  planta?: string;
+  sacosDetalle?: Array<{ codigo: string; peso: number }>;
+  pesoBruto?: number;
+  tara?: number;
+  pesoNeto?: number;
+  humedad?: number;
+  impurezas?: number;
+  observaciones?: string;
+  estado?: string;
+}
+
 interface RecepcionFormProps {
   mode: FormMode;
-  values?: Record<string, unknown>;
+  values?: RecepcionFormData;
   inModal?: boolean;
   onSave?: () => void;
 }
@@ -227,7 +245,7 @@ export default function RecepcionForm({ mode, values, inModal, onSave }: Recepci
           <div className="mt-4 rounded-xl border border-green-200 bg-green-50 p-4">
             <p className="text-sm font-medium text-green-800">✓ Acopio encontrado: {acopioData.codigo}</p>
             <p className="text-xs text-green-600">
-              {acopioData.acopiador} · {acopioData.detalles?.length || 0} productor(es) · {acopioData.totalSacos} sacos
+              {acopioData.acopiador} · {acopioData.detalles?.length || 0} productor(es) · {acopioData.total_sacos} sacos
             </p>
           </div>
         )}

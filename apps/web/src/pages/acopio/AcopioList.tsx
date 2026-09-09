@@ -1,43 +1,22 @@
 import { useCallback, useEffect, useState } from "react";
 import { Plus, X } from "lucide-react";
-import { Button, ConfirmDialog, LoadingSpinner, SearchInput, SectionHeader, Select } from "../../components/ui";
+import { Button, ConfirmDialog, FilterSelect, LoadingSpinner, SearchInput, SectionHeader } from "../../components/ui";
 import AcopioKPI from "../../components/acopio/AcopioKPI";
 import AcopioTable from "../../components/acopio/AcopioTable";
-import { fetchAcopios, fetchAcopioStats, deleteAcopio, type Acopio, formatKg } from "../../services/acopios";
+import { fetchAcopios, fetchAcopioStats, deleteAcopio, type Acopio, formatKg, ESTADO_ACOPIO_OPTIONS } from "../../services/acopios";
 import AcopioModal from "../../components/acopio/AcopioModal";
 import { toast } from "../../utils/toast";
 
 const pageSize = 10;
 
-function FilterSelect({
-  label,
-  placeholder,
-  options,
-  value,
-  onChange,
-}: {
-  label: string;
-  placeholder: string;
-  options: { value: string; label: string }[];
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div className="w-44">
-      <label className="mb-1 block text-xs font-medium text-gray-500">{label}</label>
-      <Select options={options} placeholder={placeholder} value={value} onChange={onChange} />
-    </div>
-  );
-}
-
 export default function AcopioList() {
   const [search, setSearch] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
   const [page, setPage] = useState(1);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [viewId, setViewId] = useState<string | null>(null);
+  const [editId, setEditId] = useState<number | null>(null);
+  const [viewId, setViewId] = useState<number | null>(null);
 
   const [acopios, setAcopios] = useState<Acopio[]>([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -47,6 +26,7 @@ export default function AcopioList() {
     total_acopios: 0,
     sacos_recibidos: 0,
     kilogramos_acopiados: 0,
+    kilogramos_neto: 0,
   });
 
   const loadData = useCallback(() => {
@@ -55,12 +35,13 @@ export default function AcopioList() {
     if (filtroEstado) params.estado = filtroEstado;
 
     setLoading(true);
-    fetchAcopios(params as any)
+    fetchAcopios(params)
       .then((res) => {
         setAcopios(res.data);
         setTotalPages(res.totalPages);
       })
       .catch(() => {
+        toast.error("Error al cargar acopios");
         setAcopios([]);
       })
       .finally(() => setLoading(false));
@@ -73,7 +54,9 @@ export default function AcopioList() {
   useEffect(() => {
     fetchAcopioStats()
       .then(setStats)
-      .catch(() => {});
+      .catch(() => {
+        toast.error("Error al cargar estadísticas");
+      });
   }, []);
 
   const kpis = [
@@ -91,6 +74,11 @@ export default function AcopioList() {
       label: "Kilogramos Acopiados",
       value: formatKg(stats.kilogramos_acopiados),
       iconClass: "bg-red-50 text-red-600",
+    },
+    {
+      label: "Kilogramos Netos",
+      value: formatKg(stats.kilogramos_neto),
+      iconClass: "bg-violet-100 text-violet-600",
     },
   ];
 
@@ -112,7 +100,7 @@ export default function AcopioList() {
   const handleDelete = async () => {
     if (!deleteId) return;
     try {
-      await deleteAcopio(deleteId);
+      await deleteAcopio(String(deleteId));
       setDeleteId(null);
       loadData();
       toast.success("Acopio eliminado correctamente");
@@ -150,20 +138,22 @@ export default function AcopioList() {
           <SearchInput
             placeholder="Buscar por código o acopiador..."
             value={search}
-            onChange={(val) => { setSearch(val); setPage(1); }}
+            onChange={(val) => {
+              setSearch(val);
+              setPage(1);
+            }}
           />
         </div>
 
         <FilterSelect
           label="Estado"
           placeholder="Todos"
-          options={[
-            { value: "EN_PROCESO", label: "En Proceso" },
-            { value: "COMPLETADO", label: "Completado" },
-            { value: "EN_PLANTA", label: "En Planta" },
-          ]}
+          options={ESTADO_ACOPIO_OPTIONS}
           value={filtroEstado}
-          onChange={(val) => { setFiltroEstado(val); setPage(1); }}
+          onChange={(val) => {
+            setFiltroEstado(val);
+            setPage(1);
+          }}
         />
 
         {hasFilters && (
@@ -197,27 +187,11 @@ export default function AcopioList() {
         variant="danger"
       />
 
-      <AcopioModal
-        open={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onSave={handleModalClose}
-        mode="create"
-      />
+      <AcopioModal open={showCreateModal} onClose={() => setShowCreateModal(false)} onSave={handleModalClose} mode="create" />
 
-      <AcopioModal
-        open={editId !== null}
-        onClose={() => setEditId(null)}
-        onSave={handleModalClose}
-        mode="edit"
-        acopioId={editId || undefined}
-      />
+      <AcopioModal open={editId !== null} onClose={() => setEditId(null)} onSave={handleModalClose} mode="edit" acopioId={editId ? String(editId) : undefined} />
 
-      <AcopioModal
-        open={viewId !== null}
-        onClose={() => setViewId(null)}
-        mode="view"
-        acopioId={viewId || undefined}
-      />
+      <AcopioModal open={viewId !== null} onClose={() => setViewId(null)} mode="view" acopioId={viewId ? String(viewId) : undefined} />
     </div>
   );
 }

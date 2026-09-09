@@ -37,6 +37,7 @@ export function useCreateCampania() {
     mutationFn: (data: Partial<CampaniaFormData>) => createCampania(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["campanias"] });
+      qc.invalidateQueries({ queryKey: ["campaniaGlobalStats"] });
     },
   });
 }
@@ -46,8 +47,12 @@ export function useUpdateCampania() {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<CampaniaFormData> }) =>
       updateCampania(id, data),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ["campanias"] });
+      qc.invalidateQueries({ queryKey: ["campania", variables.id] });
+      qc.invalidateQueries({ queryKey: ["campaniaStats", variables.id] });
+      qc.invalidateQueries({ queryKey: ["campaniaTimeline", variables.id] });
+      qc.invalidateQueries({ queryKey: ["campaniaGlobalStats"] });
     },
   });
 }
@@ -58,6 +63,7 @@ export function useDeleteCampania() {
     mutationFn: (id: number) => deleteCampania(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["campanias"] });
+      qc.invalidateQueries({ queryKey: ["campaniaGlobalStats"] });
     },
   });
 }

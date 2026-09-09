@@ -1,25 +1,18 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Pencil, Boxes, Scale, Users } from "lucide-react";
-import { Breadcrumb, Button, Card, LoadingSpinner } from "../../components/ui";
+import { useParams } from "react-router-dom";
+import { ArrowLeft, Pencil, Boxes, Scale, Users, Truck } from "lucide-react";
+import { Button, Card, LoadingSpinner } from "../../components/ui";
 import { CardShell, CardHeader } from "../../components/shared/formControls";
-import { fetchAcopio, formatFecha, formatKg, type Acopio } from "../../services/acopios";
+import { fetchAcopio, formatFecha, formatKg, ESTADO_ACOPIO_LABELS, type Acopio } from "../../services/acopios";
 
 interface AcopioViewProps {
   inModal?: boolean;
   acopioId?: string;
 }
 
-const estadoLabels: Record<string, string> = {
-  EN_PROCESO: "En Proceso",
-  COMPLETADO: "Completado",
-  EN_PLANTA: "En Planta",
-};
-
 export default function AcopioView({ inModal, acopioId: propId }: AcopioViewProps) {
   const { id: paramId } = useParams();
   const id = propId || paramId;
-  const navigate = useNavigate();
   const [acopio, setAcopio] = useState<Acopio | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -54,7 +47,6 @@ export default function AcopioView({ inModal, acopioId: propId }: AcopioViewProp
     <div>
       {!inModal && (
         <>
-          <Breadcrumb items={[{ label: "Acopio", to: "/acopio" }, { label: acopio.codigo }]} />
           <div className="mb-8 flex items-center gap-4">
             <Button variant="ghost" as="link" to="/acopio" iconLeft={<ArrowLeft className="h-4 w-4" />}>
               Acopio
@@ -74,7 +66,7 @@ export default function AcopioView({ inModal, acopioId: propId }: AcopioViewProp
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-2xl font-bold text-[#111827]">{acopio.codigo}</h1>
               <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">
-                {estadoLabels[acopio.estado] || acopio.estado}
+                {ESTADO_ACOPIO_LABELS[acopio.estado] || acopio.estado}
               </span>
             </div>
             <p className="mt-1 text-sm text-gray-500">
@@ -83,14 +75,15 @@ export default function AcopioView({ inModal, acopioId: propId }: AcopioViewProp
           </div>
           {acopio.vehiculo && (
             <div className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-[#111827]">
-              🚛 {acopio.vehiculo}
+              <Truck className="mr-1 inline h-4 w-4" />
+              {acopio.vehiculo}
             </div>
           )}
         </div>
       </Card>
 
       {/* KPIs */}
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card padding="md" hover={false} className="shadow-sm">
           <div className="flex items-center justify-between">
             <div>
@@ -116,10 +109,24 @@ export default function AcopioView({ inModal, acopioId: propId }: AcopioViewProp
         <Card padding="md" hover={false} className="shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Peso Total</p>
+              <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Peso Campo (sacos)</p>
               <p className="mt-1.5 text-2xl font-bold text-[#111827]">{formatKg(pesoTotal)}</p>
             </div>
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+              <Scale className="h-5 w-5" />
+            </div>
+          </div>
+        </Card>
+        <Card padding="md" hover={false} className="shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Peso Neto</p>
+              <p className="mt-1.5 text-2xl font-bold text-[#111827]">{formatKg(acopio.peso_neto)}</p>
+              <p className="text-xs text-gray-400">
+                Bruto: {acopio.peso_bruto} kg · Tara: {acopio.tara} kg
+              </p>
+            </div>
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-100 text-violet-700">
               <Scale className="h-5 w-5" />
             </div>
           </div>
@@ -143,11 +150,14 @@ export default function AcopioView({ inModal, acopioId: propId }: AcopioViewProp
             {acopio.detalles.map((detalle) => {
               const pesoDetalle = detalle.sacos.reduce((s, saco) => s + saco.peso, 0);
               return (
-                <div key={`${detalle.productorId}-${detalle.cultivoId}`} className="rounded-xl border border-gray-200 p-4">
+                <div key={`${detalle.productor_id}-${detalle.cultivo_id}`} className="rounded-xl border border-gray-200 p-4">
                   <div className="mb-3 flex items-center justify-between">
                     <div>
                       <h4 className="font-medium text-[#111827]">{detalle.productorNombre}</h4>
                       <p className="text-xs text-gray-500">Cultivo: {detalle.cultivoNombre}</p>
+                      {detalle.parcelaNombre && (
+                        <p className="text-xs text-gray-500">Parcela: {detalle.parcelaNombre}</p>
+                      )}
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-semibold text-[#111827]">{detalle.sacos.length} sacos</p>
@@ -186,13 +196,15 @@ export default function AcopioView({ inModal, acopioId: propId }: AcopioViewProp
 
       {/* Observaciones */}
       {acopio.observaciones && (
-        <CardShell className="mt-6">
-          <CardHeader
-            icon={<span className="text-lg">📝</span>}
-            title="Observaciones"
-          />
-          <p className="text-sm text-gray-700">{acopio.observaciones}</p>
-        </CardShell>
+        <div className="mt-6">
+          <CardShell>
+            <CardHeader
+              icon={<span className="text-lg">📝</span>}
+              title="Observaciones"
+            />
+            <p className="text-sm text-gray-700">{acopio.observaciones}</p>
+          </CardShell>
+        </div>
       )}
     </div>
   );

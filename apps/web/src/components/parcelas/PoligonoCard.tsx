@@ -5,7 +5,7 @@ import turfArea from "@turf/area";
 import turfLength from "@turf/length";
 import { DatePicker, Input } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
-import { useParcelaForm } from "../../contexts/ParcelaFormContext";
+import { useOptionalParcelaForm } from "../../contexts/ParcelaFormContext";
 import PolygonViewer from "./PolygonViewer";
 import type { Parcela } from "../../services/parcelas";
 import type { LatLngTuple } from "leaflet";
@@ -25,7 +25,9 @@ function measurePolygon(coords: [number, number][]) {
 
 export function PoligonoCard({ mode, values }: PoligonoCardProps) {
   const editable = mode !== "view";
-  const { data, updateData } = useParcelaForm();
+  const formCtx = useOptionalParcelaForm();
+  const data = formCtx?.data;
+  const updateData = formCtx?.updateData;
 
   const str = (val: unknown): string => (typeof val === "string" ? val : "");
   const display = (field: keyof Parcela) => {

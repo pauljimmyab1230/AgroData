@@ -1,7 +1,12 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import * as catalogosService from '../services/catalogos.service';
+import type { AuthRequest } from '../middleware/auth.middleware';
 
-export const getAll = async (req: Request, res: Response, next: NextFunction) => {
+export const getAll = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const { tipo } = req.params;
     const result = await catalogosService.getAll(tipo, {
@@ -16,7 +21,11 @@ export const getAll = async (req: Request, res: Response, next: NextFunction) =>
   }
 };
 
-export const getActivos = async (req: Request, res: Response, next: NextFunction) => {
+export const getActivos = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const { tipo } = req.params;
     const data = await catalogosService.getActivos(tipo);
@@ -26,7 +35,11 @@ export const getActivos = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-export const getById = async (req: Request, res: Response, next: NextFunction) => {
+export const getById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const id = Number(req.params.id);
     const data = await catalogosService.getById(id);
@@ -36,29 +49,39 @@ export const getById = async (req: Request, res: Response, next: NextFunction) =
   }
 };
 
-export const create = async (req: Request, res: Response, next: NextFunction) => {
+export const create = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const { tipo } = req.params;
-    const userId = (req as any).user?.id;
-    const data = await catalogosService.create(tipo, req.body, userId);
+    const data = await catalogosService.create(tipo, req.body, req.user?.id);
     res.status(201).json({ success: true, data });
   } catch (error) {
     next(error);
   }
 };
 
-export const update = async (req: Request, res: Response, next: NextFunction) => {
+export const update = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const id = Number(req.params.id);
-    const userId = (req as any).user?.id;
-    const data = await catalogosService.update(id, req.body, userId);
+    const data = await catalogosService.update(id, req.body, req.user?.id);
     res.json({ success: true, data });
   } catch (error) {
     next(error);
   }
 };
 
-export const remove = async (req: Request, res: Response, next: NextFunction) => {
+export const remove = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const id = Number(req.params.id);
     const result = await catalogosService.remove(id);
@@ -68,11 +91,14 @@ export const remove = async (req: Request, res: Response, next: NextFunction) =>
   }
 };
 
-export const toggleActivo = async (req: Request, res: Response, next: NextFunction) => {
+export const toggleActivo = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const id = Number(req.params.id);
-    const userId = (req as any).user?.id;
-    const data = await catalogosService.toggleActivo(id, userId);
+    const data = await catalogosService.toggleActivo(id, req.user?.id);
     res.json({ success: true, data });
   } catch (error) {
     next(error);

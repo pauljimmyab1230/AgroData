@@ -1,6 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../services/api";
 import { fetchRecepciones, type Recepcion, type RecepcionesQuery } from "../../services/recepciones";
+import {
+  fetchInspecciones,
+  fetchInspeccion,
+  createInspeccion,
+  updateInspeccion,
+  type Inspeccion,
+  type InspeccionesQuery,
+} from "../../services/inspecciones";
 
 // ─── Actividades ──────────────────────────────────────────
 export interface Actividad {
@@ -116,25 +124,34 @@ export function useDeleteActividad() {
 }
 
 // ─── Inspecciones ─────────────────────────────────────────
-export function useInspecciones(filters?: Record<string, string | number | undefined>) {
+export function useInspecciones(filters?: InspeccionesQuery) {
   return useQuery({
     queryKey: ["inspecciones", filters],
-    queryFn: async () => {
-      const params: Record<string, string> = {};
-      if (filters) {
-        Object.entries(filters).forEach(([k, v]) => {
-          if (v !== undefined && v !== "") params[k] = String(v);
-        });
-      }
-      const res = await api.get("/inspecciones", { params });
-      return {
-        data: res.data.data ?? [],
-        total: res.data.total ?? 0,
-        page: res.data.page ?? 1,
-        limit: res.data.limit ?? 20,
-        totalPages: res.data.totalPages ?? 1,
-      };
-    },
+    queryFn: () => fetchInspecciones(filters),
+  });
+}
+
+export function useInspeccion(id: string | undefined) {
+  return useQuery({
+    queryKey: ["inspecciones", id],
+    queryFn: () => fetchInspeccion(id!),
+    enabled: Boolean(id),
+  });
+}
+
+export function useCreateInspeccion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<Inspeccion>) => createInspeccion(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["inspecciones"] }),
+  });
+}
+
+export function useUpdateInspeccion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<Inspeccion> }) => updateInspeccion(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["inspecciones"] }),
   });
 }
 

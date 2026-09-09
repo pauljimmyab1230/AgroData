@@ -6,6 +6,54 @@ const estadoDocumentoEnum = ['PENDIENTE', 'VERIFICADO', 'RECHAZADO'];
 
 const opcional = () => Joi.string().max(200).allow('', null);
 
+const latRange = (msg: string) =>
+  Joi.number().min(-90).max(90).precision(8).messages({ 'number.min': msg, 'number.max': msg });
+
+const lngRange = (msg: string) =>
+  Joi.number().min(-180).max(180).precision(8).messages({ 'number.min': msg, 'number.max': msg });
+
+const coordPair = Joi.array().ordered(
+  latRange('Latitud fuera de rango [-90, 90]').required(),
+  lngRange('Longitud fuera de rango [-180, 180]').required(),
+).length(2);
+
+const polygonValidation = Joi.array()
+  .items(coordPair)
+  .min(3)
+  .custom((value, helpers) => {
+    if (!Array.isArray(value) || value.length < 3) {
+      return helpers.error('polygon.minVertices');
+    }
+    const seen = new Set<string>();
+    for (let i = 0; i < value.length; i++) {
+      const [lat, lng] = value[i];
+      if (typeof lat !== 'number' || typeof lng !== 'number') {
+        return helpers.error('polygon.invalidCoord');
+      }
+      if (lat < -90 || lat > 90) {
+        return helpers.error('polygon.latRange', { index: i + 1 });
+      }
+      if (lng < -180 || lng > 180) {
+        return helpers.error('polygon.lngRange', { index: i + 1 });
+      }
+      const key = `${lat.toFixed(8)},${lng.toFixed(8)}`;
+      if (seen.has(key)) {
+        return helpers.error('polygon.duplicateVertex', { index: i + 1 });
+      }
+      seen.add(key);
+    }
+    return value;
+  })
+  .allow(null)
+  .messages({
+    'polygon.minVertices': 'El polígono debe tener al menos 3 vértices',
+    'polygon.invalidCoord': 'Cada vértice debe ser un par [latitud, longitud] de números',
+    'polygon.latRange': 'Latitud fuera de rango [-90, 90] en vértice {{#index}}',
+    'polygon.lngRange': 'Longitud fuera de rango [-180, 180] en vértice {{#index}}',
+    'polygon.duplicateVertex': 'Vértice duplicado en posición {{#index}}',
+    'array.min': 'El polígono debe tener al menos 3 vértices',
+  });
+
 export const createParcelaSchema = Joi.object({
   productores_id: Joi.number().integer().positive().required(),
   codigo: Joi.string().max(20).allow(''),
@@ -24,8 +72,8 @@ export const createParcelaSchema = Joi.object({
   centro_poblado: opcional(),
   ubigeo: Joi.string().max(6).allow('', null),
   ubigeo_id: Joi.number().integer().positive().allow(null),
-  latitud: Joi.string().max(30).allow('', null),
-  longitud: Joi.string().max(30).allow('', null),
+  latitud: latRange('Latitud fuera de rango [-90, 90]').allow('', null),
+  longitud: lngRange('Longitud fuera de rango [-180, 180]').allow('', null),
   precision_gps: Joi.string().max(20).allow('', null),
   tipo_suelo: Joi.string().max(100).allow('', null),
   textura: Joi.string().max(50).allow('', null),
@@ -38,7 +86,7 @@ export const createParcelaSchema = Joi.object({
   area_calculada: Joi.string().max(50).allow('', null),
   perimetro: Joi.string().max(50).allow('', null),
   vertices: Joi.number().integer().min(3).allow(null),
-  poligono: Joi.array().items(Joi.array().items(Joi.number()).min(2)).min(3).allow(null),
+  poligono: polygonValidation,
   fecha_levantamiento: Joi.date().iso().allow(null),
   responsable: Joi.string().max(150).allow('', null),
   acreditacion: Joi.string().max(100).allow('', null),
@@ -64,8 +112,8 @@ export const updateParcelaSchema = Joi.object({
   centro_poblado: opcional(),
   ubigeo: Joi.string().max(6).allow('', null),
   ubigeo_id: Joi.number().integer().positive().allow(null),
-  latitud: Joi.string().max(30).allow('', null),
-  longitud: Joi.string().max(30).allow('', null),
+  latitud: latRange('Latitud fuera de rango [-90, 90]').allow('', null),
+  longitud: lngRange('Longitud fuera de rango [-180, 180]').allow('', null),
   precision_gps: Joi.string().max(20).allow('', null),
   tipo_suelo: Joi.string().max(100).allow('', null),
   textura: Joi.string().max(50).allow('', null),
@@ -78,7 +126,7 @@ export const updateParcelaSchema = Joi.object({
   area_calculada: Joi.string().max(50).allow('', null),
   perimetro: Joi.string().max(50).allow('', null),
   vertices: Joi.number().integer().min(3).allow(null),
-  poligono: Joi.array().items(Joi.array().items(Joi.number()).min(2)).min(3).allow(null),
+  poligono: polygonValidation,
   fecha_levantamiento: Joi.date().iso().allow(null),
   responsable: Joi.string().max(150).allow('', null),
   acreditacion: Joi.string().max(100).allow('', null),
@@ -119,7 +167,7 @@ export const updateParcelaFotoSchema = Joi.object({
   fecha: Joi.date().iso().allow(null),
   autor: Joi.string().max(150).allow('', null),
   observaciones: Joi.string().allow('', null),
-  ruta_archivo: Joi.string().max(500).allow('', null),
+  ruta_archivo: Joi.string().max(500).allow(null),
 }).min(1);
 
 export const getAllParcelasSchema = Joi.object({

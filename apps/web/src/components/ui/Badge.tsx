@@ -6,6 +6,7 @@ interface BadgeProps {
   children: ReactNode;
   variant?: BadgeVariant;
   className?: string;
+  role?: string;
 }
 
 const variantStyles: Record<BadgeVariant, string> = {
@@ -18,9 +19,10 @@ const variantStyles: Record<BadgeVariant, string> = {
   gray: "bg-gray-100 text-gray-600",
 };
 
-export default function Badge({ children, variant = "default", className = "" }: BadgeProps) {
+export default function Badge({ children, variant = "default", className = "", role }: BadgeProps) {
   return (
     <span
+      role={role}
       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${variantStyles[variant]} ${className}`}
     >
       {children}

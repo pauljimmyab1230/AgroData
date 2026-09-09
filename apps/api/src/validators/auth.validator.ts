@@ -1,5 +1,18 @@
 import Joi from 'joi';
 
+const passwordComplexity = Joi.string()
+  .min(8)
+  .max(128)
+  .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+  .required()
+  .messages({
+    'string.min': 'La contraseña debe tener al menos 8 caracteres',
+    'string.max': 'La contraseña no puede exceder 128 caracteres',
+    'string.pattern.base':
+      'La contraseña debe contener al menos una mayúscula, una minúscula y un número',
+    'any.required': 'La contraseña es obligatoria',
+  });
+
 export const registerSchema = Joi.object({
   nombre: Joi.string().min(2).max(100).required().messages({
     'string.min': 'El nombre debe tener al menos 2 caracteres',
@@ -10,11 +23,7 @@ export const registerSchema = Joi.object({
     'string.email': 'El email no es válido',
     'any.required': 'El email es obligatorio',
   }),
-  password: Joi.string().min(6).max(50).required().messages({
-    'string.min': 'La contraseña debe tener al menos 6 caracteres',
-    'string.max': 'La contraseña no puede exceder 50 caracteres',
-    'any.required': 'La contraseña es obligatoria',
-  }),
+  password: passwordComplexity,
 });
 
 export const loginSchema = Joi.object({
@@ -22,7 +31,8 @@ export const loginSchema = Joi.object({
     'string.email': 'El email no es válido',
     'any.required': 'El email es obligatorio',
   }),
-  password: Joi.string().required().messages({
+  password: Joi.string().min(1).max(128).required().messages({
+    'string.min': 'La contraseña es obligatoria',
     'any.required': 'La contraseña es obligatoria',
   }),
 });

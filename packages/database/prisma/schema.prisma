@@ -79,10 +79,9 @@ enum EstadoParcela {
 }
 
 enum EstadoCultivo {
-  ACTIVO
-  EN_DESARROLLO
+  EN_CRECIMIENTO
   COSECHADO
-  FINALIZADO
+  PERDIDO
 }
 
 enum MetodoSiembra {
@@ -175,9 +174,9 @@ enum EstadoDocumento {
 }
 
 enum EstadoAcopio {
-  EN_PROCESO
-  COMPLETADO
-  EN_PLANTA
+  EN_CAMPO
+  EN_TRANSITO
+  RECIBIDO
 }
 
 enum EstadoProducto {
@@ -260,9 +259,18 @@ enum ResultadoRecepcion {
 enum EstadoProcesamiento {
   REGISTRADA
   EN_PROCESO
-  COMPLETADA
+  FINALIZADO
   PAUSADA
   CANCELADA
+}
+
+enum TipoProceso {
+  SECADO
+  LIMPIEZA
+  MOLIENDA
+  TOSTADO
+  EMPAQUE
+  TRANSFORMACION
 }
 
 enum LineaProcesamiento {
@@ -333,27 +341,33 @@ model Productor {
   activo             Boolean         @default(true)
   created_by         String?         @db.VarChar(36)
   updated_by         String?         @db.VarChar(36)
+  ubigeo_id          Int?
 
-  familiares        familiar[]
-  documentos        documentos[]
-  parcelas          parcela[]
-  acopio_detalles   acopio_detalle[]
+  creator         usuarios?        @relation(fields: [created_by], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  familiares      familiar[]
+  documentos      documentos[]
+  parcelas        parcela[]
+  acopio_detalles acopio_detalle[]
+  ubigeo          ubigeo?          @relation(fields: [ubigeo_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([ubigeo_id])
+  @@index([created_by])
 }
 
 model familiar {
-  id                 Int      @id @default(autoincrement())
-  nombres            String   @db.VarChar(200)
-  parentesco         String   @db.VarChar(50)
-  dni                String?  @db.VarChar(8)
+  id                 Int             @id @default(autoincrement())
+  nombres            String          @db.VarChar(200)
+  parentesco         String          @db.VarChar(50)
+  dni                String?         @db.VarChar(8)
   sexo               Sexo
-  fecha_nacimiento   DateTime @db.DateTime(3)
-  ocupacion          String?  @db.VarChar(100)
+  fecha_nacimiento   DateTime        @db.DateTime(3)
+  ocupacion          String?         @db.VarChar(100)
   nivel_educativo    NivelEducativo?
-  telefono           String?  @db.VarChar(20)
-  dependiente        Boolean  @default(false)
-  vive_con_productor Boolean  @default(true)
-  created_at         DateTime @default(now()) @db.DateTime(3)
-  updated_at         DateTime @updatedAt @db.DateTime(3)
+  telefono           String?         @db.VarChar(20)
+  dependiente        Boolean         @default(false)
+  vive_con_productor Boolean         @default(true)
+  created_at         DateTime        @default(now()) @db.DateTime(3)
+  updated_at         DateTime        @updatedAt @db.DateTime(3)
   productor_id       Int
 
   productor Productor @relation(fields: [productor_id], references: [id])
@@ -425,13 +439,18 @@ model parcela {
   utm_norte           String?              @db.VarChar(20)
   utm_zona            String?              @db.VarChar(10)
   productores_id      Int
+  ubigeo_id           Int?
 
-  productor   Productor           @relation(fields: [productores_id], references: [id])
-  documentos  parcela_documentos[]
-  fotos       parcela_fotos[]
-  cultivos    cultivo[]
+  productor       Productor            @relation(fields: [productores_id], references: [id])
+  ubigeoRef       ubigeo?              @relation(fields: [ubigeo_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  documentos      parcela_documentos[]
+  fotos           parcela_fotos[]
+  historial       parcela_historial[]
+  cultivos        cultivo[]
+  acopio_detalles acopio_detalle[]
 
   @@index([productores_id])
+  @@index([ubigeo_id])
 }
 
 model parcela_documentos {
@@ -462,6 +481,21 @@ model parcela_fotos {
   parcela_id    Int
 
   parcela parcela @relation(fields: [parcela_id], references: [id])
+}
+
+model parcela_historial {
+  id          Int      @id @default(autoincrement())
+  parcela_id  Int
+  tipo        String   @db.VarChar(50)
+  titulo      String   @db.VarChar(200)
+  descripcion String?  @db.Text
+  usuario     String?  @db.VarChar(150)
+  created_at  DateTime @default(now()) @db.DateTime(3)
+
+  parcela parcela @relation(fields: [parcela_id], references: [id], onDelete: Cascade)
+
+  @@index([parcela_id])
+  @@index([created_at])
 }
 
 model campanias {
@@ -509,7 +543,7 @@ model cultivo {
   cantidad_semilla        Decimal?              @db.Decimal(10, 2)
   unidad_semilla          String?               @db.VarChar(10)
   fecha_cosecha           DateTime?             @db.DateTime(3)
-  estado                  EstadoCultivo         @default(ACTIVO)
+  estado                  EstadoCultivo         @default(EN_CRECIMIENTO)
   observaciones           String?               @db.Text
   rendimiento_esperado    Decimal?              @db.Decimal(10, 2)
   produccion_estimada     Decimal?              @db.Decimal(10, 2)
@@ -526,45 +560,45 @@ model cultivo {
   created_by              String?               @db.VarChar(36)
   updated_by              String?               @db.VarChar(36)
   parcela_id              Int
-  campanias_id            Int
+  campania_id             Int
 
-  parcela      parcela          @relation(fields: [parcela_id], references: [id])
-  campania     campanias        @relation(fields: [campanias_id], references: [id])
-  actividades  actividades[]
-  inspecciones Inspecciones[]
+  parcela          parcela          @relation(fields: [parcela_id], references: [id])
+  campania         campanias        @relation(fields: [campania_id], references: [id])
+  actividades      actividades[]
+  inspecciones     Inspecciones[]
   acopios_detalles acopio_detalle[]
 }
 
 model actividades {
-  id                     Int               @id @default(autoincrement())
-  codigo                 String            @unique @db.VarChar(20)
-  fecha                  DateTime          @db.DateTime(3)
+  id                     Int                @id @default(autoincrement())
+  codigo                 String             @unique @db.VarChar(20)
+  fecha                  DateTime           @db.DateTime(3)
   tipo_actividad         TipoActividad
-  descripcion            String?           @db.Text
-  responsable_tecnico    String            @db.VarChar(150)
-  hora_inicio            String?           @db.VarChar(5)
-  hora_fin               String?           @db.VarChar(5)
-  duracion_estimada      String?           @db.VarChar(50)
+  descripcion            String?            @db.Text
+  responsable_tecnico    String             @db.VarChar(150)
+  hora_inicio            String?            @db.VarChar(5)
+  hora_fin               String?            @db.VarChar(5)
+  duracion_estimada      String?            @db.VarChar(50)
   prioridad              PrioridadActividad @default(MEDIA)
-  estado                 EstadoActividad   @default(PROGRAMADA)
-  jornales               Int?              @default(0)
-  latitud                String?           @db.VarChar(30)
-  longitud               String?           @db.VarChar(30)
-  altitud                String?           @db.VarChar(50)
-  precision_gps          String?           @db.VarChar(20)
-  observaciones_tecnicas String?           @db.Text
-  recomendaciones        String?           @db.Text
-  objetivo               String?           @db.Text
-  resultado              String?           @db.Text
-  proxima_actividad      String?           @db.VarChar(200)
-  activo                 Boolean           @default(true)
-  created_at             DateTime          @default(now()) @db.DateTime(3)
-  updated_at             DateTime          @updatedAt @db.DateTime(3)
-  created_by             String?           @db.VarChar(36)
-  updated_by             String?           @db.VarChar(36)
+  estado                 EstadoActividad    @default(PROGRAMADA)
+  jornales               Int?               @default(0)
+  latitud                String?            @db.VarChar(30)
+  longitud               String?            @db.VarChar(30)
+  altitud                String?            @db.VarChar(50)
+  precision_gps          String?            @db.VarChar(20)
+  observaciones_tecnicas String?            @db.Text
+  recomendaciones        String?            @db.Text
+  objetivo               String?            @db.Text
+  resultado              String?            @db.Text
+  proxima_actividad      String?            @db.VarChar(200)
+  activo                 Boolean            @default(true)
+  created_at             DateTime           @default(now()) @db.DateTime(3)
+  updated_at             DateTime           @updatedAt @db.DateTime(3)
+  created_by             String?            @db.VarChar(36)
+  updated_by             String?            @db.VarChar(36)
   cultivo_id             Int
 
-  cultivo    cultivo                  @relation(fields: [cultivo_id], references: [id])
+  cultivo    cultivo                        @relation(fields: [cultivo_id], references: [id])
   insumos    Insumo_has_actividades[]
   mano_obra  Mano_de_obra_has_actividades[]
   maquinaria Maquinaria_has_actividades[]
@@ -625,10 +659,10 @@ model Insumo_has_actividades {
 
 model Mano_de_obra_has_actividades {
   mano_de_obra_id String @db.VarChar(36)
-  actividades_id Int
+  actividades_id  Int
 
-  mano_de_obra Mano_de_obra  @relation(fields: [mano_de_obra_id], references: [id])
-  actividades actividades @relation(fields: [actividades_id], references: [id])
+  mano_de_obra Mano_de_obra @relation(fields: [mano_de_obra_id], references: [id])
+  actividades  actividades  @relation(fields: [actividades_id], references: [id])
 
   @@id([mano_de_obra_id, actividades_id])
 }
@@ -637,62 +671,68 @@ model Maquinaria_has_actividades {
   maquinaria_id  String @db.VarChar(36)
   actividades_id Int
 
-  maquinaria  Maquinaria    @relation(fields: [maquinaria_id], references: [id])
+  maquinaria  Maquinaria  @relation(fields: [maquinaria_id], references: [id])
   actividades actividades @relation(fields: [actividades_id], references: [id])
 
   @@id([maquinaria_id, actividades_id])
 }
 
 model acopio {
-  id                    Int            @id @default(autoincrement())
-  codigo                String         @unique @db.VarChar(20)
-  fecha                 DateTime       @db.DateTime(3)
-  acopiador             String         @db.VarChar(150)
-  vehiculo              String?        @db.VarChar(100)
-  ruta_acopio           String?        @db.VarChar(200)
-  total_sacos           Int            @default(0)
-  peso_total            Decimal        @default(0) @db.Decimal(10, 2)
-  estado                EstadoAcopio   @default(EN_PROCESO)
-  observaciones         String?        @db.Text
-  activo                Boolean        @default(true)
-  created_at            DateTime       @default(now()) @db.DateTime(3)
-  updated_at            DateTime       @updatedAt @db.DateTime(3)
-  created_by            String?        @db.VarChar(36)
-  updated_by            String?        @db.VarChar(36)
+  id            Int          @id @default(autoincrement())
+  codigo        String       @unique @db.VarChar(20)
+  fecha         DateTime     @db.DateTime(3)
+  acopiador     String       @db.VarChar(150)
+  vehiculo      String?      @db.VarChar(100)
+  ruta_acopio   String?      @db.VarChar(200)
+  total_sacos   Int          @default(0)
+  peso_total    Decimal      @default(0) @db.Decimal(10, 2)
+  peso_bruto    Decimal      @default(0) @db.Decimal(10, 2)
+  tara          Decimal      @default(0) @db.Decimal(10, 2)
+  peso_neto     Decimal      @default(0) @db.Decimal(10, 2)
+  estado        EstadoAcopio @default(EN_CAMPO)
+  observaciones String?      @db.Text
+  activo        Boolean      @default(true)
+  created_at    DateTime     @default(now()) @db.DateTime(3)
+  updated_at    DateTime     @updatedAt @db.DateTime(3)
+  created_by    String?      @db.VarChar(36)
+  updated_by    String?      @db.VarChar(36)
 
   detalles    acopio_detalle[]
   recepciones recepcion[]
 }
 
 model acopio_detalle {
-  id              Int      @id @default(autoincrement())
-  acopio_id       Int
-  productor_id    Int
-  cultivo_id      Int
-  total_sacos     Int      @default(0)
-  peso_total      Decimal  @default(0) @db.Decimal(10, 2)
-  observaciones   String?  @db.Text
-  created_at      DateTime @default(now()) @db.DateTime(3)
-  updated_at      DateTime @updatedAt @db.DateTime(3)
+  id            Int      @id @default(autoincrement())
+  acopio_id     Int
+  productor_id  Int
+  cultivo_id    Int
+  parcela_id    Int?
+  total_sacos   Int      @default(0)
+  peso_total    Decimal  @default(0) @db.Decimal(10, 2)
+  observaciones String?  @db.Text
+  created_at    DateTime @default(now()) @db.DateTime(3)
+  updated_at    DateTime @updatedAt @db.DateTime(3)
 
   acopio    acopio    @relation(fields: [acopio_id], references: [id])
   productor Productor @relation(fields: [productor_id], references: [id])
   cultivo   cultivo   @relation(fields: [cultivo_id], references: [id])
+  parcela   parcela?  @relation(fields: [parcela_id], references: [id])
   sacos     Saco[]
 
   @@index([acopio_id])
   @@index([productor_id])
   @@index([cultivo_id])
+  @@index([parcela_id])
 }
 
 model Saco {
-  id                   String   @id @default(uuid()) @db.VarChar(36)
-  codigo               String   @db.VarChar(50)
-  peso                 Decimal  @db.Decimal(10, 2)
-  observaciones        String?  @db.Text
-  created_at           DateTime @default(now()) @db.DateTime(3)
-  updated_at           DateTime @updatedAt @db.DateTime(3)
-  acopio_detalle_id    Int
+  id                String   @id @default(uuid()) @db.VarChar(36)
+  codigo            String   @db.VarChar(50)
+  peso              Decimal  @db.Decimal(10, 2)
+  observaciones     String?  @db.Text
+  created_at        DateTime @default(now()) @db.DateTime(3)
+  updated_at        DateTime @updatedAt @db.DateTime(3)
+  acopio_detalle_id Int
 
   acopio_detalle acopio_detalle @relation(fields: [acopio_detalle_id], references: [id])
 
@@ -700,52 +740,53 @@ model Saco {
 }
 
 model recepcion {
-  id                    Int               @id @default(autoincrement())
-  codigo                String            @unique @db.VarChar(20)
-  lote_productor        String?           @db.VarChar(100)
-  fecha                 DateTime          @db.DateTime(3)
-  responsable           String            @db.VarChar(150)
-  planta                String            @db.VarChar(100)
-  sacos                 Int               @default(0)
-  peso_campo            Decimal?          @db.Decimal(10, 2)
-  peso_bruto            Decimal?          @db.Decimal(10, 2)
-  tara                  Decimal?          @db.Decimal(10, 2)
-  peso_neto             Decimal?          @db.Decimal(10, 2)
-  diferencia            Decimal?          @db.Decimal(10, 2)
-  merma                 Decimal?          @db.Decimal(5, 2)
-  humedad               Decimal?          @db.Decimal(5, 2)
-  impurezas             Decimal?          @db.Decimal(5, 2)
-  materia_extrana       Decimal?          @db.Decimal(5, 2)
-  color                 String?           @db.VarChar(50)
-  olor                  String?           @db.VarChar(50)
-  presencia_insectos    String?           @db.VarChar(50)
+  id                    Int                 @id @default(autoincrement())
+  codigo                String              @unique @db.VarChar(20)
+  lote_productor        String?             @db.VarChar(100)
+  fecha                 DateTime            @db.DateTime(3)
+  responsable           String              @db.VarChar(150)
+  planta                String              @db.VarChar(100)
+  sacos                 Int                 @default(0)
+  peso_campo            Decimal?            @db.Decimal(10, 2)
+  peso_bruto            Decimal?            @db.Decimal(10, 2)
+  tara                  Decimal?            @db.Decimal(10, 2)
+  peso_neto             Decimal?            @db.Decimal(10, 2)
+  diferencia            Decimal?            @db.Decimal(10, 2)
+  merma                 Decimal?            @db.Decimal(5, 2)
+  humedad               Decimal?            @db.Decimal(5, 2)
+  impurezas             Decimal?            @db.Decimal(5, 2)
+  materia_extrana       Decimal?            @db.Decimal(5, 2)
+  color                 String?             @db.VarChar(50)
+  olor                  String?             @db.VarChar(50)
+  presencia_insectos    String?             @db.VarChar(50)
   estado_producto       EstadoProducto?
   categoria             CategoriaRecepcion?
   destino               DestinoRecepcion?
   resultado             ResultadoRecepcion?
-  motivo                String?           @db.Text
-  estado                EstadoRecepcion   @default(PENDIENTE_PESAJE)
-  observaciones         String?           @db.Text
-  documento_firmado     Boolean           @default(false)
-  firma_responsable_url String?           @db.VarChar(500)
-  activo                Boolean           @default(true)
-  created_at            DateTime          @default(now()) @db.DateTime(3)
-  updated_at            DateTime          @updatedAt @db.DateTime(3)
-  created_by            String?           @db.VarChar(36)
-  updated_by            String?           @db.VarChar(36)
+  motivo                String?             @db.Text
+  estado                EstadoRecepcion     @default(PENDIENTE_PESAJE)
+  observaciones         String?             @db.Text
+  documento_firmado     Boolean             @default(false)
+  firma_responsable_url String?             @db.VarChar(500)
+  activo                Boolean             @default(true)
+  created_at            DateTime            @default(now()) @db.DateTime(3)
+  updated_at            DateTime            @updatedAt @db.DateTime(3)
+  created_by            String?             @db.VarChar(36)
+  updated_by            String?             @db.VarChar(36)
   acopio_id             Int?
 
-  acopio acopio? @relation(fields: [acopio_id], references: [id])
-  sacos_detalle recepcion_saco[]
+  acopio         acopio?          @relation(fields: [acopio_id], references: [id])
+  sacos_detalle  recepcion_saco[]
+  procesamientos procesamiento[]
 }
 
 model recepcion_saco {
-  id             Int      @id @default(autoincrement())
-  recepcion_id   Int
-  codigo         String   @db.VarChar(50)
-  peso           Decimal  @db.Decimal(10, 2)
-  observaciones  String?  @db.Text
-  created_at     DateTime @default(now()) @db.DateTime(3)
+  id            Int      @id @default(autoincrement())
+  recepcion_id  Int
+  codigo        String   @db.VarChar(50)
+  peso          Decimal  @db.Decimal(10, 2)
+  observaciones String?  @db.Text
+  created_at    DateTime @default(now()) @db.DateTime(3)
 
   recepcion recepcion @relation(fields: [recepcion_id], references: [id], onDelete: Cascade)
 
@@ -780,7 +821,7 @@ model Inspecciones {
   updated_by                String?              @db.VarChar(36)
   cultivo_id                Int
 
-  cultivo          cultivo               @relation(fields: [cultivo_id], references: [id])
+  cultivo          cultivo                @relation(fields: [cultivo_id], references: [id])
   checklist        inspeccion_checklist[]
   no_conformidades No_conformidades[]
   evidencias       Evidencia[]
@@ -815,7 +856,7 @@ model No_conformidades {
   updated_at        DateTime               @updatedAt @db.DateTime(3)
   inspeccion_id     Int
 
-  inspeccion Inspecciones        @relation(fields: [inspeccion_id], references: [id])
+  inspeccion Inspecciones           @relation(fields: [inspeccion_id], references: [id])
   acciones   Acciones_correctivas[]
 }
 
@@ -850,71 +891,82 @@ model Evidencia {
 }
 
 model procesamiento {
-  id                  Int                  @id @default(autoincrement())
-  codigo              String               @unique @db.VarChar(20)
-  fecha_fin           DateTime             @db.DateTime(3)
-  fecha_inicio        DateTime             @db.DateTime(3)
-  producto            String               @db.VarChar(100)
-  responsable         String               @db.VarChar(150)
-  planta              String               @db.VarChar(100)
+  id                  Int                 @id @default(autoincrement())
+  codigo              String              @unique @db.VarChar(20)
+  fecha_fin           DateTime            @db.DateTime(3)
+  fecha_inicio        DateTime            @db.DateTime(3)
+  producto            String              @db.VarChar(100)
+  responsable         String              @db.VarChar(150)
+  planta              String              @db.VarChar(100)
   linea_procesamiento LineaProcesamiento
-  estado              EstadoProcesamiento  @default(REGISTRADA)
-  observaciones       String?              @db.Text
-  peso_entrada        Decimal?             @db.Decimal(10, 2)
-  peso_salida         Decimal?             @db.Decimal(10, 2)
-  merma               Decimal?             @db.Decimal(10, 2)
-  rendimiento         Decimal?             @db.Decimal(5, 2)
-  producto_base       String?              @db.VarChar(100)
+  tipo_proceso        TipoProceso
+  estado              EstadoProcesamiento @default(REGISTRADA)
+  observaciones       String?             @db.Text
+  peso_entrada        Decimal?            @db.Decimal(10, 2)
+  peso_salida         Decimal?            @db.Decimal(10, 2)
+  merma               Decimal?            @db.Decimal(10, 2)
+  rendimiento         Decimal?            @db.Decimal(5, 2)
+  producto_base       String?             @db.VarChar(100)
   calidad_producto    CalidadProducto?
-  peso_final          Decimal?             @db.Decimal(10, 2)
-  humedad_final       Decimal?             @db.Decimal(5, 2)
-  activo              Boolean              @default(true)
-  created_at          DateTime             @default(now()) @db.DateTime(3)
-  updated_at          DateTime             @updatedAt @db.DateTime(3)
-  created_by          String?              @db.VarChar(36)
-  updated_by          String?              @db.VarChar(36)
+  peso_final          Decimal?            @db.Decimal(10, 2)
+  humedad_final       Decimal?            @db.Decimal(5, 2)
+  recepcion_id        Int?
+  activo              Boolean             @default(true)
+  created_at          DateTime            @default(now()) @db.DateTime(3)
+  updated_at          DateTime            @updatedAt @db.DateTime(3)
+  created_by          String?             @db.VarChar(36)
+  updated_by          String?             @db.VarChar(36)
+
+  recepcion recepcion? @relation(fields: [recepcion_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([recepcion_id])
 }
 
 model kardex {
-  id                Int             @id @default(autoincrement())
-  codigo            String          @unique @db.VarChar(20)
-  producto          String          @db.VarChar(200)
-  categoria         String          @db.VarChar(100)
-  unidad            String          @default("kg") @db.VarChar(10)
-  cantidad_actual   Decimal         @default(0) @db.Decimal(10, 2)
-  cantidad_minima   Decimal?        @db.Decimal(10, 2)
-  cantidad_maxima   Decimal?        @db.Decimal(10, 2)
-  ubicacion         String?         @db.VarChar(200)
-  estado            EstadoKardex    @default(DISPONIBLE)
-  fecha_ingreso     DateTime        @db.DateTime(3)
-  fecha_vencimiento DateTime?       @db.DateTime(3)
-  proveedor         String?         @db.VarChar(200)
-  costo_unitario    Decimal?        @db.Decimal(10, 2)
-  observaciones     String?         @db.Text
-  activo            Boolean         @default(true)
-  created_at        DateTime        @default(now()) @db.DateTime(3)
-  updated_at        DateTime        @updatedAt @db.DateTime(3)
-  created_by        String?         @db.VarChar(36)
-  updated_by        String?         @db.VarChar(36)
+  id                Int          @id @default(autoincrement())
+  codigo            String       @unique @db.VarChar(20)
+  producto          String       @db.VarChar(200)
+  categoria         String       @db.VarChar(100)
+  unidad            String       @default("kg") @db.VarChar(10)
+  cantidad_actual   Decimal      @default(0) @db.Decimal(10, 2)
+  cantidad_minima   Decimal?     @db.Decimal(10, 2)
+  cantidad_maxima   Decimal?     @db.Decimal(10, 2)
+  ubicacion         String?      @db.VarChar(200)
+  estado            EstadoKardex @default(DISPONIBLE)
+  fecha_ingreso     DateTime     @db.DateTime(3)
+  fecha_vencimiento DateTime?    @db.DateTime(3)
+  proveedor         String?      @db.VarChar(200)
+  costo_unitario    Decimal?     @db.Decimal(10, 2)
+  observaciones     String?      @db.Text
+  activo            Boolean      @default(true)
+  created_at        DateTime     @default(now()) @db.DateTime(3)
+  updated_at        DateTime     @updatedAt @db.DateTime(3)
+  created_by        String?      @db.VarChar(36)
+  updated_by        String?      @db.VarChar(36)
 
   movimientos kardex_movimiento[]
+
+  @@index([activo, estado, categoria])
+  @@index([activo, created_at])
 }
 
 model kardex_movimiento {
-  id                Int           @id @default(autoincrement())
-  tipo              TipoMovimiento
-  cantidad          Decimal       @db.Decimal(10, 2)
-  saldo_anterior    Decimal       @db.Decimal(10, 2)
-  saldo_posterior   Decimal       @db.Decimal(10, 2)
-  destino           String?       @db.VarChar(200)
-  referencia        String?       @db.VarChar(200)
-  responsable       String?       @db.VarChar(150)
-  observaciones     String?       @db.Text
-  fecha             DateTime      @default(now()) @db.DateTime(3)
-  created_at        DateTime      @default(now()) @db.DateTime(3)
-  kardex_id         Int
+  id              Int            @id @default(autoincrement())
+  tipo            TipoMovimiento
+  cantidad        Decimal        @db.Decimal(10, 2)
+  saldo_anterior  Decimal        @db.Decimal(10, 2)
+  saldo_posterior Decimal        @db.Decimal(10, 2)
+  destino         String?        @db.VarChar(200)
+  referencia      String?        @db.VarChar(200)
+  responsable     String?        @db.VarChar(150)
+  observaciones   String?        @db.Text
+  fecha           DateTime       @default(now()) @db.DateTime(3)
+  created_at      DateTime       @default(now()) @db.DateTime(3)
+  kardex_id       Int
 
   kardex kardex @relation(fields: [kardex_id], references: [id])
+
+  @@index([kardex_id, fecha])
 }
 
 model catalogos {
@@ -940,6 +992,9 @@ model ubigeo {
   prov     String @db.VarChar(32)
   distrito String @db.VarChar(32)
 
+  productores Productor[]
+  parcelas    parcela[]
+
   @@index([dpto])
   @@index([prov])
   @@index([distrito])
@@ -955,4 +1010,6 @@ model usuarios {
   created_at DateTime @default(now()) @db.DateTime(3)
   updated_at DateTime @updatedAt @db.DateTime(3)
   rol_sic    RolSic?
+
+  productores_creados Productor[]
 }

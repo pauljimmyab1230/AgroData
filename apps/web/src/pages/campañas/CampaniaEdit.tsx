@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { Breadcrumb, LoadingSpinner } from "../../components/ui";
+import { LoadingSpinner } from "../../components/ui";
 import { CampaniaHeader } from "../../components/campanias/CampaniaHeader";
 import { CampaniaForm } from "../../components/campanias/CampaniaForm";
 import { useCampania } from "../../hooks/queries";
@@ -37,14 +37,6 @@ export default function CampaniaEdit({ inModal, campaniaId: propId, onSave }: Ca
     <div>
       {!inModal && (
         <>
-          <Breadcrumb
-            items={[
-              { label: "Campañas", to: "/campanias" },
-              { label: campania.codigo, to: `/campanias/${campania.id}` },
-              { label: "Editar Campaña" },
-            ]}
-          />
-
           <CampaniaHeader
             title="Editar Campaña"
             description={`Actualizando la información de ${campania.nombre} (${campania.codigo})`}

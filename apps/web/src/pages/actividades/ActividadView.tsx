@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { ClipboardList, CalendarDays, Wrench } from "lucide-react";
-import { Badge, Breadcrumb, Button, Card, LoadingSpinner } from "../../components/ui";
+import { Badge, Button, Card, LoadingSpinner } from "../../components/ui";
 import { ActividadHeader } from "../../components/actividades/ActividadHeader";
 import { InformacionGeneralCard } from "../../components/actividades/InformacionGeneralCard";
 import { ActividadCard } from "../../components/actividades/ActividadCard";
@@ -64,10 +64,6 @@ export default function ActividadView({ inModal, actividadId: propId }: Activida
     <div>
       {!inModal && (
         <>
-          <Breadcrumb
-            items={[{ label: "Actividades Agrícolas", to: "/actividades" }, { label: actividad.codigo }]}
-          />
-
           <ActividadHeader
             title={`${tipoLabel} · ${actividad.cultivoNombre}`}
             backTo="/actividades"
@@ -103,9 +99,8 @@ export default function ActividadView({ inModal, actividadId: propId }: Activida
               Ficha Técnica de Actividad Agrícola
             </p>
             <p className="mt-1 text-sm text-gray-500">
-              Productor: <span className="font-medium text-[#111827]">{actividad.productorNombre}</span>
-              {" · "}Parcela: <span className="font-medium text-[#111827]">{actividad.parcelaNombre}</span>
-              {" · "}Campaña: <span className="font-medium text-[#111827]">{actividad.campaniaNombre}</span>
+              Cultivo: <span className="font-medium text-[#111827]">{actividad.cultivoNombre}</span>
+              {" · "}Código: <span className="font-medium text-[#111827]">{actividad.cultivoCodigo}</span>
               {" · "}Responsable:{" "}
               <span className="font-medium text-[#111827]">{actividad.responsableTecnico}</span>
             </p>

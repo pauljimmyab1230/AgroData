@@ -1,5 +1,5 @@
 import { Info, MapPin, Hexagon } from "lucide-react";
-import { Stepper, type StepperStep } from "../ui/Stepper";
+import Stepper, { type StepperStep } from "../ui/Stepper";
 
 interface ParcelaTabsProps {
   active: number;

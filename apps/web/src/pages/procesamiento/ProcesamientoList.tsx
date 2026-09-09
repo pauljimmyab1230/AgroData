@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Factory, Hash, Scale, TrendingDown, X } from "lucide-react";
-import { Button, ConfirmDialog, LoadingSpinner, SearchInput, SectionHeader, Select } from "../../components/ui";
+import { Button, ConfirmDialog, FilterSelect, LoadingSpinner, SearchInput, SectionHeader } from "../../components/ui";
 import ProcesamientoKPI from "../../components/procesamiento/ProcesamientoKPI";
 import ProcesamientoTable from "../../components/procesamiento/ProcesamientoTable";
 import {
@@ -12,31 +12,11 @@ import {
   formatearPeso,
 } from "../../services/procesamientos";
 import ProcesamientoModal from "../../components/procesamiento/ProcesamientoModal";
+import { toast } from "../../utils/toast";
 
-const pageSize = 5;
+const pageSize = 10;
 
 const toOptions = (items: readonly string[]) => items.map((item) => ({ value: item, label: item }));
-
-function FilterSelect({
-  label,
-  placeholder,
-  options,
-  value,
-  onChange,
-}: {
-  label: string;
-  placeholder: string;
-  options: { value: string; label: string }[];
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div className="w-44">
-      <label className="mb-1 block text-xs font-medium text-gray-500">{label}</label>
-      <Select options={options} placeholder={placeholder} value={value} onChange={onChange} />
-    </div>
-  );
-}
 
 export default function ProcesamientoList() {
   const [search, setSearch] = useState("");
@@ -67,7 +47,7 @@ export default function ProcesamientoList() {
       setTotal(result.total);
       setTotalPages(result.totalPages);
     } catch {
-      // handled silently
+      toast.error("Error al cargar procesamientos");
     } finally {
       setLoading(false);
     }
@@ -135,8 +115,9 @@ export default function ProcesamientoList() {
       await deleteProcesamiento(deleteId);
       setDeleteId(null);
       loadData();
+      toast.success("Procesamiento eliminado correctamente");
     } catch {
-      // handled silently
+      toast.error("Error al eliminar el procesamiento");
     }
   };
 

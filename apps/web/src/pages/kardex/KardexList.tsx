@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AlertTriangle, Boxes, Eye, Pencil, Plus, ShieldCheck, Tag, X } from "lucide-react";
-import { Breadcrumb, Button, Card, ConfirmDialog, DataTable, Pagination, SearchInput, SectionHeader, Select, Badge } from "../../components/ui";
+import { Button, Card, ConfirmDialog, DataTable, Pagination, SearchInput, SectionHeader, Select, Badge } from "../../components/ui";
 import {
   fetchKardex,
   deleteKardexItem,
@@ -108,7 +108,7 @@ export default function KardexList() {
     {
       label: "Bajo Stock",
       value: String(
-        items.filter((i) => i.cantidadActual < i.cantidadMinima).length
+        items.filter((i) => i.cantidadMinima != null && i.cantidadActual < i.cantidadMinima).length
       ),
       icon: AlertTriangle,
       iconClass: "bg-red-50 text-red-600",
@@ -137,8 +137,6 @@ export default function KardexList() {
 
   return (
     <div>
-      <Breadcrumb items={[{ label: "Kardex" }]} />
-
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <SectionHeader
           title="Kardex"
@@ -231,7 +229,7 @@ export default function KardexList() {
             label: "Saldo",
             sortable: true,
             render: (item: KardexItem) => (
-              <span className={`${item.cantidadActual < item.cantidadMinima ? "font-semibold text-red-600" : ""}`}>
+              <span className={`${item.cantidadMinima != null && item.cantidadActual < item.cantidadMinima ? "font-semibold text-red-600" : ""}`}>
                 {item.cantidadActual} {item.unidad}
               </span>
             ),

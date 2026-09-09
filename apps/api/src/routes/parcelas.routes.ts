@@ -19,8 +19,10 @@ router.use(authMiddleware);
 
 // ─── Parcelas ───────────────────────────────────────────────
 
-router.get('/', validate(getAllParcelasSchema), parcelasController.getAll);
+router.get('/stats', validate(getAllParcelasSchema, 'query'), parcelasController.getStats);
+router.get('/', validate(getAllParcelasSchema, 'query'), parcelasController.getAll);
 router.get('/:id', validate(idParamSchema, 'params'), parcelasController.getById);
+router.get('/:id/historial', validate(idParamSchema, 'params'), parcelasController.getHistorial);
 router.post('/', adminMiddleware, validate(createParcelaSchema), parcelasController.create);
 router.put('/:id', adminMiddleware, validate(idParamSchema, 'params'), validate(updateParcelaSchema), parcelasController.update);
 router.delete('/:id', adminMiddleware, validate(idParamSchema, 'params'), parcelasController.remove);

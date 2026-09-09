@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Hash, PackageCheck, Plus, Scale, Timer, X } from "lucide-react";
-import { Button, ConfirmDialog, LoadingSpinner, SearchInput, SectionHeader, Select } from "../../components/ui";
+import { Button, ConfirmDialog, FilterSelect, LoadingSpinner, SearchInput, SectionHeader } from "../../components/ui";
 import RecepcionKPI from "../../components/recepcion/RecepcionKPI";
 import RecepcionTable from "../../components/recepcion/RecepcionTable";
 import {
@@ -11,8 +11,9 @@ import {
   recepcionEstados,
 } from "../../services/recepciones";
 import RecepcionModal from "../../components/recepcion/RecepcionModal";
+import { toast } from "../../utils/toast";
 
-const pageSize = 20;
+const pageSize = 10;
 
 const estadoLabels: Record<string, string> = {
   PENDIENTE_PESAJE: "Pendiente de Pesaje",
@@ -25,27 +26,6 @@ const estadoOptions = recepcionEstados.map((e) => ({
   value: e,
   label: estadoLabels[e] ?? e,
 }));
-
-function FilterSelect({
-  label,
-  placeholder,
-  options,
-  value,
-  onChange,
-}: {
-  label: string;
-  placeholder: string;
-  options: { value: string; label: string }[];
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div className="w-44">
-      <label className="mb-1 block text-xs font-medium text-gray-500">{label}</label>
-      <Select options={options} placeholder={placeholder} value={value} onChange={onChange} />
-    </div>
-  );
-}
 
 export default function RecepcionList() {
   const [search, setSearch] = useState("");
@@ -75,7 +55,9 @@ export default function RecepcionList() {
         setTotal(result.total);
         setTotalPages(result.totalPages);
       })
-      .catch(() => {})
+      .catch(() => {
+        toast.error("Error al cargar recepciones");
+      })
       .finally(() => setLoading(false));
   };
 
@@ -105,8 +87,9 @@ export default function RecepcionList() {
       await deleteRecepcion(deleteId);
       setDeleteId(null);
       loadData();
+      toast.success("Recepción eliminada correctamente");
     } catch {
-      // handled silently
+      toast.error("Error al eliminar la recepción");
     } finally {
       setDeleting(false);
     }
@@ -121,7 +104,7 @@ export default function RecepcionList() {
     },
     {
       label: "Kilogramos Recibidos",
-      value: loading ? "—" : formatearPeso(recepciones.reduce((acc, r) => acc + (r.pesoNeto ?? 0), 0)),
+      value: loading ? "—" : formatearPeso(recepciones.reduce((acc, r) => acc + (r.pesoTotal ?? 0), 0)),
       icon: Scale,
       iconClass: "bg-sun-100 text-sun-700",
     },

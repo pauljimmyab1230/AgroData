@@ -14,12 +14,17 @@ import {
   fetchDocumentos,
   createDocumento,
   deleteDocumento,
+  updateDocumentoEstado,
   fetchComunidades,
   fetchProductorStats,
   type Productor,
+  type ProductorId,
   type Familiar,
+  type FamiliarId,
   type Parcela,
   type Documento,
+  type DocumentoId,
+  type EstadoDocumento,
   type ProductorStats,
 } from "../../services/productores";
 
@@ -39,7 +44,7 @@ export function useProductores(filters?: {
   });
 }
 
-export function useProductor(id: number | null) {
+export function useProductor(id: ProductorId | null) {
   return useQuery<Productor>({
     queryKey: ["productor", id],
     queryFn: () => fetchProductor(id!),
@@ -60,7 +65,7 @@ export function useCreateProductor() {
 export function useUpdateProductor() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<Productor> }) =>
+    mutationFn: ({ id, data }: { id: ProductorId; data: Partial<Productor> }) =>
       updateProductor(id, data),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ["productores"] });
@@ -72,14 +77,14 @@ export function useUpdateProductor() {
 export function useDeleteProductor() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => deleteProductor(id),
+    mutationFn: (id: ProductorId) => deleteProductor(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["productores"] });
     },
   });
 }
 
-export function useFamiliares(productorId: number | null) {
+export function useFamiliares(productorId: ProductorId | null) {
   return useQuery<Familiar[]>({
     queryKey: ["familiares", productorId],
     queryFn: () => fetchFamiliares(productorId!),
@@ -87,7 +92,7 @@ export function useFamiliares(productorId: number | null) {
   });
 }
 
-export function useCreateFamiliar(productorId: number) {
+export function useCreateFamiliar(productorId: ProductorId) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: Partial<Familiar>) => {
@@ -102,10 +107,10 @@ export function useCreateFamiliar(productorId: number) {
   });
 }
 
-export function useUpdateFamiliar(productorId: number) {
+export function useUpdateFamiliar(productorId: ProductorId) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ familiarId, data }: { familiarId: number; data: Partial<Familiar> }) =>
+    mutationFn: ({ familiarId, data }: { familiarId: FamiliarId; data: Partial<Familiar> }) =>
       updateFamiliar(productorId, familiarId, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["familiares", productorId] });
@@ -113,10 +118,10 @@ export function useUpdateFamiliar(productorId: number) {
   });
 }
 
-export function useDeleteFamiliar(productorId: number) {
+export function useDeleteFamiliar(productorId: ProductorId) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (familiarId: number) => deleteFamiliar(productorId, familiarId),
+    mutationFn: (familiarId: FamiliarId) => deleteFamiliar(productorId, familiarId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["familiares", productorId] });
     },
@@ -141,7 +146,7 @@ export function useProductorStats() {
 
 // ─── Parcelas by Productor ───────────────────────────────
 
-export function useParcelasByProductor(productorId: number | null) {
+export function useParcelasByProductor(productorId: ProductorId | null) {
   return useQuery<Parcela[]>({
     queryKey: ["parcelasProductor", productorId],
     queryFn: () => fetchParcelas(productorId!),
@@ -151,7 +156,7 @@ export function useParcelasByProductor(productorId: number | null) {
 
 // ─── Documentos by Productor ─────────────────────────────
 
-export function useDocumentos(productorId: number | null) {
+export function useDocumentos(productorId: ProductorId | null) {
   return useQuery<Documento[]>({
     queryKey: ["documentos", productorId],
     queryFn: () => fetchDocumentos(productorId!),
@@ -159,7 +164,7 @@ export function useDocumentos(productorId: number | null) {
   });
 }
 
-export function useCreateDocumento(productorId: number) {
+export function useCreateDocumento(productorId: ProductorId) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: { tipo: string; categoria: string; nombre_archivo: string; ruta_archivo: string; tamano_bytes: number; mime_type: string }) =>
@@ -170,10 +175,21 @@ export function useCreateDocumento(productorId: number) {
   });
 }
 
-export function useDeleteDocumento(productorId: number) {
+export function useDeleteDocumento(productorId: ProductorId) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (documentoId: number) => deleteDocumento(productorId, documentoId),
+    mutationFn: (documentoId: DocumentoId) => deleteDocumento(productorId, documentoId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["documentos", productorId] });
+    },
+  });
+}
+
+export function useUpdateDocumentoEstado(productorId: ProductorId) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ documentoId, estado }: { documentoId: DocumentoId; estado: EstadoDocumento }) =>
+      updateDocumentoEstado(productorId, documentoId, estado),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["documentos", productorId] });
     },

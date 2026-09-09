@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { ArrowLeft, Pencil, Scale, TrendingDown, Package } from "lucide-react";
-import { Breadcrumb, Button } from "../../components/ui";
+import { Button } from "../../components/ui";
 import ProcesamientoHeader from "../../components/procesamiento/ProcesamientoHeader";
 import ProcesamientoKPI from "../../components/procesamiento/ProcesamientoKPI";
 import { InformacionGeneralCard } from "../../components/procesamiento/InformacionGeneralCard";
@@ -81,8 +81,6 @@ export default function ProcesamientoView({ inModal, procesamientoId: propId }: 
     <div>
       {!inModal && (
         <>
-          <Breadcrumb items={[{ label: "Procesamiento", to: "/procesamiento" }, { label: orden.codigo }]} />
-
           <div className="mb-8 flex items-center gap-4">
             <Button variant="ghost" as="link" to="/procesamiento" iconLeft={<ArrowLeft className="h-4 w-4" />}>
               Procesamiento

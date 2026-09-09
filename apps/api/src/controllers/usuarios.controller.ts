@@ -1,15 +1,23 @@
-import { Response, NextFunction } from 'express';
+import type { Response, NextFunction } from 'express';
 import * as usuariosService from '../services/usuarios.service';
-import { AuthRequest } from '../middleware/auth.middleware';
+import type { AuthRequest } from '../middleware/auth.middleware';
+import type { CreateUsuarioInput, UpdateUsuarioInput, ListUsuariosQuery } from '../types/usuarios.types';
 
-export const getAll = async (req: AuthRequest, res: Response, next: NextFunction) => {
+// ─── List ───────────────────────────────────────────────────
+export const getAll = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
-    const search = req.query.search as string | undefined;
-    const rol = req.query.rol as string | undefined;
-    const rol_sic = req.query.rol_sic as string | undefined;
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
-    const result = await usuariosService.getAll(search, rol, rol_sic, page, limit);
+    const { search, rol, rol_sic, page, limit } = req.query as ListUsuariosQuery;
+    const result = await usuariosService.getAll(
+      search,
+      rol,
+      rol_sic,
+      Number(page) || 1,
+      Number(limit) || 20,
+    );
     res.status(200).json({
       success: true,
       ...result,
@@ -19,7 +27,12 @@ export const getAll = async (req: AuthRequest, res: Response, next: NextFunction
   }
 };
 
-export const getById = async (req: AuthRequest, res: Response, next: NextFunction) => {
+// ─── Get By ID ──────────────────────────────────────────────
+export const getById = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const usuario = await usuariosService.getById(req.params.id);
     res.status(200).json({
@@ -31,9 +44,15 @@ export const getById = async (req: AuthRequest, res: Response, next: NextFunctio
   }
 };
 
-export const create = async (req: AuthRequest, res: Response, next: NextFunction) => {
+// ─── Create ─────────────────────────────────────────────────
+export const create = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
-    const usuario = await usuariosService.create(req.body);
+    const input: CreateUsuarioInput = req.body;
+    const usuario = await usuariosService.create(input);
     res.status(201).json({
       success: true,
       message: 'Usuario creado exitosamente',
@@ -44,9 +63,15 @@ export const create = async (req: AuthRequest, res: Response, next: NextFunction
   }
 };
 
-export const update = async (req: AuthRequest, res: Response, next: NextFunction) => {
+// ─── Update ─────────────────────────────────────────────────
+export const update = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
-    const usuario = await usuariosService.update(req.params.id, req.body);
+    const input: UpdateUsuarioInput = req.body;
+    const usuario = await usuariosService.update(req.params.id, input);
     res.status(200).json({
       success: true,
       message: 'Usuario actualizado exitosamente',
@@ -57,7 +82,12 @@ export const update = async (req: AuthRequest, res: Response, next: NextFunction
   }
 };
 
-export const remove = async (req: AuthRequest, res: Response, next: NextFunction) => {
+// ─── Remove ─────────────────────────────────────────────────
+export const remove = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const result = await usuariosService.remove(req.params.id);
     res.status(200).json({
@@ -69,7 +99,12 @@ export const remove = async (req: AuthRequest, res: Response, next: NextFunction
   }
 };
 
-export const getBasic = async (req: AuthRequest, res: Response, next: NextFunction) => {
+// ─── Get Basic ──────────────────────────────────────────────
+export const getBasic = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const rol_sic = req.query.rol_sic as string | undefined;
     const data = await usuariosService.getBasic(rol_sic);

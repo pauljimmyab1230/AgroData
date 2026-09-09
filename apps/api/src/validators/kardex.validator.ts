@@ -50,6 +50,11 @@ export const getAllKardexSchema = Joi.object({
   limit: Joi.number().integer().min(1).max(100).default(20),
 });
 
+export const getMovimientosSchema = Joi.object({
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(50),
+});
+
 export const addMovimientoSchema = Joi.object({
   tipo: Joi.string().valid(...tipoMovimientoEnum).required().messages({
     'any.required': 'El tipo de movimiento es obligatorio',
@@ -58,7 +63,12 @@ export const addMovimientoSchema = Joi.object({
     'any.required': 'La cantidad es obligatoria',
     'number.positive': 'La cantidad debe ser un valor positivo',
   }),
-  destino: Joi.string().max(200).allow('', null),
+  destino: Joi.string().max(200).allow('', null).when('tipo', {
+    is: 'TRANSFERENCIA',
+    then: Joi.required().messages({
+      'any.required': 'El destino es obligatorio para transferencias',
+    }),
+  }),
   referencia: Joi.string().max(200).allow('', null),
   responsable: Joi.string().max(150).allow('', null),
   observaciones: Joi.string().allow('', null),

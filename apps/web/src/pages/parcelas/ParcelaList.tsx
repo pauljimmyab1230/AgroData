@@ -11,7 +11,7 @@ import {
   SectionHeader,
   Select,
 } from "../../components/ui";
-import { useParcelas, useDeleteParcela } from "../../hooks/queries";
+import { useParcelas, useDeleteParcela, useParcelasStats } from "../../hooks/queries";
 import { fetchParcelas, type Parcela } from "../../services/parcelas";
 import {
   comunidadesOpciones,
@@ -67,33 +67,39 @@ export default function ParcelaList() {
   }), [search, filtroComunidad, filtroCultivo, filtroEstado, page]);
 
   const { data, isLoading, isFetching } = useParcelas(filters);
+  const statsFilters = useMemo(() => ({
+    search: filters.search,
+    comunidad: filters.comunidad,
+    cultivo: filters.cultivo,
+    estado: filters.estado,
+  }), [filters.search, filters.comunidad, filters.cultivo, filters.estado]);
+  const { data: stats } = useParcelasStats(statsFilters);
   const deleteMutation = useDeleteParcela();
 
   const parcelas = data?.data ?? [];
   const totalPages = data?.totalPages ?? 1;
-  const total = data?.total ?? 0;
 
   const kpis = useMemo(() => [
-    { label: "Total Parcelas", value: String(total), icon: MapPin, iconClass: "bg-forest-600/10 text-forest-600" },
+    { label: "Total Parcelas", value: String(stats?.total ?? 0), icon: MapPin, iconClass: "bg-forest-600/10 text-forest-600" },
     {
       label: "Área Total",
-      value: `${parcelas.reduce((acc, p) => acc + (Number.isNaN(Number(p.area)) ? 0 : Number(p.area)), 0).toFixed(2)} ha`,
+      value: `${(stats?.areaTotal ?? 0).toFixed(2)} ha`,
       icon: Ruler,
       iconClass: "bg-sun-100 text-sun-700",
     },
     {
       label: "Productores con Parcelas",
-      value: String(new Set(parcelas.map((p) => p.productorId)).size),
+      value: String(stats?.productoresUnicos ?? 0),
       icon: Users,
       iconClass: "bg-forest-600/10 text-forest-600",
     },
     {
       label: "Parcelas Certificadas",
-      value: String(parcelas.filter((p) => p.certificacion === "ORGANICA").length),
+      value: String(stats?.certificadas ?? 0),
       icon: BadgeCheck,
       iconClass: "bg-sun-100 text-sun-700",
     },
-  ], [total, parcelas]);
+  ], [stats]);
 
   const hasFilters =
     Boolean(search) ||

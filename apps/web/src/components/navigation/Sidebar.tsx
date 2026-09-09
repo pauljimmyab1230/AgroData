@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -129,9 +129,7 @@ export default function AdminSidebar({ collapsed, mobileOpen, onToggle, onMobile
     }
   }, [location.pathname]);
 
-  const filtered = useMemo(() => {
-    return navItems;
-  }, []);
+  const filtered = navItems;
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     `group relative flex items-center gap-3 text-sm font-medium transition-all duration-200 ease-in-out ${

@@ -26,7 +26,7 @@ export default function EmptyState({
 
   return (
     <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50/50 px-6 py-16 text-center">
-      <div className={`mb-4 flex h-16 w-16 items-center justify-center rounded-2xl ${iconClassName}`}>
+      <div className={`mb-4 flex h-16 w-16 items-center justify-center rounded-2xl ${iconClassName}`} aria-hidden="true">
         {icon || <Inbox className="h-8 w-8" />}
       </div>
       <h3 className="text-lg font-semibold text-[#111827]">{title}</h3>
@@ -38,7 +38,7 @@ export default function EmptyState({
               {actionLabel}
             </Link>
           ) : (
-            <button onClick={onAction} className={actionClasses}>
+            <button type="button" onClick={onAction} className={actionClasses}>
               {actionLabel}
             </button>
           )}

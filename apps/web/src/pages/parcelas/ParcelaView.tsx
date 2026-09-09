@@ -9,14 +9,18 @@ import {
   Layers,
   History,
   FileText,
+  Camera,
+  FolderOpen,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { Badge, Breadcrumb, Button, Card, LoadingSpinner } from "../../components/ui";
+import { Badge, Button, Card, LoadingSpinner } from "../../components/ui";
 import { DatosGeneralesCard } from "../../components/parcelas/DatosGeneralesCard";
 import { InformacionAgroecologicaCard } from "../../components/parcelas/InformacionAgroecologicaCard";
 import { UbicacionCard } from "../../components/parcelas/UbicacionCard";
 import { PoligonoCard } from "../../components/parcelas/PoligonoCard";
-import { useParcela } from "../../hooks/queries";
+import { ParcelaDocuments } from "../../components/parcelas/ParcelaDocuments";
+import { ParcelaPhotos } from "../../components/parcelas/ParcelaPhotos";
+import { useParcela, useParcelaHistorial } from "../../hooks/queries";
 
 const formatFecha = (fecha: string) => {
   if (!fecha) return "—";
@@ -47,6 +51,7 @@ export default function ParcelaView({ inModal, parcelaId: propId }: ParcelaViewP
   const { id: paramId } = useParams();
   const id = propId || paramId;
   const { data: parcela, isLoading } = useParcela(id || null);
+  const { data: historialData } = useParcelaHistorial(id || null);
 
   if (isLoading) {
     return (
@@ -100,7 +105,13 @@ export default function ParcelaView({ inModal, parcelaId: propId }: ParcelaViewP
     },
   ];
 
-  const historial: HistorialItem[] = [
+  const historial: HistorialItem[] = historialData?.map((item) => ({
+    id: item.id,
+    tipo: item.tipo as "registro" | "documento",
+    titulo: item.titulo,
+    descripcion: item.descripcion || "",
+    fecha: item.createdAt,
+  })) ?? [
     {
       id: "registro",
       tipo: "registro",
@@ -121,8 +132,6 @@ export default function ParcelaView({ inModal, parcelaId: propId }: ParcelaViewP
     <div>
       {!inModal && (
         <>
-          <Breadcrumb items={[{ label: "Parcelas", to: "/parcelas" }, { label: parcela.codigo }]} />
-
           <div className="mb-8 flex items-center gap-4">
             <Button variant="ghost" as="link" to="/parcelas" iconLeft={<ArrowLeft className="h-4 w-4" />}>
               Parcelas
@@ -194,6 +203,40 @@ export default function ParcelaView({ inModal, parcelaId: propId }: ParcelaViewP
         <UbicacionCard mode="view" values={parcela} />
         <PoligonoCard mode="view" values={parcela} />
       </div>
+
+      {parcela.documentos && parcela.documentos.length > 0 && (
+        <div className="mt-6">
+          <Card padding="lg" hover={false} className="shadow-sm">
+            <div className="mb-6 flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-forest-600/10 text-forest-600">
+                <FolderOpen size={20} />
+              </span>
+              <div>
+                <h3 className="text-base font-semibold text-[#111827]">Documentos</h3>
+                <p className="text-xs text-gray-500">Documentación adjunta de la parcela</p>
+              </div>
+            </div>
+            <ParcelaDocuments mode="view" documentos={parcela.documentos} />
+          </Card>
+        </div>
+      )}
+
+      {parcela.fotos && parcela.fotos.length > 0 && (
+        <div className="mt-6">
+          <Card padding="lg" hover={false} className="shadow-sm">
+            <div className="mb-6 flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-forest-600/10 text-forest-600">
+                <Camera size={20} />
+              </span>
+              <div>
+                <h3 className="text-base font-semibold text-[#111827]">Fotografías</h3>
+                <p className="text-xs text-gray-500">Registro fotográfico de la parcela</p>
+              </div>
+            </div>
+            <ParcelaPhotos mode="view" fotos={parcela.fotos} />
+          </Card>
+        </div>
+      )}
 
       <div className="mt-6">
         <Card padding="lg" hover={false} className="shadow-sm">

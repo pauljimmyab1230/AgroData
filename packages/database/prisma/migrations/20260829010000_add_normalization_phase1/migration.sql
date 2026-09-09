@@ -1,6 +1,3 @@
--- AlterTable: inspeccion_acciones_correctivas - Convert estado from VARCHAR to ENUM
-ALTER TABLE `inspeccion_acciones_correctivas` MODIFY COLUMN `estado` ENUM('PENDIENTE', 'EN_PROCESO', 'COMPLETADA', 'VERIFICADA') NOT NULL DEFAULT 'PENDIENTE';
-
 -- AlterTable: productores - Add ubigeo_id FK
 ALTER TABLE `productores` ADD COLUMN `ubigeo_id` INTEGER NULL;
 CREATE INDEX `productores_ubigeo_id_idx` ON `productores`(`ubigeo_id`);

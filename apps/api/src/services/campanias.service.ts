@@ -1,5 +1,17 @@
 import prisma from '../config/database';
 import { createError } from '../middleware/error.middleware';
+import type {
+  CreateCampaniaInput,
+  UpdateCampaniaInput,
+  CampaniaFilters,
+  EstadoCampania,
+} from '@agrodata/types';
+import type {
+  CampaniaRecord,
+  CampaniaStats,
+  CampaniaGlobalStats,
+  CampaniaTimelineEvent,
+} from '../types/campanias.types';
 
 const generateCodigo = async (): Promise<string> => {
   const year = new Date().getFullYear();
@@ -31,13 +43,15 @@ const ensureUniqueCodigo = async (codigo: string): Promise<string> => {
 
 // ─── CRUD ──────────────────────────────────────────────────
 
-export const getAll = async (filters: {
-  search?: string;
-  estado?: string;
-  anio_agricola?: string;
-  page?: number;
-  limit?: number;
-}) => {
+export const getAll = async (
+  filters: {
+    search?: string;
+    estado?: string;
+    anio_agricola?: string;
+    page?: number;
+    limit?: number;
+  },
+): Promise<{ data: CampaniaRecord[]; total: number; page: number; limit: number; totalPages: number }> => {
   const where: Record<string, unknown> = { activo: true };
 
   if (filters.estado) where.estado = filters.estado;
@@ -68,7 +82,7 @@ export const getAll = async (filters: {
   return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
 };
 
-export const getById = async (id: string) => {
+export const getById = async (id: string): Promise<CampaniaRecord> => {
   const campania = await prisma.campanias.findFirst({
     where: { id: Number(id), activo: true },
   });
@@ -80,8 +94,8 @@ export const getById = async (id: string) => {
   return campania;
 };
 
-export const create = async (data: Record<string, unknown>, userId?: string) => {
-  let codigo = (data.codigo as string) || '';
+export const create = async (data: CreateCampaniaInput, userId?: string): Promise<CampaniaRecord> => {
+  let codigo = data.codigo || '';
   if (!codigo.trim()) {
     codigo = await ensureUniqueCodigo(await generateCodigo());
   } else {
@@ -94,30 +108,30 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
   return prisma.campanias.create({
     data: {
       codigo,
-      nombre: data.nombre as string,
-      anio_agricola: data.anio_agricola as string,
-      fecha_inicio: new Date(data.fecha_inicio as string),
-      fecha_fin: new Date(data.fecha_fin as string),
-      descripcion: (data.descripcion as string) || null,
-      estado: (data.estado as 'PLANIFICADA' | 'ACTIVA' | 'FINALIZADA' | 'CANCELADA') || 'PLANIFICADA',
-      responsable: data.responsable as string,
-      tecnico_coordinador: data.tecnico_coordinador as string,
-      objetivo: (data.objetivo as string) || null,
-      permitir_cultivos: (data.permitir_cultivos as boolean) ?? true,
-      permitir_actividades: (data.permitir_actividades as boolean) ?? true,
-      permitir_cosechas: (data.permitir_cosechas as boolean) ?? true,
-      permitir_inspecciones: (data.permitir_inspecciones as boolean) ?? true,
-      permitir_acopio: (data.permitir_acopio as boolean) ?? true,
-      permitir_procesamiento: (data.permitir_procesamiento as boolean) ?? true,
-      visible: (data.visible as boolean) ?? true,
-      activa: (data.activa as boolean) ?? false,
-      observaciones: (data.observaciones as string) || null,
-      created_by: userId || null,
+      nombre: data.nombre,
+      anio_agricola: data.anio_agricola,
+      fecha_inicio: new Date(data.fecha_inicio),
+      fecha_fin: new Date(data.fecha_fin),
+      descripcion: data.descripcion ?? null,
+      estado: data.estado ?? 'PLANIFICADA',
+      responsable: data.responsable,
+      tecnico_coordinador: data.tecnico_coordinador,
+      objetivo: data.objetivo ?? null,
+      permitir_cultivos: data.permitir_cultivos ?? true,
+      permitir_actividades: data.permitir_actividades ?? true,
+      permitir_cosechas: data.permitir_cosechas ?? true,
+      permitir_inspecciones: data.permitir_inspecciones ?? true,
+      permitir_acopio: data.permitir_acopio ?? true,
+      permitir_procesamiento: data.permitir_procesamiento ?? true,
+      visible: data.visible ?? true,
+      activa: data.activa ?? false,
+      observaciones: data.observaciones ?? null,
+      created_by: userId ?? null,
     },
   });
 };
 
-export const update = async (id: string, data: Record<string, unknown>, userId?: string) => {
+export const update = async (id: string, data: UpdateCampaniaInput, userId?: string): Promise<CampaniaRecord> => {
   const existing = await prisma.campanias.findFirst({ where: { id: Number(id), activo: true } });
 
   if (!existing) {
@@ -126,8 +140,8 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
 
   const updateData: Record<string, unknown> = {};
 
-  if (data.codigo !== undefined && (data.codigo as string).trim()) {
-    const codigo = (data.codigo as string).trim();
+  if (data.codigo !== undefined && data.codigo.trim()) {
+    const codigo = data.codigo.trim();
     const existingCodigo = await prisma.campanias.findFirst({
       where: { codigo, id: { not: Number(id) } },
       select: { id: true },
@@ -138,27 +152,28 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
     updateData.codigo = codigo;
   }
 
-  const stringFields = ['nombre', 'anio_agricola', 'responsable', 'tecnico_coordinador'];
+  const stringFields = ['nombre', 'anio_agricola', 'responsable', 'tecnico_coordinador'] as const;
   for (const field of stringFields) {
     if (data[field] !== undefined) updateData[field] = data[field];
   }
 
-  const nullableFields = ['descripcion', 'objetivo', 'observaciones'];
+  const nullableFields = ['descripcion', 'objetivo', 'observaciones'] as const;
   for (const field of nullableFields) {
-    if (data[field] !== undefined) updateData[field] = (data[field] as string) || null;
+    if (data[field] !== undefined) updateData[field] = data[field] || null;
   }
 
-  if (data.fecha_inicio !== undefined) updateData.fecha_inicio = new Date(data.fecha_inicio as string);
-  if (data.fecha_fin !== undefined) updateData.fecha_fin = new Date(data.fecha_fin as string);
+  if (data.fecha_inicio !== undefined) updateData.fecha_inicio = new Date(data.fecha_inicio);
+  if (data.fecha_fin !== undefined) updateData.fecha_fin = new Date(data.fecha_fin);
   if (data.estado !== undefined) updateData.estado = data.estado;
-  if (data.permitir_cultivos !== undefined) updateData.permitir_cultivos = data.permitir_cultivos;
-  if (data.permitir_actividades !== undefined) updateData.permitir_actividades = data.permitir_actividades;
-  if (data.permitir_cosechas !== undefined) updateData.permitir_cosechas = data.permitir_cosechas;
-  if (data.permitir_inspecciones !== undefined) updateData.permitir_inspecciones = data.permitir_inspecciones;
-  if (data.permitir_acopio !== undefined) updateData.permitir_acopio = data.permitir_acopio;
-  if (data.permitir_procesamiento !== undefined) updateData.permitir_procesamiento = data.permitir_procesamiento;
-  if (data.visible !== undefined) updateData.visible = data.visible;
-  if (data.activa !== undefined) updateData.activa = data.activa;
+
+  const booleanFields = [
+    'permitir_cultivos', 'permitir_actividades', 'permitir_cosechas',
+    'permitir_inspecciones', 'permitir_acopio', 'permitir_procesamiento',
+    'visible', 'activa',
+  ] as const;
+  for (const field of booleanFields) {
+    if (data[field] !== undefined) updateData[field] = data[field];
+  }
 
   if (userId) updateData.updated_by = userId;
 
@@ -168,11 +183,19 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
   });
 };
 
-export const remove = async (id: string) => {
+export const remove = async (id: string): Promise<{ message: string }> => {
   const existing = await prisma.campanias.findFirst({ where: { id: Number(id), activo: true } });
 
   if (!existing) {
     throw createError('Campaña no encontrada', 404);
+  }
+
+  const cultivosCount = await prisma.cultivo.count({
+    where: { campania_id: Number(id), activo: true },
+  });
+
+  if (cultivosCount > 0) {
+    throw createError('No se puede eliminar la campaña porque tiene cultivos asociados', 409);
   }
 
   await prisma.campanias.update({
@@ -185,29 +208,32 @@ export const remove = async (id: string) => {
 
 // ─── Stats ─────────────────────────────────────────────────
 
-const cultivoFilter = (campaniaId: number) => ({
-  cultivo: { campanias_id: campaniaId, activo: true },
-});
-
-export const getStats = async (id: string) => {
+export const getStats = async (id: string): Promise<CampaniaStats> => {
   const campania = await prisma.campanias.findFirst({ where: { id: Number(id), activo: true } });
   if (!campania) throw createError('Campaña no encontrada', 404);
 
   const campaniaId = Number(id);
-  const filter = cultivoFilter(campaniaId);
 
-  const [cultivos, actividades, inspecciones, acopios] = await Promise.all([
-    prisma.cultivo.findMany({
-      where: { campanias_id: campaniaId, activo: true },
-      select: { id: true, area_sembrada: true, parcela_id: true, cultivo: true },
+  const cultivos = await prisma.cultivo.findMany({
+    where: { campania_id: campaniaId, activo: true },
+    select: { id: true, area_sembrada: true, parcela_id: true, cultivo: true },
+  });
+
+  const cultivoIds = cultivos.map((c) => c.id);
+  const parcelasIds = new Set(cultivos.map((c) => c.parcela_id));
+
+  const [actividades, inspecciones, acopios, parcelas] = await Promise.all([
+    prisma.actividades.count({ where: { activo: true, cultivo_id: { in: cultivoIds } } }),
+    prisma.inspecciones.count({ where: { activo: true, cultivo_id: { in: cultivoIds } } }),
+    prisma.acopio.count({ where: { activo: true, detalles: { some: { cultivo_id: { in: cultivoIds } } } } }),
+    prisma.parcela.findMany({
+      where: { id: { in: Array.from(parcelasIds) } },
+      select: { productores_id: true },
     }),
-    prisma.actividades.count({ where: { activo: true, ...filter } }),
-    prisma.inspecciones.count({ where: { activo: true, ...filter } }),
-    prisma.acopio.count({ where: { activo: true, ...filter } }),
   ]);
 
-  const parcelasIds = new Set(cultivos.map((c) => c.parcela_id));
-  const areaSembrada = cultivos.reduce((acc: number, c) => acc + (Number(c.area_sembrada) || 0), 0);
+  const productoresIds = new Set(parcelas.map((p) => p.productores_id));
+  const areaSembrada = cultivos.reduce((acc, c) => acc + (Number(c.area_sembrada) || 0), 0);
 
   const cultivosPorTipo: Record<string, number> = {};
   for (const c of cultivos) {
@@ -215,6 +241,7 @@ export const getStats = async (id: string) => {
   }
 
   return {
+    productores: productoresIds.size,
     parcelas: parcelasIds.size,
     cultivos: cultivos.length,
     areaSembrada: Math.round(areaSembrada * 100) / 100,
@@ -231,7 +258,7 @@ export const getGlobalStats = async (filters?: {
   search?: string;
   estado?: string;
   anio_agricola?: string;
-}) => {
+}): Promise<CampaniaGlobalStats> => {
   const where: Record<string, unknown> = { activo: true };
 
   if (filters?.estado) where.estado = filters.estado;
@@ -255,14 +282,14 @@ export const getGlobalStats = async (filters?: {
     }),
   ]);
 
-  const estados: Record<string, number> = {
+  const estados: Record<EstadoCampania, number> = {
     PLANIFICADA: 0,
     ACTIVA: 0,
     FINALIZADA: 0,
     CANCELADA: 0,
   };
   for (const item of porEstado) {
-    estados[item.estado] = item._count.id;
+    estados[item.estado as EstadoCampania] = item._count.id;
   }
 
   return { total, estados };
@@ -270,88 +297,94 @@ export const getGlobalStats = async (filters?: {
 
 // ─── Timeline ──────────────────────────────────────────────
 
-export const getTimeline = async (id: string) => {
+export const getTimeline = async (id: string): Promise<CampaniaTimelineEvent[]> => {
   const campania = await prisma.campanias.findFirst({ where: { id: Number(id), activo: true } });
   if (!campania) throw createError('Campaña no encontrada', 404);
 
   const campaniaId = Number(id);
 
   const cultivosCampania = await prisma.cultivo.findMany({
-    where: { campanias_id: campaniaId, activo: true },
+    where: { campania_id: campaniaId, activo: true },
     select: { id: true },
   });
-  const cultivoIds = cultivosCampania.map(c => c.id);
+  const cultivoIds = cultivosCampania.map((c) => c.id);
 
   const [cultivos, actividades, inspecciones, acopios] = await Promise.all([
     prisma.cultivo.findMany({
-      where: { campanias_id: campaniaId, activo: true },
+      where: { campania_id: campaniaId, activo: true },
       select: {
         id: true,
         cultivo: true,
         created_at: true,
         fecha_siembra: true,
-        parcela: { select: { nombre: true, productor: { select: { nombres: true, apellido_paterno: true } } } },
+        parcela: {
+          select: {
+            nombre: true,
+            productor: { select: { nombres: true, apellido_paterno: true } },
+          },
+        },
       },
       take: 50,
       orderBy: { created_at: 'desc' },
     }),
-    cultivoIds.length > 0 ? prisma.actividades.findMany({
-      where: { activo: true, cultivo_id: { in: cultivoIds } },
-      select: {
-        id: true,
-        tipo_actividad: true,
-        descripcion: true,
-        responsable_tecnico: true,
-        estado: true,
-        created_at: true,
-        fecha: true,
-      },
-      take: 50,
-      orderBy: { created_at: 'desc' },
-    }) : [],
-    cultivoIds.length > 0 ? prisma.inspecciones.findMany({
-      where: { activo: true, cultivo_id: { in: cultivoIds } },
-      select: {
-        id: true,
-        codigo: true,
-        inspector: true,
-        estado: true,
-        created_at: true,
-        fecha: true,
-      },
-      take: 50,
-      orderBy: { created_at: 'desc' },
-    }) : [],
-    cultivoIds.length > 0 ? prisma.acopio.findMany({
-      where: { activo: true, detalles: { some: { cultivo_id: { in: cultivoIds } } } },
-      select: {
-        id: true,
-        codigo: true,
-        acopiador: true,
-        peso_total: true,
-        created_at: true,
-        fecha: true,
-      },
-      take: 50,
-      orderBy: { created_at: 'desc' },
-    }) : [],
+    cultivoIds.length > 0
+      ? prisma.actividades.findMany({
+          where: { activo: true, cultivo_id: { in: cultivoIds } },
+          select: {
+            id: true,
+            tipo_actividad: true,
+            descripcion: true,
+            responsable_tecnico: true,
+            estado: true,
+            created_at: true,
+            fecha: true,
+          },
+          take: 50,
+          orderBy: { created_at: 'desc' },
+        })
+      : [],
+    cultivoIds.length > 0
+      ? prisma.inspecciones.findMany({
+          where: { activo: true, cultivo_id: { in: cultivoIds } },
+          select: {
+            id: true,
+            codigo: true,
+            inspector: true,
+            estado: true,
+            created_at: true,
+            fecha: true,
+          },
+          take: 50,
+          orderBy: { created_at: 'desc' },
+        })
+      : [],
+    cultivoIds.length > 0
+      ? prisma.acopio.findMany({
+          where: { activo: true, detalles: { some: { cultivo_id: { in: cultivoIds } } } },
+          select: {
+            id: true,
+            codigo: true,
+            acopiador: true,
+            peso_total: true,
+            created_at: true,
+            fecha: true,
+          },
+          take: 50,
+          orderBy: { created_at: 'desc' },
+        })
+      : [],
   ]);
 
-  const items: Array<{
-    id: string;
-    tipo: string;
-    titulo: string;
-    descripcion: string;
-    fecha: string;
-  }> = [];
+  const items: CampaniaTimelineEvent[] = [];
 
   for (const c of cultivos) {
+    const productor = (c.parcela as { productor?: { nombres?: string; apellido_paterno?: string } | null })?.productor;
     items.push({
       id: `cultivo-${c.id}`,
       tipo: 'cultivo',
       titulo: `Cultivo registrado: ${c.cultivo}`,
-      descripcion: `${(c.parcela as any)?.productor?.nombres ?? ''} ${(c.parcela as any)?.productor?.apellido_paterno ?? ''} - ${c.parcela?.nombre ?? ''}`,
-      fecha: (c.created_at ?? c.fecha_siembra) as unknown as string,
+      descripcion: `${productor?.nombres ?? ''} ${productor?.apellido_paterno ?? ''} - ${c.parcela?.nombre ?? ''}`,
+      fecha: String(c.created_at ?? c.fecha_siembra),
     });
   }
 
@@ -361,7 +394,7 @@ export const getTimeline = async (id: string) => {
       tipo: 'actividad',
       titulo: `Actividad: ${a.tipo_actividad ?? a.descripcion ?? 'Sin descripción'}`,
       descripcion: `${a.responsable_tecnico ?? ''} - ${a.estado ?? ''}`,
-      fecha: (a.created_at ?? a.fecha) as unknown as string,
+      fecha: String(a.created_at ?? a.fecha),
     });
   }
 
@@ -371,7 +404,7 @@ export const getTimeline = async (id: string) => {
       tipo: 'inspeccion',
       titulo: `Inspección: ${i.codigo}`,
       descripcion: `${i.inspector ?? ''} - ${i.estado ?? ''}`,
-      fecha: (i.created_at ?? i.fecha) as unknown as string,
+      fecha: String(i.created_at ?? i.fecha),
     });
   }
 
@@ -381,7 +414,7 @@ export const getTimeline = async (id: string) => {
       tipo: 'acopio',
       titulo: `Acopio: ${a.codigo}`,
       descripcion: `${a.acopiador ?? ''} - ${a.peso_total ?? 0} kg`,
-      fecha: (a.created_at ?? a.fecha) as unknown as string,
+      fecha: String(a.created_at ?? a.fecha),
     });
   }
 

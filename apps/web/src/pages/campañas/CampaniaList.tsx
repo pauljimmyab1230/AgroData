@@ -1,42 +1,16 @@
 import { useState, useMemo } from "react";
 import { Plus, X } from "lucide-react";
-import { Button, ConfirmDialog, SearchInput, Select } from "../../components/ui";
+import { Button, ConfirmDialog, FilterSelect, LoadingSpinner, SearchInput } from "../../components/ui";
 import { CampaniaHeader } from "../../components/campanias/CampaniaHeader";
 import { CampaniaKPI } from "../../components/campanias/CampaniaKPI";
 import { CampaniaTable } from "../../components/campanias/CampaniaTable";
 import { useCampanias, useCampaniaGlobalStats, useDeleteCampania } from "../../hooks/queries";
 import CampaniaModal from "../../components/campanias/CampaniaModal";
 import { campaniaEstados } from "../../services/campanias";
+import { aniosAgricolas } from "../../constants/campanias";
 import { toast } from "../../utils/toast";
 
-const currentYear = new Date().getFullYear();
-const aniosAgricolas = Array.from({ length: 5 }, (_, i) => {
-  const y = currentYear - i;
-  return `${y}-${y + 1}`;
-});
-
 const toOptions = (items: readonly string[]) => items.map((item) => ({ value: item, label: item }));
-
-function FilterSelect({
-  label,
-  placeholder,
-  options,
-  value,
-  onChange,
-}: {
-  label: string;
-  placeholder: string;
-  options: { value: string; label: string }[];
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div className="w-44">
-      <label className="mb-1 block text-xs font-medium text-gray-500">{label}</label>
-      <Select options={options} placeholder={placeholder} value={value} onChange={onChange} />
-    </div>
-  );
-}
 
 export default function CampaniaList() {
   const [search, setSearch] = useState("");
@@ -77,7 +51,7 @@ export default function CampaniaList() {
   if (isLoading && campanias.length === 0) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-forest-600 border-t-transparent" />
+        <LoadingSpinner />
       </div>
     );
   }

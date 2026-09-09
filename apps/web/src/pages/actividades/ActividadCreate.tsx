@@ -1,4 +1,3 @@
-import { Breadcrumb } from "../../components/ui";
 import { ActividadHeader } from "../../components/actividades/ActividadHeader";
 import { ActividadForm } from "../../components/actividades/ActividadForm";
 
@@ -12,7 +11,6 @@ export default function ActividadCreate({ inModal, onSave }: ActividadCreateProp
     <div>
       {!inModal && (
         <>
-          <Breadcrumb items={[{ label: "Actividades Agrícolas", to: "/actividades" }, { label: "Nueva Actividad" }]} />
           <ActividadHeader
             title="Nueva Actividad"
             description="Registra una nueva actividad agrícola completando las secciones."

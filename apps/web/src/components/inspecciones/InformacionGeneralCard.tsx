@@ -26,7 +26,7 @@ export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardP
   const [productores, setProductores] = useState<SelectOption[]>([]);
   const [parcelas, setParcelas] = useState<SelectOption[]>([]);
   const [cultivos, setCultivos] = useState<SelectOption[]>([]);
-  const [selectedProductorId, setSelectedProductorId] = useState<string>(values?.productorId ?? "");
+  const [selectedProductorId, setSelectedProductorId] = useState<string>(values?.productorId ? String(values.productorId) : "");
 
   const inspectoresOptions = inspectores.map((u) => ({ value: u.nombre, label: u.nombre }));
 
@@ -90,7 +90,7 @@ export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardP
           <Select
             options={campanias}
             placeholder="Seleccione"
-            value={values?.campaniaId}
+            value={values?.campaniaId ? String(values.campaniaId) : undefined}
           />
         </Field>
 
@@ -111,7 +111,7 @@ export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardP
           <Select
             options={parcelas}
             placeholder={selectedProductorId ? "Seleccione" : "Primero seleccione un productor"}
-            value={values?.parcelaId}
+            value={values?.parcelaId ? String(values.parcelaId) : undefined}
             disabled={!selectedProductorId}
           />
         </Field>
@@ -120,7 +120,7 @@ export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardP
           <Select
             options={cultivos}
             placeholder={values?.parcelaId ? "Seleccione" : "Primero seleccione una parcela"}
-            value={values?.cultivoId}
+            value={values?.cultivoId ? String(values.cultivoId) : undefined}
             disabled={!values?.parcelaId}
           />
         </Field>

@@ -1,12 +1,22 @@
 import { useState, useEffect } from "react";
 import api from "./api";
 
+// ─── Types ────────────────────────────────────────────────
+export type Rol = "ADMIN" | "USER";
+export type RolSic =
+  | "RESPONSABLE_SIC"
+  | "INSPECTOR"
+  | "COMITE_DECISION"
+  | "TECNICO_CAMPO"
+  | "ACOPIADOR"
+  | "CAPACITADOR";
+
 export interface Usuario {
   id: string;
   nombre: string;
   email: string;
-  rol: string;
-  rolSic: string | null;
+  rol: Rol;
+  rolSic: RolSic | null;
   activo: boolean;
   createdAt: string;
   updatedAt: string;
@@ -16,13 +26,22 @@ interface UsuarioDTO {
   id: string;
   nombre: string;
   email: string;
-  rol: string;
-  rol_sic: string | null;
+  rol: Rol;
+  rol_sic: RolSic | null;
   activo: boolean;
   created_at: string;
   updated_at: string;
 }
 
+interface PaginatedResponse {
+  data: UsuarioDTO[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+// ─── Mappers ──────────────────────────────────────────────
 function toFrontend(dto: UsuarioDTO): Usuario {
   return {
     id: dto.id,
@@ -36,16 +55,17 @@ function toFrontend(dto: UsuarioDTO): Usuario {
   };
 }
 
-function toBackend(data: Partial<Usuario>): Record<string, unknown> {
+function toBackend(data: Partial<Usuario>): Partial<UsuarioDTO> {
   const out: Record<string, unknown> = {};
   if (data.nombre !== undefined) out.nombre = data.nombre;
   if (data.email !== undefined) out.email = data.email;
   if (data.rol !== undefined) out.rol = data.rol;
-  if (data.rolSic !== undefined) out.rol_sic = data.rolSic || null;
+  if (data.rolSic !== undefined) out.rol_sic = data.rolSic;
   if (data.activo !== undefined) out.activo = data.activo;
-  return out;
+  return out as Partial<UsuarioDTO>;
 }
 
+// ─── API calls ────────────────────────────────────────────
 export async function fetchUsuarios(params?: {
   search?: string;
   rol?: string;
@@ -54,14 +74,14 @@ export async function fetchUsuarios(params?: {
   limit?: number;
 }): Promise<{ data: Usuario[]; total: number; page: number; limit: number; totalPages: number }> {
   const query = new URLSearchParams();
-  if (params?.search) query.set('search', params.search);
-  if (params?.rol) query.set('rol', params.rol);
-  if (params?.rol_sic) query.set('rol_sic', params.rol_sic);
-  if (params?.page) query.set('page', String(params.page));
-  if (params?.limit) query.set('limit', String(params.limit));
+  if (params?.search) query.set("search", params.search);
+  if (params?.rol) query.set("rol", params.rol);
+  if (params?.rol_sic) query.set("rol_sic", params.rol_sic);
+  if (params?.page) query.set("page", String(params.page));
+  if (params?.limit) query.set("limit", String(params.limit));
 
   const qs = query.toString();
-  const res = await api.get(`/usuarios${qs ? `?${qs}` : ''}`);
+  const res = await api.get<PaginatedResponse>(`/usuarios${qs ? `?${qs}` : ""}`);
   return {
     data: res.data.data.map(toFrontend),
     total: res.data.total,
@@ -72,7 +92,7 @@ export async function fetchUsuarios(params?: {
 }
 
 export async function fetchUsuario(id: string): Promise<Usuario> {
-  const res = await api.get(`/usuarios/${id}`);
+  const res = await api.get<{ data: UsuarioDTO }>(`/usuarios/${id}`);
   return toFrontend(res.data.data);
 }
 
@@ -80,25 +100,28 @@ export async function createUsuario(data: {
   nombre: string;
   email: string;
   password: string;
-  rol?: string;
-  rolSic?: string | null;
+  rol?: Rol;
+  rolSic?: RolSic | null;
 }): Promise<Usuario> {
-  const res = await api.post("/usuarios", {
+  const res = await api.post<{ data: UsuarioDTO }>("/usuarios", {
     nombre: data.nombre,
     email: data.email,
     password: data.password,
-    rol: data.rol || 'USER',
-    rol_sic: data.rolSic || null,
+    rol: data.rol ?? "USER",
+    rol_sic: data.rolSic ?? null,
   });
   return toFrontend(res.data.data);
 }
 
-export async function updateUsuario(id: string, data: Partial<Usuario> & { password?: string }): Promise<Usuario> {
+export async function updateUsuario(
+  id: string,
+  data: Partial<Usuario> & { password?: string },
+): Promise<Usuario> {
   const payload = toBackend(data);
-  if ((data as Record<string, unknown>).password !== undefined) {
-    payload.password = (data as Record<string, unknown>).password;
+  if (data.password !== undefined) {
+    (payload as Record<string, unknown>).password = data.password;
   }
-  const res = await api.put(`/usuarios/${id}`, payload);
+  const res = await api.put<{ data: UsuarioDTO }>(`/usuarios/${id}`, payload);
   return toFrontend(res.data.data);
 }
 
@@ -112,13 +135,13 @@ export interface UsuarioBasico {
   id: string;
   nombre: string;
   email: string;
-  rol_sic: string | null;
+  rol_sic: RolSic | null;
 }
 
 export async function fetchUsuariosBasic(rol_sic?: string): Promise<UsuarioBasico[]> {
   const params: Record<string, string> = {};
   if (rol_sic) params.rol_sic = rol_sic;
-  const res = await api.get("/usuarios/basic", { params });
+  const res = await api.get<{ data: UsuarioBasico[] }>("/usuarios/basic", { params });
   return res.data.data ?? [];
 }
 
@@ -137,7 +160,9 @@ export function useUsuariosBasic(rol_sic?: string) {
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [rol_sic]);
 
   return { usuarios, loading };

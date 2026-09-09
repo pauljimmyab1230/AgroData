@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Calendar, DollarSign, MapPin, Package, Pencil, Plus, TrendingUp, User, Trash2 } from "lucide-react";
-import { Breadcrumb, Button, Card, Badge, FormField, Input, Select, Textarea, DatePicker, ConfirmDialog } from "../../components/ui";
+import { Button, Card, Badge, FormField, Input, Select, Textarea, DatePicker, ConfirmDialog } from "../../components/ui";
 import {
   fetchKardexItem,
   addKardexMovimiento,
@@ -115,8 +115,6 @@ export default function KardexView() {
 
   return (
     <div>
-      <Breadcrumb items={[{ label: "Kardex", to: "/kardex" }, { label: item.codigo }]} />
-
       <div className="mb-8 flex items-center gap-4">
         <Button variant="ghost" as="link" to="/kardex" iconLeft={<ArrowLeft className="h-4 w-4" />}>
           Kardex
@@ -163,7 +161,7 @@ export default function KardexView() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Stock Mínimo</p>
-              <p className="mt-1.5 text-2xl font-bold text-[#111827]">{item.cantidadMinima} {item.unidad}</p>
+              <p className="mt-1.5 text-2xl font-bold text-[#111827]">{item.cantidadMinima ?? "—"} {item.unidad}</p>
             </div>
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
               <TrendingUp className="h-5 w-5" />
@@ -295,7 +293,7 @@ export default function KardexView() {
             </div>
             <div className="flex justify-between border-b border-gray-100 py-2">
               <span className="text-sm text-gray-500">Costo Unitario</span>
-              <span className="text-sm font-medium text-[#111827]">S/ {item.costoUnitario.toFixed(2)}</span>
+              <span className="text-sm font-medium text-[#111827]">S/ {item.costoUnitario != null ? item.costoUnitario.toFixed(2) : "—"}</span>
             </div>
             <div className="flex justify-between border-b border-gray-100 py-2">
               <span className="text-sm text-gray-500">Proveedor</span>

@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { CalendarDays, Pencil } from "lucide-react";
-import { Breadcrumb, Button, Card, LoadingSpinner } from "../../components/ui";
+import { Button, Card, LoadingSpinner } from "../../components/ui";
 import { CampaniaHeader } from "../../components/campanias/CampaniaHeader";
 import { CampaniaEstadoBadge } from "../../components/campanias/CampaniaEstadoBadge";
 import { CampaniaKPIResumen } from "../../components/campanias/CampaniaKPIResumen";
@@ -12,13 +12,7 @@ import { CampaniaStatusCard } from "../../components/campanias/CampaniaStatusCar
 import { ConfiguracionCard } from "../../components/campanias/ConfiguracionCard";
 import { ObservacionesCard } from "../../components/campanias/ObservacionesCard";
 import { useCampania, useCampaniaStats } from "../../hooks/queries";
-
-const formatFecha = (fecha: string) => {
-  if (!fecha) return "—";
-  const [y, m, d] = fecha.split("-").map(Number);
-  const meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-  return `${d} ${meses[m - 1]} ${y}`;
-};
+import { formatFechaCorta } from "../../utils/formatters";
 
 interface CampaniaViewProps {
   inModal?: boolean;
@@ -53,8 +47,6 @@ export default function CampaniaView({ inModal, campaniaId: propId }: CampaniaVi
     <div>
       {!inModal && (
         <>
-          <Breadcrumb items={[{ label: "Campañas", to: "/campanias" }, { label: campania.codigo }]} />
-
           <CampaniaHeader
             title={campania.nombre}
             backTo="/campanias"
@@ -92,11 +84,11 @@ export default function CampaniaView({ inModal, campaniaId: propId }: CampaniaVi
           <div className="flex flex-col gap-2 sm:items-end">
             <div className="flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-[#111827]">
               <CalendarDays className="h-5 w-5 text-forest-600" />
-              Inicio: <span>{formatFecha(campania.fechaInicio)}</span>
+              Inicio: <span>{formatFechaCorta(campania.fechaInicio)}</span>
             </div>
             <div className="flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-[#111827]">
               <CalendarDays className="h-5 w-5 text-forest-600" />
-              Fin: <span>{formatFecha(campania.fechaFin)}</span>
+              Fin: <span>{formatFechaCorta(campania.fechaFin)}</span>
             </div>
           </div>
         </div>

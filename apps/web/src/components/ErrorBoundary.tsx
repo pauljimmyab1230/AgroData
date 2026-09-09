@@ -1,4 +1,4 @@
-import { Component, ErrorInfo, ReactNode } from "react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
 
 interface Props {
@@ -21,8 +21,8 @@ export class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("[ErrorBoundary]", error, errorInfo);
+  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+    console.error("[ErrorBoundary]", error, errorInfo.componentStack);
   }
 
   render() {
@@ -46,11 +46,11 @@ export class ErrorBoundary extends Component<Props, State> {
               this.setState({ hasError: false, error: null });
               window.location.reload();
             }}
-            className="px-4 py-2 bg-forest-600 text-white rounded-lg hover:bg-forest-700 transition-colors"
+            className="px-4 py-2 bg-[#0A4174] text-white rounded-lg hover:bg-[#001D39] transition-colors"
           >
             Recargar página
           </button>
-          {process.env.NODE_ENV === "development" && this.state.error && (
+          {import.meta.env.DEV && this.state.error && (
             <pre className="mt-4 text-xs text-left bg-gray-100 p-4 rounded-lg max-w-2xl overflow-auto">
               {this.state.error.message}
               {"\n"}

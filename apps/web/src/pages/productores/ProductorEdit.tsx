@@ -1,7 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, ChevronLeft, Save } from "lucide-react";
 import {
-  Breadcrumb,
   Button,
   LoadingSpinner,
   SectionHeader,
@@ -15,11 +14,13 @@ import { FamiliarTable } from "../../components/productores/FamiliarTable";
 import { DocumentoUploader } from "../../components/productores/DocumentoUploader";
 import { useProductor, useUpdateProductor } from "../../hooks/queries";
 import { ProductorFormProvider, useProductorForm } from "../../contexts/ProductorFormContext";
+import { getApiErrorMessage, toProductorId } from "../../services/productores";
+import type { ProductorId } from "../../services/productores";
 import { toast } from "../../utils/toast";
 import { useProductorStepper } from "../../hooks/useProductorStepper";
 
 interface ProductorEditProps {
-  id: string;
+  id: string | number;
   inModal?: boolean;
   onSave?: () => void;
 }
@@ -29,6 +30,7 @@ function ProductorEditForm({ id, inModal, onSave }: ProductorEditProps) {
   const navigate = useNavigate();
   const { pasoActual, pasoMaximoAlcanzado, totalPasos, isFirstStep, isLastStep, handleNext, handleBack, handlePasoChange } = useProductorStepper();
   const updateMutation = useUpdateProductor();
+  const productorId = toProductorId(Number(id));
 
   const handleSave = async () => {
     if (!validateStep(1)) {
@@ -36,15 +38,14 @@ function ProductorEditForm({ id, inModal, onSave }: ProductorEditProps) {
       return;
     }
     try {
-      await updateMutation.mutateAsync({ id: Number(id), data });
+      await updateMutation.mutateAsync({ id: productorId, data });
       if (!inModal) {
         navigate(`/productores/${id}`);
       } else {
         onSave?.();
       }
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Error al guardar. Verifique los datos.";
-      toast.error(msg);
+      toast.error(getApiErrorMessage(err));
     }
   };
 
@@ -52,14 +53,6 @@ function ProductorEditForm({ id, inModal, onSave }: ProductorEditProps) {
     <div>
       {!inModal && (
         <>
-          <Breadcrumb
-            items={[
-              { label: "Productores", to: "/productores" },
-              { label: id, to: `/productores/${id}` },
-              { label: "Editar Productor" },
-            ]}
-          />
-
           <div className="mb-8 flex items-center gap-4">
             <Button
               variant="ghost"
@@ -91,9 +84,9 @@ function ProductorEditForm({ id, inModal, onSave }: ProductorEditProps) {
           </>
         )}
 
-        {pasoActual === 2 && <FamiliarTable mode="edit" productorId={Number(id)} />}
+        {pasoActual === 2 && <FamiliarTable mode="edit" productorId={productorId} />}
 
-        {pasoActual === 3 && <DocumentoUploader mode="edit" productorId={Number(id)} />}
+        {pasoActual === 3 && <DocumentoUploader mode="edit" productorId={productorId} />}
       </div>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm">
@@ -134,14 +127,16 @@ function ProductorEditForm({ id, inModal, onSave }: ProductorEditProps) {
 
 interface ProductorEditDefaultProps {
   inModal?: boolean;
-  id?: string;
+  id?: string | number;
   onSave?: () => void;
 }
 
 export default function ProductorEdit({ inModal, id: propId, onSave }: ProductorEditDefaultProps) {
   const { id: paramId } = useParams();
   const id = propId || paramId;
-  const { data: productor, isLoading, error } = useProductor(Number(id));
+  const numId = Number(id);
+  const productorId = !isNaN(numId) && numId > 0 ? toProductorId(numId) : null;
+  const { data: productor, isLoading, error } = useProductor(productorId);
 
   if (isLoading) {
     return (

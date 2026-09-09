@@ -44,8 +44,6 @@ const riesgoLabels: Record<string, string> = {
   ALTO: "Alto",
 };
 
-const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: riesgoLabels[item] ?? item }));
-
 function contarCumplimiento(criterios: CriterioChecklist[]) {
   return {
     cumple: criterios.filter((c) => c.cumplimiento === "CUMPLE").length,
@@ -100,7 +98,6 @@ function DetalleCriterio({ criterio }: { criterio: CriterioChecklist }) {
 
 export function ChecklistCard({ mode, values }: ChecklistCardProps) {
   const editable = mode !== "view";
-  const [criteriosCatalogo, setCriteriosCatalogo] = useState<string[]>([]);
   const [criterios, setCriterios] = useState<CriterioChecklist[]>(() =>
     editable ? values?.checklist ?? [] : [],
   );
@@ -109,7 +106,6 @@ export function ChecklistCard({ mode, values }: ChecklistCardProps) {
     fetchCatalogoActivos("criterios-checklist")
       .then((items) => {
         const nombres = items.map((i) => i.nombre);
-        setCriteriosCatalogo(nombres);
         if (editable && !values?.checklist) {
           setCriterios(crearChecklist(nombres));
         }

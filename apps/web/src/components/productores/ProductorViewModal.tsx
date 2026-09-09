@@ -11,17 +11,18 @@ import { DocumentoUploader } from "./DocumentoUploader";
 import { useProductor } from "../../hooks/queries";
 import { ProductorFormProvider } from "../../contexts/ProductorFormContext";
 import { getEstadoProductorBadgeVariant, getEstadoProductorLabel } from "../../utils/formatters";
+import { toProductorId } from "../../services/productores";
+import type { ProductorId, EstadoProductor } from "../../services/productores";
 
 interface ProductorViewModalProps {
   open: boolean;
   onClose: () => void;
-  productorId?: string;
+  productorId?: ProductorId;
 }
 
 export default function ProductorViewModal({ open, onClose, productorId }: ProductorViewModalProps) {
-  const numId = productorId ? Number(productorId) : null;
   const { data: productor, isLoading: loadingProductor } = useProductor(
-    open && numId ? numId : null
+    open && productorId ? productorId : null
   );
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -41,7 +42,7 @@ export default function ProductorViewModal({ open, onClose, productorId }: Produ
     };
   }, [open, handleKeyDown]);
 
-  const estadoBadge = (estado: string) => (
+  const estadoBadge = (estado: EstadoProductor) => (
     <Badge variant={getEstadoProductorBadgeVariant(estado)}>{getEstadoProductorLabel(estado)}</Badge>
   );
 
@@ -103,9 +104,9 @@ export default function ProductorViewModal({ open, onClose, productorId }: Produ
                 <ContactoUbicacionCard mode="view" values={productor} />
                 <SocioculturalCard mode="view" values={productor} />
                 <OrganizacionCard mode="view" values={productor} />
-                {numId && <FamiliarTable mode="view" productorId={numId} />}
-                {numId && <ParcelaTable mode="view" productorId={numId} />}
-                {numId && <DocumentoUploader mode="view" productorId={numId} />}
+                {productor && <FamiliarTable mode="view" productorId={productor.id} />}
+                {productor && <ParcelaTable mode="view" productorId={productor.id} />}
+                {productor && <DocumentoUploader mode="view" productorId={productor.id} />}
               </div>
             </ProductorFormProvider>
           ) : (

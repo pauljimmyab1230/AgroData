@@ -1,0 +1,2 @@
+-- This is a data migration script (migrate.ts)
+-- No schema changes needed for this migration

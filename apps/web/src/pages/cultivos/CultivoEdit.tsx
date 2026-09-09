@@ -12,7 +12,8 @@ interface CultivoEditProps {
 
 export default function CultivoEdit({ inModal, cultivoId: propId, onSave }: CultivoEditProps) {
   const { id: paramId } = useParams();
-  const id = propId || paramId;
+  const id = propId ?? paramId;
+
   const { data: cultivo, isLoading } = useCultivo(id || null);
 
   if (isLoading) {
@@ -36,13 +37,12 @@ export default function CultivoEdit({ inModal, cultivoId: propId, onSave }: Cult
       {!inModal && (
         <CultivoHeader
           title="Editar Cultivo"
-          description={`Actualizando información de ${cultivo.cultivo} (${cultivo.codigo})`}
-          crumbs={[{ label: "Cultivos", to: "/cultivos" }, { label: cultivo.codigo, to: `/cultivos/${cultivo.id}` }, { label: "Editar" }]}
+          description={`Actualizando la información de ${cultivo.cultivo} (${cultivo.codigo})`}
           backTo={`/cultivos/${cultivo.id}`}
         />
       )}
 
-      <CultivoForm key={id} mode="edit" values={cultivo} inModal={inModal} onSave={onSave} />
+      <CultivoForm mode="edit" values={cultivo} inModal={inModal} onSave={onSave} />
     </div>
   );
 }

@@ -3,13 +3,7 @@ import { DataTable } from "../ui";
 import { CampaniaActions } from "./CampaniaActions";
 import { CampaniaEstadoBadge } from "./CampaniaEstadoBadge";
 import type { Campania } from "../../services/campanias";
-
-const formatFecha = (fecha: string) => {
-  if (!fecha) return "—";
-  const [y, m, d] = fecha.split("-").map(Number);
-  const meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-  return `${d} ${meses[m - 1]} ${y}`;
-};
+import { formatFechaCorta } from "../../utils/formatters";
 
 type CampaniaTableProps = {
   data: Campania[];
@@ -46,8 +40,8 @@ export function CampaniaTable({
       ),
     },
     { key: "anioAgricola", label: "Año Agrícola", sortable: true },
-    { key: "fechaInicio", label: "Fecha Inicio", render: (c: Campania) => formatFecha(c.fechaInicio) },
-    { key: "fechaFin", label: "Fecha Fin", render: (c: Campania) => formatFecha(c.fechaFin) },
+    { key: "fechaInicio", label: "Fecha Inicio", render: (c: Campania) => formatFechaCorta(c.fechaInicio) },
+    { key: "fechaFin", label: "Fecha Fin", render: (c: Campania) => formatFechaCorta(c.fechaFin) },
     { key: "estado", label: "Estado", sortable: true, render: (c: Campania) => <CampaniaEstadoBadge estado={c.estado} /> },
     {
       key: "acciones",

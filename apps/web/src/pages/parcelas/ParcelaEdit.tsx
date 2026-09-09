@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { Breadcrumb, Button, LoadingSpinner } from "../../components/ui";
+import { Button, LoadingSpinner } from "../../components/ui";
 import ParcelaForm from "../../components/parcelas/ParcelaForm";
 import { useParcela } from "../../hooks/queries";
 
@@ -36,14 +36,6 @@ export default function ParcelaEdit({ inModal, parcelaId: propId, onSave }: Parc
     <div>
       {!inModal && (
         <>
-          <Breadcrumb
-            items={[
-              { label: "Parcelas", to: "/parcelas" },
-              { label: parcela.codigo, to: `/parcelas/${parcela.id}` },
-              { label: "Editar" },
-            ]}
-          />
-
           <div className="mb-8 flex items-center gap-4">
             <Button
               variant="ghost"

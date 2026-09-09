@@ -1,22 +1,16 @@
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import { Badge, DataTable } from "../ui";
-import { formatFecha, formatKg, type Acopio } from "../../services/acopios";
+import { formatFecha, formatKg, ESTADO_ACOPIO_LABELS, type Acopio } from "../../services/acopios";
 
 interface AcopioTableProps {
   data: Acopio[];
-  onView: (id: string) => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onView: (id: number) => void;
+  onEdit: (id: number) => void;
+  onDelete: (id: number) => void;
   currentPage?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
 }
-
-const estadoLabels: Record<string, string> = {
-  EN_PROCESO: "En Proceso",
-  COMPLETADO: "Completado",
-  EN_PLANTA: "En Planta",
-};
 
 export default function AcopioTable({
   data,
@@ -39,28 +33,26 @@ export default function AcopioTable({
     {
       key: "detalles",
       label: "Productores",
-      render: (a: Acopio) => (
-        <span className="text-sm text-gray-600">{a.detalles.length} productor(es)</span>
-      ),
+      render: (a: Acopio) => <span className="text-sm text-gray-600">{a.detalles.length} productor(es)</span>,
     },
     {
-      key: "totalSacos",
+      key: "total_sacos",
       label: "Sacos",
       sortable: true,
-      render: (a: Acopio) => <Badge variant="gray">{a.totalSacos}</Badge>,
+      render: (a: Acopio) => <Badge variant="gray">{a.total_sacos}</Badge>,
     },
     {
-      key: "pesoTotal",
-      label: "Peso Total",
+      key: "peso_neto",
+      label: "Peso Neto",
       sortable: true,
-      render: (a: Acopio) => <span className="font-medium text-[#111827]">{formatKg(a.pesoTotal)}</span>,
+      render: (a: Acopio) => <span className="font-medium text-[#111827]">{formatKg(a.peso_neto)}</span>,
     },
     {
       key: "estado",
       label: "Estado",
       render: (a: Acopio) => {
-        const variant = a.estado === "COMPLETADO" ? "green" : a.estado === "EN_PLANTA" ? "blue" : "yellow";
-        return <Badge variant={variant}>{estadoLabels[a.estado] || a.estado}</Badge>;
+        const variant = a.estado === "RECIBIDO" ? "green" : a.estado === "EN_TRANSITO" ? "forest" : "yellow";
+        return <Badge variant={variant}>{ESTADO_ACOPIO_LABELS[a.estado] || a.estado}</Badge>;
       },
     },
     {

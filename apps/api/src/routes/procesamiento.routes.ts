@@ -13,7 +13,7 @@ const router = Router();
 
 router.use(authMiddleware);
 
-router.get('/', validate(getAllProcesamientosSchema), procesamientoController.getAll);
+router.get('/', validate(getAllProcesamientosSchema, 'query'), procesamientoController.getAll);
 router.get('/:id', validate(idParamSchema, 'params'), procesamientoController.getById);
 router.post('/', adminMiddleware, validate(createProcesamientoSchema), procesamientoController.create);
 router.put('/:id', adminMiddleware, validate(idParamSchema, 'params'), validate(updateProcesamientoSchema), procesamientoController.update);

@@ -1,7 +1,7 @@
 import api from "./api";
 
 export interface KardexMovimiento {
-  id?: string;
+  id?: number;
   tipo: string;
   cantidad: number;
   saldoAnterior: number;
@@ -14,20 +14,20 @@ export interface KardexMovimiento {
 }
 
 export interface KardexItem {
-  id: string;
+  id: number;
   codigo: string;
   producto: string;
   categoria: string;
   unidad: string;
   cantidadActual: number;
-  cantidadMinima: number;
-  cantidadMaxima: number;
+  cantidadMinima: number | null;
+  cantidadMaxima: number | null;
   ubicacion: string;
   estado: string;
   fechaIngreso: string;
   fechaVencimiento: string;
   proveedor: string;
-  costoUnitario: number;
+  costoUnitario: number | null;
   observaciones: string;
   movimientos: KardexMovimiento[];
   createdAt: string;
@@ -35,23 +35,28 @@ export interface KardexItem {
 }
 
 interface KardexItemDTO {
-  id: string;
+  id: number;
   codigo: string;
   producto: string;
   categoria: string;
   unidad: string;
   cantidad_actual: number;
-  cantidad_minima: number;
-  cantidad_maxima: number;
-  ubicacion: string;
+  cantidad_minima: number | null;
+  cantidad_maxima: number | null;
+  ubicacion: string | null;
   estado: string;
-  fecha_ingreso: string | null;
+  fecha_ingreso: string;
   fecha_vencimiento: string | null;
   proveedor: string | null;
-  costo_unitario: number;
+  costo_unitario: number | null;
   observaciones: string | null;
+  activo: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
   movimientos: Array<{
-    id: string;
+    id: number;
     tipo: string;
     cantidad: number;
     saldo_anterior: number;
@@ -61,9 +66,9 @@ interface KardexItemDTO {
     referencia: string | null;
     responsable: string | null;
     observaciones: string | null;
+    created_at: string;
+    kardex_id: number;
   }>;
-  created_at: string;
-  updated_at: string;
 }
 
 function toFrontend(dto: KardexItemDTO): KardexItem {
@@ -74,14 +79,14 @@ function toFrontend(dto: KardexItemDTO): KardexItem {
     categoria: dto.categoria,
     unidad: dto.unidad,
     cantidadActual: Number(dto.cantidad_actual) || 0,
-    cantidadMinima: Number(dto.cantidad_minima) || 0,
-    cantidadMaxima: Number(dto.cantidad_maxima) || 0,
-    ubicacion: dto.ubicacion,
+    cantidadMinima: dto.cantidad_minima != null ? Number(dto.cantidad_minima) : null,
+    cantidadMaxima: dto.cantidad_maxima != null ? Number(dto.cantidad_maxima) : null,
+    ubicacion: dto.ubicacion ?? "",
     estado: dto.estado,
     fechaIngreso: dto.fecha_ingreso?.split("T")[0] ?? "",
     fechaVencimiento: dto.fecha_vencimiento?.split("T")[0] ?? "",
     proveedor: dto.proveedor ?? "",
-    costoUnitario: Number(dto.costo_unitario) || 0,
+    costoUnitario: dto.costo_unitario != null ? Number(dto.costo_unitario) : null,
     observaciones: dto.observaciones ?? "",
     movimientos: (dto.movimientos ?? []).map(m => ({
       id: m.id,
@@ -230,6 +235,11 @@ export async function removeKardexMovimiento(kardexId: string, movimientoId: str
   await api.delete(`/kardex/${kardexId}/movimientos/${movimientoId}`);
 }
 
+export async function recomputeStock(kardexId: string): Promise<{ stock_recalculado: number; movimientos_procesados: number }> {
+  const res = await api.post(`/kardex/${kardexId}/recompute`);
+  return res.data.data;
+}
+
 export function formatearFecha(fecha: string): string {
   if (!fecha) return "";
   return new Date(fecha).toLocaleDateString("es-PE", {
@@ -243,6 +253,7 @@ export function formatearPeso(peso: number): string {
   return `${peso.toFixed(2)} kg`;
 }
 
-export function calcularValorInventario(cantidad: number, costo: number): number {
+export function calcularValorInventario(cantidad: number, costo: number | null): number {
+  if (costo == null) return 0;
   return cantidad * costo;
 }

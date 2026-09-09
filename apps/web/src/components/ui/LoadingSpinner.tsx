@@ -12,7 +12,7 @@ const sizeMap = {
 
 export default function LoadingSpinner({ size = "md", text, className = "" }: LoadingSpinnerProps) {
   return (
-    <div className={`flex flex-col items-center justify-center gap-3 ${className}`}>
+    <div className={`flex flex-col items-center justify-center gap-3 ${className}`} role="status" aria-label="Cargando">
       <div
         className={`${sizeMap[size]} animate-spin rounded-full border-4 border-forest-600/20 border-t-forest-600`}
       />

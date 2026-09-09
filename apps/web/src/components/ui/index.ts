@@ -16,5 +16,6 @@ export { default as ConfirmDialog } from "./ConfirmDialog";
 export { default as SectionHeader } from "./SectionHeader";
 export { default as Breadcrumb } from "./Breadcrumb";
 export { default as DatePicker } from "./DatePicker";
-export { Stepper } from "./Stepper";
+export { default as FilterSelect } from "./FilterSelect";
+export { default as Stepper } from "./Stepper";
 export type { StepperStep } from "./Stepper";

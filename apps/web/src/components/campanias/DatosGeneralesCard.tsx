@@ -2,19 +2,8 @@ import { ClipboardList } from "lucide-react";
 import { DatePicker, Input, Select, Textarea } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import type { CampaniaFormData } from "../../services/campanias";
-
-const currentYear = new Date().getFullYear();
-const aniosAgricolas = Array.from({ length: 5 }, (_, i) => {
-  const y = currentYear - i;
-  return `${y}-${y + 1}`;
-});
-
-const formatFecha = (fecha: string) => {
-  if (!fecha) return "—";
-  const [y, m, d] = fecha.split("-").map(Number);
-  const meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-  return `${d} ${meses[m - 1]} ${y}`;
-};
+import { formatFechaCorta } from "../../utils/formatters";
+import { aniosAgricolas } from "../../constants/campanias";
 
 type DatosGeneralesCardProps = {
   mode: FormMode;
@@ -65,7 +54,7 @@ export function DatosGeneralesCard({ mode, value, onChange, errors }: DatosGener
           {editable && errors?.anioAgricola && <p className="mt-1 text-xs text-red-500">{errors.anioAgricola}</p>}
         </Field>
 
-        <Field label="Fecha de Inicio" mode={mode} value={formatFecha(value.fechaInicio)} required>
+        <Field label="Fecha de Inicio" mode={mode} value={formatFechaCorta(value.fechaInicio)} required>
           <DatePicker
             selected={value.fechaInicio ? new Date(value.fechaInicio + "T00:00:00") : null}
             onChange={(date) => onChange?.({ fechaInicio: date?.toISOString().split("T")[0] ?? "" })}
@@ -73,7 +62,7 @@ export function DatosGeneralesCard({ mode, value, onChange, errors }: DatosGener
           {editable && errors?.fechaInicio && <p className="mt-1 text-xs text-red-500">{errors.fechaInicio}</p>}
         </Field>
 
-        <Field label="Fecha de Fin" mode={mode} value={formatFecha(value.fechaFin)} required>
+        <Field label="Fecha de Fin" mode={mode} value={formatFechaCorta(value.fechaFin)} required>
           <DatePicker
             selected={value.fechaFin ? new Date(value.fechaFin + "T00:00:00") : null}
             onChange={(date) => onChange?.({ fechaFin: date?.toISOString().split("T")[0] ?? "" })}

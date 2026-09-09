@@ -1,14 +1,18 @@
-import { Response, NextFunction } from 'express';
+import type { Response, NextFunction } from 'express';
 import * as acopiosService from '../services/acopios.service';
-import { AuthRequest } from '../middleware/auth.middleware';
+import type { AuthRequest } from '../middleware/auth.middleware';
 
-export const getAll = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const getAll = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const result = await acopiosService.getAll({
       search: req.query.search as string | undefined,
       estado: req.query.estado as string | undefined,
-      page: parseInt(req.query.page as string) || 1,
-      limit: parseInt(req.query.limit as string) || 20,
+      page: Number(req.query.page) || 1,
+      limit: Number(req.query.limit) || 20,
     });
     res.status(200).json({
       success: true,
@@ -19,7 +23,11 @@ export const getAll = async (req: AuthRequest, res: Response, next: NextFunction
   }
 };
 
-export const getById = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const getById = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const acopio = await acopiosService.getById(req.params.id);
     res.status(200).json({
@@ -31,7 +39,11 @@ export const getById = async (req: AuthRequest, res: Response, next: NextFunctio
   }
 };
 
-export const create = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const create = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const acopio = await acopiosService.create(req.body, req.user?.id);
     res.status(201).json({
@@ -44,7 +56,11 @@ export const create = async (req: AuthRequest, res: Response, next: NextFunction
   }
 };
 
-export const update = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const update = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const acopio = await acopiosService.update(req.params.id, req.body, req.user?.id);
     res.status(200).json({
@@ -57,7 +73,11 @@ export const update = async (req: AuthRequest, res: Response, next: NextFunction
   }
 };
 
-export const remove = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const remove = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const result = await acopiosService.remove(req.params.id);
     res.status(200).json({
@@ -69,7 +89,11 @@ export const remove = async (req: AuthRequest, res: Response, next: NextFunction
   }
 };
 
-export const getStats = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const getStats = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const stats = await acopiosService.getStats();
     res.status(200).json({
@@ -81,7 +105,11 @@ export const getStats = async (req: AuthRequest, res: Response, next: NextFuncti
   }
 };
 
-export const getByCodigo = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const getByCodigo = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const acopio = await acopiosService.getByCodigo(req.params.codigo);
     res.status(200).json({

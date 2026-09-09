@@ -9,17 +9,9 @@ export type EstadoInspeccion = "PENDIENTE" | "APROBADA" | "NO_CONFORME";
 export type ResultadoInspeccion = "CONFORME" | "CONFORME_CON_OBSERVACIONES" | "NO_CONFORME";
 export type EstadoNoConformidad = "PENDIENTE" | "EN_PROCESO" | "CORREGIDA" | "VERIFICADA";
 export type EstadoAccionCorrectiva = "PENDIENTE" | "EN_PROCESO" | "COMPLETADA" | "VERIFICADA";
-export type TipoEvento =
-  | "programada"
-  | "realizada"
-  | "evidencias"
-  | "observaciones"
-  | "correctivas"
-  | "verificacion"
-  | "cierre";
 
 export interface CriterioChecklist {
-  id?: string;
+  id?: number;
   criterio: string;
   cumplimiento: Cumplimiento | null;
   riesgo: Riesgo;
@@ -27,8 +19,18 @@ export interface CriterioChecklist {
   evidencia: string;
 }
 
+export interface AccionCorrectiva {
+  id?: number;
+  accion: string;
+  responsable: string;
+  fechaInicio: string;
+  fechaLimite: string;
+  estado: EstadoAccionCorrectiva;
+  observaciones: string;
+}
+
 export interface NoConformidad {
-  id?: string;
+  id?: number;
   codigo: string;
   tipo: string;
   categoria: string;
@@ -38,49 +40,33 @@ export interface NoConformidad {
   fechaCompromiso: string;
   estado: EstadoNoConformidad;
   accionCorrectiva: string;
-}
-
-export interface AccionCorrectiva {
-  id?: string;
-  accion: string;
-  responsable: string;
-  fechaInicio: string;
-  fechaLimite: string;
-  estado: EstadoAccionCorrectiva;
-  observaciones: string;
+  acciones: AccionCorrectiva[];
 }
 
 export interface Evidencia {
-  id?: string;
+  id?: number;
   nombre: string;
   descripcion: string;
   fecha: string;
   responsable: string;
   tipo: string;
-  preview?: string;
-}
-
-export interface EventoHistorial {
-  id?: string;
-  fecha: string;
-  titulo: string;
-  descripcion: string;
-  tipo: TipoEvento;
+  rutaArchivo: string;
 }
 
 export interface Inspeccion {
-  id: string;
+  id: number;
   codigo: string;
   fecha: string;
-  campaniaId: string;
+  campaniaId: number;
   campaniaNombre: string;
   campaniaCodigo: string;
-  productorId: string;
+  productorId: number;
   productorNombre: string;
-  parcelaId: string;
+  productorCodigo: string;
+  parcelaId: number;
   parcelaNombre: string;
   parcelaCodigo: string;
-  cultivoId: string | null;
+  cultivoId: number;
   cultivoNombre: string;
   cultivoCodigo: string;
   inspector: string;
@@ -88,7 +74,6 @@ export interface Inspeccion {
   resultado: ResultadoInspeccion | null;
   checklist: CriterioChecklist[];
   noConformidades: NoConformidad[];
-  accionesCorrectivas: AccionCorrectiva[];
   evidencias: Evidencia[];
   latitud: string;
   longitud: string;
@@ -104,7 +89,6 @@ export interface Inspeccion {
   resumenEjecutivo: string;
   fechaProximaInspeccion: string;
   nivelCumplimiento: string;
-  historial: EventoHistorial[];
   createdAt: string;
   updatedAt: string;
 }
@@ -112,16 +96,8 @@ export interface Inspeccion {
 // ─── DTO (API response shape) ──────────────────────────────
 
 interface InspeccionDTO {
-  id: string;
+  id: number;
   codigo: string;
-  campania_id: string;
-  campania: { id: string; nombre: string; codigo: string };
-  productor_id: string;
-  productor: { id: string; nombres: string; apellido_paterno: string; apellido_materno: string };
-  parcela_id: string;
-  parcela: { id: string; nombre: string; codigo: string };
-  cultivo_id: string | null;
-  cultivo: { id: string; cultivo: string; codigo: string } | null;
   fecha: string;
   inspector: string;
   estado: string;
@@ -140,56 +116,104 @@ interface InspeccionDTO {
   resumen_ejecutivo: string | null;
   fecha_proxima_inspeccion: string | null;
   nivel_cumplimiento: string | null;
-  checklist: Array<{ criterio: string; cumplimiento: string | null; riesgo: string; observacion: string | null; evidencia: string | null }>;
-  no_conformidades: Array<{ codigo: string | null; tipo: string; categoria: string; descripcion: string; severidad: string; responsable: string; fecha_compromiso: string | null; estado: string; accion_correctiva: string | null }>;
-  acciones_correctivas: Array<{ accion: string; responsable: string; fecha_inicio: string | null; fecha_limite: string | null; estado: string; evidencia: string | null }>;
-  evidencias: Array<{ nombre: string; tipo: string; ruta_archivo: string | null; fecha: string | null }>;
-  historial: Array<{ fecha: string; titulo: string; descripcion: string | null; tipo: string }>;
   created_at: string;
   updated_at: string;
+  cultivo_id: number;
+  cultivo: {
+    id: number;
+    cultivo: string;
+    codigo: string;
+    campania: { id: number; nombre: string; codigo: string };
+    parcela: {
+      id: number;
+      nombre: string;
+      codigo: string;
+      productor: { id: number; nombres: string; apellido_paterno: string; apellido_materno: string; codigo: string };
+    };
+  } | null;
+  checklist: Array<{ id: number; criterio: string; cumplimiento: string | null; riesgo: string; observacion: string | null; evidencia: string | null }>;
+  no_conformidades: Array<{
+    id: number;
+    codigo: string | null;
+    tipo: string;
+    categoria: string;
+    descripcion: string;
+    severidad: string;
+    responsable: string;
+    fecha_compromiso: string | null;
+    estado: string;
+    accion_correctiva: string | null;
+    acciones: Array<{ id: number; accion: string; responsable: string; fecha_inicio: string | null; fecha_limite: string | null; estado: string; observaciones: string | null }>;
+  }>;
+  evidencias: Array<{ id: number; nombre: string; descripcion: string | null; tipo: string | null; ruta_archivo: string | null; fecha: string | null; responsable: string | null }>;
 }
 
 // ─── Mapping ───────────────────────────────────────────────
 
+const splitDate = (v?: string | null): string => v?.split("T")[0] ?? "";
+
 function toFrontend(dto: InspeccionDTO): Inspeccion {
+  const cultivo = dto.cultivo;
+  const parcela = cultivo?.parcela;
+  const productor = parcela?.productor;
+  const campania = cultivo?.campania;
+
   return {
     id: dto.id,
     codigo: dto.codigo,
-    fecha: dto.fecha?.split("T")[0] ?? "",
-    campaniaId: dto.campania_id,
-    campaniaNombre: dto.campania?.nombre ?? "",
-    campaniaCodigo: dto.campania?.codigo ?? "",
-    productorId: dto.productor_id,
-    productorNombre: `${dto.productor?.nombres ?? ""} ${dto.productor?.apellido_paterno ?? ""} ${dto.productor?.apellido_materno ?? ""}`.trim(),
-    parcelaId: dto.parcela_id,
-    parcelaNombre: dto.parcela?.nombre ?? "",
-    parcelaCodigo: dto.parcela?.codigo ?? "",
-    cultivoId: dto.cultivo_id,
-    cultivoNombre: dto.cultivo?.cultivo ?? "",
-    cultivoCodigo: dto.cultivo?.codigo ?? "",
+    fecha: splitDate(dto.fecha),
+    campaniaId: campania?.id ?? 0,
+    campaniaNombre: campania?.nombre ?? "",
+    campaniaCodigo: campania?.codigo ?? "",
+    productorId: productor?.id ?? 0,
+    productorNombre: productor ? `${productor.nombres} ${productor.apellido_paterno} ${productor.apellido_materno}`.trim() : "",
+    productorCodigo: productor?.codigo ?? "",
+    parcelaId: parcela?.id ?? 0,
+    parcelaNombre: parcela?.nombre ?? "",
+    parcelaCodigo: parcela?.codigo ?? "",
+    cultivoId: cultivo?.id ?? 0,
+    cultivoNombre: cultivo?.cultivo ?? "",
+    cultivoCodigo: cultivo?.codigo ?? "",
     inspector: dto.inspector,
     estado: dto.estado as EstadoInspeccion,
     resultado: (dto.resultado as ResultadoInspeccion) || null,
-    checklist: (dto.checklist ?? []).map((c: any) => ({
-      id: c.id, criterio: c.criterio, cumplimiento: c.cumplimiento,
-      riesgo: c.riesgo, observacion: c.observacion ?? "", evidencia: c.evidencia ?? "",
+    checklist: (dto.checklist ?? []).map((c) => ({
+      id: c.id,
+      criterio: c.criterio,
+      cumplimiento: c.cumplimiento as Cumplimiento | null,
+      riesgo: c.riesgo as Riesgo,
+      observacion: c.observacion ?? "",
+      evidencia: c.evidencia ?? "",
     })),
-    noConformidades: (dto.no_conformidades ?? []).map((nc: any) => ({
-      id: nc.id, codigo: nc.codigo ?? "", tipo: nc.tipo, categoria: nc.categoria,
-      descripcion: nc.descripcion, severidad: nc.severidad,
-      responsable: nc.responsable, fechaCompromiso: nc.fecha_compromiso?.split("T")[0] ?? "",
-      estado: nc.estado, accionCorrectiva: nc.accion_correctiva ?? "",
+    noConformidades: (dto.no_conformidades ?? []).map((nc) => ({
+      id: nc.id,
+      codigo: nc.codigo ?? "",
+      tipo: nc.tipo,
+      categoria: nc.categoria,
+      descripcion: nc.descripcion,
+      severidad: nc.severidad as Severidad,
+      responsable: nc.responsable,
+      fechaCompromiso: splitDate(nc.fecha_compromiso),
+      estado: nc.estado as EstadoNoConformidad,
+      accionCorrectiva: nc.accion_correctiva ?? "",
+      acciones: (nc.acciones ?? []).map((ac) => ({
+        id: ac.id,
+        accion: ac.accion,
+        responsable: ac.responsable,
+        fechaInicio: splitDate(ac.fecha_inicio),
+        fechaLimite: splitDate(ac.fecha_limite),
+        estado: ac.estado as EstadoAccionCorrectiva,
+        observaciones: ac.observaciones ?? "",
+      })),
     })),
-    accionesCorrectivas: (dto.acciones_correctivas ?? []).map((ac: any) => ({
-      id: ac.id, accion: ac.accion, responsable: ac.responsable,
-      fechaInicio: ac.fecha_inicio?.split("T")[0] ?? "",
-      fechaLimite: ac.fecha_limite?.split("T")[0] ?? "",
-      estado: ac.estado, observaciones: ac.observaciones ?? "",
-    })),
-    evidencias: (dto.evidencias ?? []).map((e: any) => ({
-      id: e.id, nombre: e.nombre, descripcion: e.descripcion ?? "",
-      fecha: e.fecha?.split("T")[0] ?? "", responsable: e.responsable ?? "",
+    evidencias: (dto.evidencias ?? []).map((e) => ({
+      id: e.id,
+      nombre: e.nombre,
+      descripcion: e.descripcion ?? "",
+      fecha: splitDate(e.fecha),
+      responsable: e.responsable ?? "",
       tipo: e.tipo ?? "",
+      rutaArchivo: e.ruta_archivo ?? "",
     })),
     latitud: dto.latitud ?? "",
     longitud: dto.longitud ?? "",
@@ -200,15 +224,11 @@ function toFrontend(dto: InspeccionDTO): Inspeccion {
     recomendaciones: dto.recomendaciones ?? "",
     prioridadRecomendacion: dto.prioridad_recomendacion ?? "",
     responsableRecomendacion: dto.responsable_recomendacion ?? "",
-    fechaRecomendacion: dto.fecha_recomendacion?.split("T")[0] ?? "",
+    fechaRecomendacion: splitDate(dto.fecha_recomendacion),
     riesgoGeneral: dto.riesgo_general as Riesgo,
     resumenEjecutivo: dto.resumen_ejecutivo ?? "",
-    fechaProximaInspeccion: dto.fecha_proxima_inspeccion?.split("T")[0] ?? "",
+    fechaProximaInspeccion: splitDate(dto.fecha_proxima_inspeccion),
     nivelCumplimiento: dto.nivel_cumplimiento ?? "",
-    historial: (dto.historial ?? []).map((h: any) => ({
-      id: h.id, fecha: h.fecha?.split("T")[0] ?? "",
-      titulo: h.titulo, descripcion: h.descripcion ?? "", tipo: h.tipo,
-    })),
     createdAt: dto.created_at,
     updatedAt: dto.updated_at,
   };
@@ -217,10 +237,7 @@ function toFrontend(dto: InspeccionDTO): Inspeccion {
 function toBackend(data: Partial<Inspeccion>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   if (data.codigo !== undefined) out.codigo = data.codigo;
-  if (data.campaniaId !== undefined) out.campania_id = data.campaniaId;
-  if (data.productorId !== undefined) out.productor_id = data.productorId;
-  if (data.parcelaId !== undefined) out.parcela_id = data.parcelaId;
-  if (data.cultivoId !== undefined) out.cultivo_id = data.cultivoId || null;
+  if (data.cultivoId !== undefined) out.cultivo_id = data.cultivoId;
   if (data.fecha !== undefined) out.fecha = data.fecha;
   if (data.inspector !== undefined) out.inspector = data.inspector;
   if (data.estado !== undefined) out.estado = data.estado;
@@ -239,28 +256,46 @@ function toBackend(data: Partial<Inspeccion>): Record<string, unknown> {
   if (data.resumenEjecutivo !== undefined) out.resumen_ejecutivo = data.resumenEjecutivo || null;
   if (data.fechaProximaInspeccion !== undefined) out.fecha_proxima_inspeccion = data.fechaProximaInspeccion || null;
   if (data.nivelCumplimiento !== undefined) out.nivel_cumplimiento = data.nivelCumplimiento || null;
-  if (data.checklist !== undefined) out.checklist = data.checklist.map((c) => ({
-    criterio: c.criterio, cumplimiento: c.cumplimiento,
-    riesgo: c.riesgo, observacion: c.observacion, evidencia: c.evidencia,
-  }));
-  if (data.noConformidades !== undefined) out.no_conformidades = data.noConformidades.map((nc) => ({
-    codigo: nc.codigo, tipo: nc.tipo, categoria: nc.categoria,
-    descripcion: nc.descripcion, severidad: nc.severidad,
-    responsable: nc.responsable, fecha_compromiso: nc.fechaCompromiso || null,
-    estado: nc.estado, accion_correctiva: nc.accionCorrectiva,
-  }));
-  if (data.accionesCorrectivas !== undefined) out.acciones_correctivas = data.accionesCorrectivas.map((ac) => ({
-    accion: ac.accion, responsable: ac.responsable,
-    fecha_inicio: ac.fechaInicio || null, fecha_limite: ac.fechaLimite || null,
-    estado: ac.estado, observaciones: ac.observaciones,
-  }));
-  if (data.evidencias !== undefined) out.evidencias = data.evidencias.map((e) => ({
-    nombre: e.nombre, descripcion: e.descripcion, tipo: e.tipo,
-    ruta_archivo: e.preview || null, fecha: e.fecha || null, responsable: e.responsable,
-  }));
-  if (data.historial !== undefined) out.historial = data.historial.map((h) => ({
-    titulo: h.titulo, descripcion: h.descripcion, tipo: h.tipo, fecha: h.fecha,
-  }));
+  if (data.checklist !== undefined) {
+    out.checklist = data.checklist.map((c) => ({
+      criterio: c.criterio,
+      cumplimiento: c.cumplimiento,
+      riesgo: c.riesgo,
+      observacion: c.observacion,
+      evidencia: c.evidencia,
+    }));
+  }
+  if (data.noConformidades !== undefined) {
+    out.no_conformidades = data.noConformidades.map((nc) => ({
+      codigo: nc.codigo,
+      tipo: nc.tipo,
+      categoria: nc.categoria,
+      descripcion: nc.descripcion,
+      severidad: nc.severidad,
+      responsable: nc.responsable,
+      fecha_compromiso: nc.fechaCompromiso || null,
+      estado: nc.estado,
+      accion_correctiva: nc.accionCorrectiva,
+      acciones: nc.acciones.map((ac) => ({
+        accion: ac.accion,
+        responsable: ac.responsable,
+        fecha_inicio: ac.fechaInicio || null,
+        fecha_limite: ac.fechaLimite || null,
+        estado: ac.estado,
+        observaciones: ac.observaciones,
+      })),
+    }));
+  }
+  if (data.evidencias !== undefined) {
+    out.evidencias = data.evidencias.map((e) => ({
+      nombre: e.nombre,
+      descripcion: e.descripcion,
+      tipo: e.tipo,
+      ruta_archivo: e.rutaArchivo || null,
+      fecha: e.fecha || null,
+      responsable: e.responsable,
+    }));
+  }
   return out;
 }
 
@@ -269,9 +304,7 @@ function toBackend(data: Partial<Inspeccion>): Record<string, unknown> {
 export interface InspeccionesQuery {
   search?: string;
   estado?: string;
-  campania_id?: string;
-  productor_id?: string;
-  parcela_id?: string;
+  cultivo_id?: number;
   page?: number;
   limit?: number;
 }
@@ -280,9 +313,7 @@ export async function fetchInspecciones(params?: InspeccionesQuery): Promise<{ d
   const query: Record<string, string> = {};
   if (params?.search) query.search = params.search;
   if (params?.estado) query.estado = params.estado;
-  if (params?.campania_id) query.campania_id = params.campania_id;
-  if (params?.productor_id) query.productor_id = params.productor_id;
-  if (params?.parcela_id) query.parcela_id = params.parcela_id;
+  if (params?.cultivo_id) query.cultivo_id = String(params.cultivo_id);
   if (params?.page) query.page = String(params.page);
   if (params?.limit) query.limit = String(params.limit);
 
@@ -318,23 +349,13 @@ export async function deleteInspeccion(id: string): Promise<void> {
 // ─── Helpers ───────────────────────────────────────────────
 
 export function formatFecha(fecha?: string): string {
-  if (!fecha) return "—";
+  if (!fecha) return "\u2014";
   const parts = fecha.split("-");
   if (parts.length !== 3) return fecha;
   return `${parts[2]}/${parts[1]}/${parts[0]}`;
 }
 
 // ─── Options ───────────────────────────────────────────────
-
-export const campaniasOpciones: string[] = [];
-
-export const productoresOpciones: string[] = [];
-
-export const parcelasOpciones: string[] = [];
-
-export const cultivosOpciones: string[] = [];
-
-export const inspectoresOpciones: string[] = [];
 
 export const estadosOpciones: EstadoInspeccion[] = ["PENDIENTE", "APROBADA", "NO_CONFORME"];
 
@@ -347,8 +368,6 @@ export const resultadosOpciones: ResultadoInspeccion[] = [
 export const severidadesOpciones: Severidad[] = ["LEVE", "MODERADA", "CRITICA"];
 
 export const riesgosOpciones: Riesgo[] = ["BAJO", "MEDIO", "ALTO"];
-
-export const prioridadesOpciones = ["Alta", "Media", "Baja"];
 
 export const estadosNoConformidadOpciones: EstadoNoConformidad[] = [
   "PENDIENTE",
@@ -363,8 +382,6 @@ export const estadosAccionCorrectivaOpciones: EstadoAccionCorrectiva[] = [
   "COMPLETADA",
   "VERIFICADA",
 ];
-
-export const responsablesOpciones: string[] = [];
 
 export const tiposNoConformidadOpciones = [
   "Uso de insumo no permitido",
@@ -447,7 +464,7 @@ export function crearChecklist(criterios?: string[]): CriterioChecklist[] {
   return lista.map((criterio) => ({
     criterio,
     cumplimiento: null,
-    riesgo: "BAJO",
+    riesgo: "BAJO" as Riesgo,
     observacion: "",
     evidencia: "",
   }));

@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Pencil, Trash2, Settings, Shield, UserCheck, Calendar } from "lucide-react";
 import {
   Badge,
-  Breadcrumb,
   Button,
   Card,
   ConfirmDialog,
@@ -85,13 +84,6 @@ export default function UsuarioView() {
 
   return (
     <div>
-      <Breadcrumb
-        items={[
-          { label: "Usuarios", to: "/usuarios" },
-          { label: usuario.nombre },
-        ]}
-      />
-
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <SectionHeader title={usuario.nombre} description={usuario.email} />

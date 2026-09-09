@@ -1,6 +1,39 @@
 import prisma, { type PrismaTransaction } from '../config/database';
 import { createError } from '../middleware/error.middleware';
+import type { TipoActividad, PrioridadActividad, EstadoActividad } from '@agrodata/types';
 
+// ─── Types ──────────────────────────────────────────────────
+interface InsumoInput {
+  id?: string;
+  producto: string;
+  categoria?: string | null;
+  fabricante?: string | null;
+  cantidad?: number | null;
+  unidad?: string | null;
+  lote?: string | null;
+  costo_unitario?: number | null;
+  observaciones?: string | null;
+}
+
+interface ManoObraInput {
+  id?: string;
+  trabajador: string;
+  funcion?: string | null;
+  jornales?: number | null;
+  horas?: number | null;
+  observaciones?: string | null;
+}
+
+interface MaquinariaInput {
+  id?: string;
+  equipo: string;
+  operador?: string | null;
+  horas_uso?: number | null;
+  combustible?: number | null;
+  observaciones?: string | null;
+}
+
+// ─── Code Generation ────────────────────────────────────────
 const generateCodigo = async (): Promise<string> => {
   const last = await prisma.actividades.findFirst({
     orderBy: { codigo: 'desc' },
@@ -26,19 +59,23 @@ const ensureUniqueCodigo = async (codigo: string): Promise<string> => {
   throw createError('No se pudo generar un código único', 500);
 };
 
-const ensureRelationExists = async (model: string, id: string | number) => {
-  const numId = Number(id);
-  const lookupId = !isNaN(numId) && String(numId) === String(id) ? numId : id;
-  const exists = await (prisma as any)[model].findUnique({ where: { id: lookupId }, select: { id: true } });
-  if (!exists) throw createError(`${model} no encontrado`, 404);
-};
-
 const selectIncludes = {
   cultivo: { select: { id: true, cultivo: true, codigo: true } },
-  insumos: true,
-  mano_obra: true,
-  maquinaria: true,
+  insumos: { select: { insumo: true } },
+  mano_obra: { select: { mano_de_obra: true } },
+  maquinaria: { select: { maquinaria: true } },
 };
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function flattenActividad(raw: any) {
+  if (!raw) return null;
+  return {
+    ...raw,
+    insumos: (raw.insumos ?? []).map((r: { insumo: unknown }) => r.insumo),
+    mano_obra: (raw.mano_obra ?? []).map((r: { mano_de_obra: unknown }) => r.mano_de_obra),
+    maquinaria: (raw.maquinaria ?? []).map((r: { maquinaria: unknown }) => r.maquinaria),
+  };
+}
 
 // ─── CRUD ──────────────────────────────────────────────────
 
@@ -85,16 +122,14 @@ export const getAll = async (filters: {
 };
 
 export const getById = async (id: string) => {
-  const actividad = await prisma.actividades.findFirst({
+  const raw = await prisma.actividades.findFirst({
     where: { id: Number(id), activo: true },
     include: selectIncludes,
   });
 
-  if (!actividad) {
-    throw createError('Actividad no encontrada', 404);
-  }
+  if (!raw) throw createError('Actividad no encontrada', 404);
 
-  return actividad;
+  return flattenActividad(raw);
 };
 
 export const create = async (data: Record<string, unknown>, userId?: string) => {
@@ -106,25 +141,26 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
     if (exists) throw createError(`El código ${codigo} ya está en uso`, 409);
   }
 
-  await ensureRelationExists('cultivo', Number(data.cultivo_id));
+  const cultivoExists = await prisma.cultivo.findUnique({ where: { id: Number(data.cultivo_id) }, select: { id: true } });
+  if (!cultivoExists) throw createError('Cultivo no encontrado', 404);
 
-  const insumos = (data.insumos as any[]) || [];
-  const manoObra = (data.mano_obra as any[]) || [];
-  const maquinaria = (data.maquinaria as any[]) || [];
+  const insumos = (data.insumos as InsumoInput[]) || [];
+  const manoObra = (data.mano_obra as ManoObraInput[]) || [];
+  const maquinaria = (data.maquinaria as MaquinariaInput[]) || [];
 
-  return prisma.actividades.create({
+  const raw = await prisma.actividades.create({
     data: {
       codigo,
       cultivo_id: Number(data.cultivo_id),
       fecha: new Date(data.fecha as string),
-      tipo_actividad: data.tipo_actividad as any,
+      tipo_actividad: (data.tipo_actividad as TipoActividad) || 'OTRA',
       descripcion: (data.descripcion as string) || null,
       responsable_tecnico: data.responsable_tecnico as string,
       hora_inicio: (data.hora_inicio as string) || null,
       hora_fin: (data.hora_fin as string) || null,
       duracion_estimada: (data.duracion_estimada as string) || null,
-      prioridad: (data.prioridad as any) || 'MEDIA',
-      estado: (data.estado as any) || 'PROGRAMADA',
+      prioridad: (data.prioridad as PrioridadActividad) || 'MEDIA',
+      estado: (data.estado as EstadoActividad) || 'PROGRAMADA',
       jornales: data.jornales ? Number(data.jornales) : 0,
       latitud: (data.latitud as string) || null,
       longitud: (data.longitud as string) || null,
@@ -136,12 +172,20 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
       resultado: (data.resultado as string) || null,
       proxima_actividad: (data.proxima_actividad as string) || null,
       created_by: userId || null,
-      insumos: insumos.length ? { create: insumos } : undefined,
-      mano_obra: manoObra.length ? { create: manoObra } : undefined,
-      maquinaria: maquinaria.length ? { create: maquinaria } : undefined,
+      insumos: insumos.length
+        ? { create: insumos.map((i) => ({ insumo: { create: buildInsumoData(i) } })) }
+        : undefined,
+      mano_obra: manoObra.length
+        ? { create: manoObra.map((m) => ({ mano_de_obra: { create: buildManoObraData(m) } })) }
+        : undefined,
+      maquinaria: maquinaria.length
+        ? { create: maquinaria.map((m) => ({ maquinaria: { create: buildMaquinariaData(m) } })) }
+        : undefined,
     },
     include: selectIncludes,
   });
+
+  return flattenActividad(raw);
 };
 
 export const update = async (id: string, data: Record<string, unknown>, userId?: string) => {
@@ -155,7 +199,11 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
     if (data[field] !== undefined) updateData[field] = (data[field] as string) || null;
   }
 
-  if (data.cultivo_id !== undefined) updateData.cultivo_id = data.cultivo_id ? Number(data.cultivo_id) : null;
+  if (data.cultivo_id !== undefined) {
+    const cultivoExists = await prisma.cultivo.findUnique({ where: { id: Number(data.cultivo_id) }, select: { id: true } });
+    if (!cultivoExists) throw createError('Cultivo no encontrado', 404);
+    updateData.cultivo_id = Number(data.cultivo_id);
+  }
 
   const enumFields = ['tipo_actividad', 'prioridad', 'estado'];
   for (const field of enumFields) {
@@ -166,75 +214,55 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
   if (data.jornales !== undefined) updateData.jornales = data.jornales !== null ? Number(data.jornales) : 0;
   if (userId) updateData.updated_by = userId;
 
-  // Handle nested arrays
   const hasInsumosUpdate = data.insumos !== undefined;
   const hasManoObraUpdate = data.mano_obra !== undefined;
   const hasMaquinariaUpdate = data.maquinaria !== undefined;
 
-  return prisma.$transaction(async (tx: PrismaTransaction) => {
+  const raw = await prisma.$transaction(async (tx: PrismaTransaction) => {
     const updated = await tx.actividades.update({
       where: { id: Number(id) },
       data: updateData,
     });
 
-    // Replace insumos if provided
     if (hasInsumosUpdate) {
       await tx.insumo_has_actividades.deleteMany({ where: { actividades_id: Number(id) } });
-      const insumos = (data.insumos as any[]) || [];
-      if (insumos.length) {
-        for (const i of insumos) {
-          const insumo = await tx.insumo.create({
-            data: {
-              producto: i.nombre || i.producto,
-              cantidad: i.cantidad ? Number(i.cantidad) : null,
-              unidad: i.unidad || null,
-              costo_unitario: i.costo ? Number(i.costo) : null,
-            },
-          });
-          await tx.insumo_has_actividades.create({
-            data: { insumo_id: insumo.id, actividades_id: Number(id) },
-          });
-        }
+      const insumos = (data.insumos as InsumoInput[]) || [];
+      for (const i of insumos) {
+        const insumoData = buildInsumoData(i);
+        const insumo = i.id
+          ? await tx.insumo.update({ where: { id: i.id }, data: insumoData })
+          : await tx.insumo.create({ data: insumoData });
+        await tx.insumo_has_actividades.create({
+          data: { insumo_id: insumo.id, actividades_id: Number(id) },
+        });
       }
     }
 
-    // Replace mano_obra if provided
     if (hasManoObraUpdate) {
       await tx.mano_de_obra_has_actividades.deleteMany({ where: { actividades_id: Number(id) } });
-      const manoObra = (data.mano_obra as any[]) || [];
-      if (manoObra.length) {
-        for (const m of manoObra) {
-          const mo = await tx.mano_de_obra.create({
-            data: {
-              trabajador: m.nombre || m.trabajador,
-              horas: m.horas ? Number(m.horas) : null,
-              jornales: m.tarifa ? Number(m.tarifa) : null,
-            },
-          });
-          await tx.mano_de_obra_has_actividades.create({
-            data: { mano_de_obra_id: mo.id, actividades_id: Number(id) },
-          });
-        }
+      const manoObra = (data.mano_obra as ManoObraInput[]) || [];
+      for (const m of manoObra) {
+        const moData = buildManoObraData(m);
+        const mo = m.id
+          ? await tx.mano_de_obra.update({ where: { id: m.id }, data: moData })
+          : await tx.mano_de_obra.create({ data: moData });
+        await tx.mano_de_obra_has_actividades.create({
+          data: { mano_de_obra_id: mo.id, actividades_id: Number(id) },
+        });
       }
     }
 
-    // Replace maquinaria if provided
     if (hasMaquinariaUpdate) {
       await tx.maquinaria_has_actividades.deleteMany({ where: { actividades_id: Number(id) } });
-      const maquinaria = (data.maquinaria as any[]) || [];
-      if (maquinaria.length) {
-        for (const m of maquinaria) {
-          const mq = await tx.maquinaria.create({
-            data: {
-              equipo: m.nombre || m.equipo,
-              horas_uso: m.horas ? Number(m.horas) : null,
-              combustible: m.costo ? Number(m.costo) : null,
-            },
-          });
-          await tx.maquinaria_has_actividades.create({
-            data: { maquinaria_id: mq.id, actividades_id: Number(id) },
-          });
-        }
+      const maquinaria = (data.maquinaria as MaquinariaInput[]) || [];
+      for (const m of maquinaria) {
+        const mqData = buildMaquinariaData(m);
+        const mq = m.id
+          ? await tx.maquinaria.update({ where: { id: m.id }, data: mqData })
+          : await tx.maquinaria.create({ data: mqData });
+        await tx.maquinaria_has_actividades.create({
+          data: { maquinaria_id: mq.id, actividades_id: Number(id) },
+        });
       }
     }
 
@@ -243,6 +271,8 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
       include: selectIncludes,
     });
   });
+
+  return flattenActividad(raw);
 };
 
 export const remove = async (id: string) => {
@@ -256,3 +286,41 @@ export const remove = async (id: string) => {
 
   return { message: 'Actividad eliminada exitosamente' };
 };
+
+// ─── Helpers ──────────────────────────────────────────────
+
+function buildInsumoData(i: InsumoInput) {
+  const cantidad = i.cantidad ? Number(i.cantidad) : null;
+  const costo_unitario = i.costo_unitario ? Number(i.costo_unitario) : null;
+  return {
+    producto: i.producto,
+    categoria: i.categoria || null,
+    fabricante: i.fabricante || null,
+    cantidad,
+    unidad: i.unidad || null,
+    lote: i.lote || null,
+    costo_unitario,
+    costo_total: cantidad !== null && costo_unitario !== null ? Number(cantidad) * Number(costo_unitario) : null,
+    observaciones: i.observaciones || null,
+  };
+}
+
+function buildManoObraData(m: ManoObraInput) {
+  return {
+    trabajador: m.trabajador,
+    funcion: m.funcion || null,
+    jornales: m.jornales ? Number(m.jornales) : null,
+    horas: m.horas ? Number(m.horas) : null,
+    observaciones: m.observaciones || null,
+  };
+}
+
+function buildMaquinariaData(m: MaquinariaInput) {
+  return {
+    equipo: m.equipo,
+    operador: m.operador || null,
+    horas_uso: m.horas_uso ? Number(m.horas_uso) : null,
+    combustible: m.combustible ? Number(m.combustible) : null,
+    observaciones: m.observaciones || null,
+  };
+}

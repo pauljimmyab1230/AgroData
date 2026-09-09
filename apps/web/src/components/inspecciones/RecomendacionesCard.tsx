@@ -1,10 +1,8 @@
 import { useState } from "react";
 import { Lightbulb } from "lucide-react";
-import { DatePicker, Select, Textarea } from "../ui";
+import { DatePicker, Input, Select, Textarea } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import {
-  prioridadesOpciones,
-  responsablesOpciones,
   type Inspeccion,
 } from "../../services/inspecciones";
 
@@ -12,8 +10,6 @@ type RecomendacionesCardProps = {
   mode: FormMode;
   values?: Partial<Inspeccion>;
 };
-
-const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: item }));
 
 const parseDate = (s?: string) => (s ? new Date(s + "T00:00:00") : null);
 
@@ -34,17 +30,17 @@ export function RecomendacionesCard({ mode, values }: RecomendacionesCardProps) 
       <div className="mb-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <Field label="Prioridad" mode={mode} value={values?.prioridadRecomendacion}>
           <Select
-            options={toOptions(prioridadesOpciones)}
+            options={[{ value: "Alta", label: "Alta" }, { value: "Media", label: "Media" }, { value: "Baja", label: "Baja" }]}
             placeholder="Seleccione"
             value={editable ? values?.prioridadRecomendacion : undefined}
           />
         </Field>
 
         <Field label="Responsable" mode={mode} value={values?.responsableRecomendacion}>
-          <Select
-            options={toOptions(responsablesOpciones)}
-            placeholder="Seleccione"
+          <Input
+            placeholder="Nombre del responsable"
             value={editable ? values?.responsableRecomendacion : undefined}
+            disabled={!editable}
           />
         </Field>
 

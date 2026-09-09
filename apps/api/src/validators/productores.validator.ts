@@ -52,6 +52,7 @@ export const createProductorSchema = Joi.object({
   cargo: Joi.string().valid(...cargoEnum).required(),
   foto_url: Joi.string().allow('', null),
   firma_url: Joi.string().allow('', null),
+  ubigeo_id: Joi.number().integer().positive().allow(null),
 });
 
 export const updateProductorSchema = Joi.object({
@@ -89,6 +90,7 @@ export const updateProductorSchema = Joi.object({
   cargo: Joi.string().valid(...cargoEnum),
   foto_url: Joi.string().allow('', null),
   firma_url: Joi.string().allow('', null),
+  ubigeo_id: Joi.number().integer().positive().allow(null),
 }).min(1);
 
 export const createFamiliarSchema = Joi.object({
@@ -144,6 +146,8 @@ export const getAllProductoresSchema = Joi.object({
   cargo: Joi.string().valid(...cargoEnum),
   sexo: Joi.string().valid(...sexoEnum),
   comunidad: Joi.string().max(150).allow('', null),
+  nivel_educativo: Joi.string().valid(...nivelEducativoEnum),
+  idioma_principal: Joi.string().valid(...idiomaEnum.filter(i => i !== 'NINGUNO')),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
 });

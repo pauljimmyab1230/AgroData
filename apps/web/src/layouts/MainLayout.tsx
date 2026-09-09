@@ -2,21 +2,20 @@ import { useState, useCallback, useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "../components/navigation/Sidebar";
 import Header from "../components/navigation/Header";
+import { useUIStore } from "../stores/uiStore";
 
 export default function MainLayout() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
+  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(() => window.innerWidth >= 1024);
 
   useEffect(() => {
-    const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024);
-    checkDesktop();
-    window.addEventListener("resize", checkDesktop);
-    return () => window.removeEventListener("resize", checkDesktop);
-  }, []);
-
-  const handleToggleSidebar = useCallback(() => {
-    setSidebarCollapsed((prev) => !prev);
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    setIsDesktop(mq.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
   }, []);
 
   const handleCloseMobileSidebar = useCallback(() => {
@@ -32,7 +31,7 @@ export default function MainLayout() {
       <Sidebar
         collapsed={sidebarCollapsed}
         mobileOpen={mobileSidebarOpen}
-        onToggle={handleToggleSidebar}
+        onToggle={toggleSidebar}
         onMobileClose={handleCloseMobileSidebar}
       />
 

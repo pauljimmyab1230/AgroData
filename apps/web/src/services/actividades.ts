@@ -5,23 +5,32 @@ import api from "./api";
 export interface ActividadInsumo {
   id?: string;
   producto: string;
+  categoria?: string;
+  fabricante?: string;
   cantidad?: number | null;
   unidad?: string;
+  lote?: string;
   costoUnitario?: number | null;
+  costoTotal?: number | null;
+  observaciones?: string;
 }
 
 export interface ActividadManoObra {
   id?: string;
   trabajador: string;
+  funcion?: string;
   horas?: number | null;
   jornales?: number | null;
+  observaciones?: string;
 }
 
 export interface ActividadMaquinaria {
   id?: string;
   equipo: string;
+  operador?: string;
   horasUso?: number | null;
   combustible?: number | null;
+  observaciones?: string;
 }
 
 export interface Actividad {
@@ -80,9 +89,19 @@ interface ActividadDTO {
   objetivo: string | null;
   resultado: string | null;
   proxima_actividad: string | null;
-  insumos: Array<{ id?: number; nombre: string; cantidad: number | null; unidad: string | null; costo: number | null }>;
-  mano_obra: Array<{ id?: number; nombre: string; horas: number | null; tarifa: number | null }>;
-  maquinaria: Array<{ id?: number; nombre: string; horas: number | null; costo: number | null }>;
+  insumos: Array<{
+    id?: string; producto: string; categoria: string | null; fabricante: string | null;
+    cantidad: number | null; unidad: string | null; lote: string | null;
+    costo_unitario: number | null; costo_total: number | null; observaciones: string | null;
+  }>;
+  mano_obra: Array<{
+    id?: string; trabajador: string; funcion: string | null;
+    jornales: number | null; horas: number | null; observaciones: string | null;
+  }>;
+  maquinaria: Array<{
+    id?: string; equipo: string; operador: string | null;
+    horas_uso: number | null; combustible: number | null; observaciones: string | null;
+  }>;
   created_at: string;
   updated_at: string;
 }
@@ -114,13 +133,20 @@ function toFrontend(dto: ActividadDTO): Actividad {
     resultado: dto.resultado ?? "",
     proximaActividad: dto.proxima_actividad ?? "",
     insumos: (dto.insumos ?? []).map((i) => ({
-      id: i.id, producto: i.producto, cantidad: i.cantidad, unidad: i.unidad, costoUnitario: i.costo_unitario,
+      id: i.id, producto: i.producto, categoria: i.categoria ?? undefined,
+      fabricante: i.fabricante ?? undefined, cantidad: i.cantidad,
+      unidad: i.unidad ?? undefined, lote: i.lote ?? undefined,
+      costoUnitario: i.costo_unitario, costoTotal: i.costo_total,
+      observaciones: i.observaciones ?? undefined,
     })),
     manoObra: (dto.mano_obra ?? []).map((m) => ({
-      id: m.id, trabajador: m.trabajador, horas: m.horas, jornales: m.jornales,
+      id: m.id, trabajador: m.trabajador, funcion: m.funcion ?? undefined,
+      horas: m.horas, jornales: m.jornales, observaciones: m.observaciones ?? undefined,
     })),
     maquinaria: (dto.maquinaria ?? []).map((m) => ({
-      id: m.id, equipo: m.equipo, horasUso: m.horas_uso, combustible: m.combustible,
+      id: m.id, equipo: m.equipo, operador: m.operador ?? undefined,
+      horasUso: m.horas_uso, combustible: m.combustible,
+      observaciones: m.observaciones ?? undefined,
     })),
     createdAt: dto.created_at,
     updatedAt: dto.updated_at,
@@ -151,20 +177,18 @@ function toBackend(data: Partial<Actividad>): Record<string, unknown> {
   if (data.resultado !== undefined) out.resultado = data.resultado || null;
   if (data.proximaActividad !== undefined) out.proxima_actividad = data.proximaActividad || null;
   if (data.insumos !== undefined) out.insumos = data.insumos.map((i) => ({
-    producto: i.producto,
-    cantidad: i.cantidad,
-    unidad: i.unidad,
-    costo_unitario: i.costoUnitario,
+    id: i.id, producto: i.producto, categoria: i.categoria || null,
+    fabricante: i.fabricante || null, cantidad: i.cantidad, unidad: i.unidad || null,
+    lote: i.lote || null, costo_unitario: i.costoUnitario,
+    costo_total: i.costoTotal, observaciones: i.observaciones || null,
   }));
   if (data.manoObra !== undefined) out.mano_obra = data.manoObra.map((m) => ({
-    trabajador: m.trabajador,
-    horas: m.horas,
-    jornales: m.jornales,
+    id: m.id, trabajador: m.trabajador, funcion: m.funcion || null,
+    horas: m.horas, jornales: m.jornales, observaciones: m.observaciones || null,
   }));
   if (data.maquinaria !== undefined) out.maquinaria = data.maquinaria.map((m) => ({
-    equipo: m.equipo,
-    horas_uso: m.horasUso,
-    combustible: m.combustible,
+    id: m.id, equipo: m.equipo, operador: m.operador || null,
+    horas_uso: m.horasUso, combustible: m.combustible, observaciones: m.observaciones || null,
   }));
   return out;
 }
@@ -330,19 +354,28 @@ export function formDataToActividad(data: ActividadFormData): Partial<Actividad>
     proximaActividad: data.proximaActividad,
     insumos: data.insumos.map((i) => ({
       producto: i.producto,
+      categoria: i.categoria,
+      fabricante: i.fabricante,
       cantidad: i.cantidad,
       unidad: i.unidad,
+      lote: i.lote,
       costoUnitario: i.costoUnitario,
+      costoTotal: i.costoTotal,
+      observaciones: i.observaciones,
     })),
     manoObra: data.manoObra.map((m) => ({
       trabajador: m.trabajador,
+      funcion: m.funcion,
       horas: m.horas,
       jornales: m.jornales,
+      observaciones: m.observaciones,
     })),
     maquinaria: data.maquinaria.map((m) => ({
       equipo: m.equipo,
+      operador: m.operador,
       horasUso: m.horasUso,
       combustible: m.combustible,
+      observaciones: m.observaciones,
     })),
   };
 }

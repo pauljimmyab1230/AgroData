@@ -6,7 +6,6 @@ import { EstadoAccionCorrectivaBadge } from "./badges";
 import {
   estadosAccionCorrectivaOpciones,
   formatFecha,
-  responsablesOpciones,
   type AccionCorrectiva,
   type EstadoAccionCorrectiva,
   type Inspeccion,
@@ -37,7 +36,10 @@ const emptyDraft: DraftAC = {
 
 export function AccionesCorrectivasCard({ mode, values }: AccionesCorrectivasCardProps) {
   const editable = mode !== "view";
-  const [acciones, setAcciones] = useState<AccionCorrectiva[]>(values?.accionesCorrectivas ?? []);
+  const [acciones, setAcciones] = useState<AccionCorrectiva[]>(() => {
+    if (!values?.noConformidades) return [];
+    return values.noConformidades.flatMap((nc) => nc.acciones ?? []);
+  });
   const [modalOpen, setModalOpen] = useState(false);
   const [draft, setDraft] = useState<DraftAC>(emptyDraft);
 
@@ -160,11 +162,12 @@ export function AccionesCorrectivasCard({ mode, values }: AccionesCorrectivasCar
             />
           </FormField>
           <FormField label="Responsable" required>
-            <Select
-              options={toOptions(responsablesOpciones)}
-              placeholder="Seleccione el responsable"
+            <input
+              type="text"
+              placeholder="Nombre del responsable"
               value={draft.responsable}
-              onChange={(value) => setDraft((prev) => ({ ...prev, responsable: value }))}
+              onChange={(e) => setDraft((prev) => ({ ...prev, responsable: e.target.value }))}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
             />
           </FormField>
           <FormField label="Estado" required>

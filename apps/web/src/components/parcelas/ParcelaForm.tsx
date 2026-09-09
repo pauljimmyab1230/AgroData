@@ -30,8 +30,15 @@ export default function ParcelaForm({ mode, parcelaId, inModal, onSave }: Parcel
   const navigate = useNavigate();
 
   const handleSave = async () => {
-    if (!validate()) {
-      setTab(1);
+    const validation = validate();
+    if (!validation.valid) {
+      const errorFields = Object.keys(validation.errors);
+      const hasUbicacionError = errorFields.some(f => ['departamento', 'provincia', 'distrito'].includes(f));
+      if (hasUbicacionError && tab !== 2) {
+        setTab(2);
+      } else if (!hasUbicacionError && tab === 1) {
+        setTab(1);
+      }
       return;
     }
     setSaving(true);

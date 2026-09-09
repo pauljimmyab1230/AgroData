@@ -1,55 +1,69 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import ProtectedRoute from "../components/ProtectedRoute";
-import Login from "../pages/auth/Login";
-import Dashboard from "../pages/dashboard/Dashboard";
-import ProductorList from "../pages/productores/ProductorList";
-import ParcelaList from "../pages/parcelas/ParcelaList";
-import ParcelaView from "../pages/parcelas/ParcelaView";
-import ParcelaEdit from "../pages/parcelas/ParcelaEdit";
-import CultivoList from "../pages/cultivos/CultivoList";
-import CultivoCreate from "../pages/cultivos/CultivoCreate";
-import CultivoView from "../pages/cultivos/CultivoView";
-import CultivoEdit from "../pages/cultivos/CultivoEdit";
-import CampaniaList from "../pages/campañas/CampaniaList";
-import CampaniaCreate from "../pages/campañas/CampaniaCreate";
-import CampaniaView from "../pages/campañas/CampaniaView";
-import CampaniaEdit from "../pages/campañas/CampaniaEdit";
-import ActividadList from "../pages/actividades/ActividadList";
-import ActividadCreate from "../pages/actividades/ActividadCreate";
-import ActividadView from "../pages/actividades/ActividadView";
-import ActividadEdit from "../pages/actividades/ActividadEdit";
-import InspeccionList from "../pages/inspecciones/InspeccionList";
-import InspeccionCreate from "../pages/inspecciones/InspeccionCreate";
-import InspeccionView from "../pages/inspecciones/InspeccionView";
-import InspeccionEdit from "../pages/inspecciones/InspeccionEdit";
-import AcopioList from "../pages/acopio/AcopioList";
-import AcopioCreate from "../pages/acopio/AcopioCreate";
-import AcopioView from "../pages/acopio/AcopioView";
-import AcopioEdit from "../pages/acopio/AcopioEdit";
-import RecepcionList from "../pages/recepcion/RecepcionList";
-import RecepcionCreate from "../pages/recepcion/RecepcionCreate";
-import RecepcionView from "../pages/recepcion/RecepcionView";
-import RecepcionEdit from "../pages/recepcion/RecepcionEdit";
-import ProcesamientoList from "../pages/procesamiento/ProcesamientoList";
-import ProcesamientoCreate from "../pages/procesamiento/ProcesamientoCreate";
-import ProcesamientoView from "../pages/procesamiento/ProcesamientoView";
-import ProcesamientoEdit from "../pages/procesamiento/ProcesamientoEdit";
-import KardexList from "../pages/kardex/KardexList";
-import KardexView from "../pages/kardex/KardexView";
-import KardexCreate from "../pages/kardex/KardexCreate";
-import KardexEdit from "../pages/kardex/KardexEdit";
-import UsuarioList from "../pages/usuarios/UsuarioList";
-import UsuarioCreate from "../pages/usuarios/UsuarioCreate";
-import UsuarioView from "../pages/usuarios/UsuarioView";
-import UsuarioEdit from "../pages/usuarios/UsuarioEdit";
-import CatalogPage from "../pages/catalogos/CatalogPage";
-import ProductorView from "../pages/productores/ProductorView";
-import ProductorCreate from "../pages/productores/ProductorCreate";
-import ProductorEdit from "../pages/productores/ProductorEdit";
+import { LoadingSpinner } from "../components/ui";
+
+const Login = lazy(() => import("../pages/auth/Login"));
+const Dashboard = lazy(() => import("../pages/dashboard/Dashboard"));
+const ProductorList = lazy(() => import("../pages/productores/ProductorList"));
+const ProductorView = lazy(() => import("../pages/productores/ProductorView"));
+const ProductorCreate = lazy(() => import("../pages/productores/ProductorCreate"));
+const ProductorEdit = lazy(() => import("../pages/productores/ProductorEdit"));
+const ParcelaList = lazy(() => import("../pages/parcelas/ParcelaList"));
+const ParcelaView = lazy(() => import("../pages/parcelas/ParcelaView"));
+const ParcelaEdit = lazy(() => import("../pages/parcelas/ParcelaEdit"));
+const CultivoList = lazy(() => import("../pages/cultivos/CultivoList"));
+const CultivoView = lazy(() => import("../pages/cultivos/CultivoView"));
+const CampaniaList = lazy(() => import("../pages/campañas/CampaniaList"));
+const CampaniaCreate = lazy(() => import("../pages/campañas/CampaniaCreate"));
+const CampaniaView = lazy(() => import("../pages/campañas/CampaniaView"));
+const CampaniaEdit = lazy(() => import("../pages/campañas/CampaniaEdit"));
+const ActividadList = lazy(() => import("../pages/actividades/ActividadList"));
+const ActividadCreate = lazy(() => import("../pages/actividades/ActividadCreate"));
+const ActividadView = lazy(() => import("../pages/actividades/ActividadView"));
+const ActividadEdit = lazy(() => import("../pages/actividades/ActividadEdit"));
+const InspeccionList = lazy(() => import("../pages/inspecciones/InspeccionList"));
+const InspeccionCreate = lazy(() => import("../pages/inspecciones/InspeccionCreate"));
+const InspeccionView = lazy(() => import("../pages/inspecciones/InspeccionView"));
+const InspeccionEdit = lazy(() => import("../pages/inspecciones/InspeccionEdit"));
+const AcopioList = lazy(() => import("../pages/acopio/AcopioList"));
+const AcopioView = lazy(() => import("../pages/acopio/AcopioView"));
+const RecepcionList = lazy(() => import("../pages/recepcion/RecepcionList"));
+const RecepcionView = lazy(() => import("../pages/recepcion/RecepcionView"));
+const ProcesamientoList = lazy(() => import("../pages/procesamiento/ProcesamientoList"));
+const ProcesamientoView = lazy(() => import("../pages/procesamiento/ProcesamientoView"));
+const KardexList = lazy(() => import("../pages/kardex/KardexList"));
+const KardexView = lazy(() => import("../pages/kardex/KardexView"));
+const KardexCreate = lazy(() => import("../pages/kardex/KardexCreate"));
+const KardexEdit = lazy(() => import("../pages/kardex/KardexEdit"));
+const UsuarioList = lazy(() => import("../pages/usuarios/UsuarioList"));
+const UsuarioCreate = lazy(() => import("../pages/usuarios/UsuarioCreate"));
+const UsuarioView = lazy(() => import("../pages/usuarios/UsuarioView"));
+const UsuarioEdit = lazy(() => import("../pages/usuarios/UsuarioEdit"));
+const CatalogPage = lazy(() => import("../pages/catalogos/CatalogPage"));
+
+function SuspenseLoader() {
+  return (
+    <div className="flex items-center justify-center py-20">
+      <LoadingSpinner text="Cargando..." />
+    </div>
+  );
+}
+
+function NotFound() {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 text-center">
+      <h1 className="text-6xl font-bold text-gray-300">404</h1>
+      <p className="mt-4 text-lg font-medium text-gray-600">Página no encontrada</p>
+      <p className="mt-2 text-sm text-gray-500">La ruta que ingresaste no existe.</p>
+    </div>
+  );
+}
 
 export default function AppRoutes() {
     return (
+        <Suspense fallback={<SuspenseLoader />}>
         <Routes>
             <Route path="/login" element={<Login />} />
 
@@ -92,8 +106,10 @@ export default function AppRoutes() {
                     <Route path="/productores/nueva" element={<ProductorCreate />} />
                     <Route path="/productores/:id" element={<ProductorView />} />
                     <Route path="/productores/:id/editar" element={<ProductorEdit />} />
+                    <Route path="*" element={<NotFound />} />
                 </Route>
             </Route>
         </Routes>
+        </Suspense>
     );
 }

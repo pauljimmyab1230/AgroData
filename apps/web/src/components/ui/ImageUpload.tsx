@@ -132,6 +132,10 @@ export default function ImageUpload({
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
         onClick={() => inputRef.current?.click()}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); inputRef.current?.click(); } }}
+        aria-label="Subir imagen"
         className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-8 text-center transition-all ${
           dragOver
             ? "border-forest-600 bg-forest-600/5"
@@ -158,7 +162,7 @@ export default function ImageUpload({
           className="hidden"
         />
       </div>
-      {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
+      {error && <p className="mt-2 text-xs text-red-500" role="alert">{error}</p>}
     </div>
   );
 }

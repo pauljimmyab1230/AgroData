@@ -1,12 +1,9 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { Breadcrumb, Button, LoadingSpinner, SectionHeader } from "../../components/ui";
+import { Button, LoadingSpinner } from "../../components/ui";
 import ProcesamientoForm from "../../components/procesamiento/ProcesamientoForm";
-import {
-  type OrdenProcesamiento,
-  fetchProcesamiento,
-} from "../../services/procesamientos";
+import { fetchProcesamiento, type OrdenProcesamiento } from "../../services/procesamientos";
 
 interface ProcesamientoEditProps {
   inModal?: boolean;
@@ -16,20 +13,19 @@ interface ProcesamientoEditProps {
 
 export default function ProcesamientoEdit({ inModal, procesamientoId: propId, onSave }: ProcesamientoEditProps) {
   const { id: paramId } = useParams();
-  const id = propId || paramId;
+  const id = propId ?? paramId;
   const [orden, setOrden] = useState<OrdenProcesamiento | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!id) return;
-    setLoading(true);
+    if (!id) { setLoading(false); return; }
     fetchProcesamiento(id)
       .then(setOrden)
-      .catch(() => {})
+      .catch(() => setOrden(null))
       .finally(() => setLoading(false));
   }, [id]);
 
-  if (loading || !orden) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
         <LoadingSpinner />
@@ -37,33 +33,26 @@ export default function ProcesamientoEdit({ inModal, procesamientoId: propId, on
     );
   }
 
+  if (!orden) {
+    return (
+      <div className="py-20 text-center text-gray-500">
+        <p>No se encontró la orden de procesamiento.</p>
+      </div>
+    );
+  }
+
   return (
     <div>
       {!inModal && (
-        <>
-          <Breadcrumb
-            items={[
-              { label: "Procesamiento", to: "/procesamiento" },
-              { label: orden.codigo, to: `/procesamiento/${orden.id}` },
-              { label: "Editar Orden" },
-            ]}
-          />
-
-          <div className="mb-8 flex items-center gap-4">
-            <Button
-              variant="ghost"
-              as="link"
-              to={`/procesamiento/${orden.id}`}
-              iconLeft={<ArrowLeft className="h-4 w-4" />}
-            >
-              Volver
-            </Button>
-            <SectionHeader
-              title="Editar Orden de Procesamiento"
-              description={`Actualizando la información de la orden ${orden.codigo}`}
-            />
+        <div className="mb-8 flex items-center gap-4">
+          <Button variant="ghost" as="link" to="/procesamiento" iconLeft={<ArrowLeft className="h-4 w-4" />}>
+            Procesamiento
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-[#111827]">Editar Procesamiento</h1>
+            <p className="text-sm text-gray-500">Actualizando {orden.codigo}</p>
           </div>
-        </>
+        </div>
       )}
 
       <ProcesamientoForm mode="edit" values={orden} inModal={inModal} onSave={onSave} />

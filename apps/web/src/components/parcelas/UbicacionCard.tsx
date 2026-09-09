@@ -1,7 +1,7 @@
 import { Crosshair, Globe, MapPin } from "lucide-react";
 import { Input, Select } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
-import { useParcelaForm } from "../../contexts/ParcelaFormContext";
+import { useOptionalParcelaForm } from "../../contexts/ParcelaFormContext";
 import ParcelaMap, { latLngToUtm } from "./ParcelaMap";
 import { ParcelaCoordinates } from "./ParcelaCoordinates";
 import { useUbigeo } from "../../hooks/useUbigeo";
@@ -14,7 +14,9 @@ type UbicacionCardProps = {
 
 export function UbicacionCard({ mode, values }: UbicacionCardProps) {
   const editable = mode !== "view";
-  const { data, updateData } = useParcelaForm();
+  const formCtx = useOptionalParcelaForm();
+  const data = formCtx?.data;
+  const updateData = formCtx?.updateData;
 
   const ubigeo = useUbigeo({
     initialDepartamento: values?.departamento ?? data?.departamento,

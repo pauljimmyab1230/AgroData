@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode, KeyboardEvent } from "react";
 
 interface CardProps {
   children: ReactNode;
@@ -22,12 +22,33 @@ export default function Card({
   hover = true,
   onClick,
 }: CardProps) {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onClick?.();
+    }
+  };
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        onKeyDown={handleKeyDown}
+        className={`w-full text-left rounded-2xl border border-gray-200 bg-white transition-shadow ${
+          hover ? "hover:shadow-lg hover:shadow-gray-200/60" : ""
+        } cursor-pointer ${className}`}
+      >
+        <div className={paddingStyles[padding]}>{children}</div>
+      </button>
+    );
+  }
+
   return (
     <div
-      onClick={onClick}
       className={`rounded-2xl border border-gray-200 bg-white transition-shadow ${
         hover ? "hover:shadow-lg hover:shadow-gray-200/60" : ""
-      } ${onClick ? "cursor-pointer" : ""} ${className}`}
+      } ${className}`}
     >
       <div className={paddingStyles[padding]}>{children}</div>
     </div>

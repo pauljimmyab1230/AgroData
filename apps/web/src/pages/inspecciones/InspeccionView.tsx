@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { ArrowLeft, CalendarClock, Camera, CheckCircle2, ClipboardCheck, Gauge, Pencil, TriangleAlert } from "lucide-react";
-import { Breadcrumb, Button } from "../../components/ui";
+import { Button } from "../../components/ui";
 import InspeccionHeader from "../../components/inspecciones/InspeccionHeader";
 import InspeccionKPI from "../../components/inspecciones/InspeccionKPI";
 import { InformacionGeneralCard } from "../../components/inspecciones/InformacionGeneralCard";
@@ -13,7 +13,6 @@ import { MapaCard } from "../../components/inspecciones/MapaCard";
 import { ObservacionesCard } from "../../components/inspecciones/ObservacionesCard";
 import { RecomendacionesCard } from "../../components/inspecciones/RecomendacionesCard";
 import { ResultadoCard } from "../../components/inspecciones/ResultadoCard";
-import { HistorialCard } from "../../components/inspecciones/HistorialCard";
 import { fetchInspeccion, formatFecha, type Inspeccion } from "../../services/inspecciones";
 
 interface InspeccionViewProps {
@@ -88,8 +87,6 @@ export default function InspeccionView({ inModal, inspeccionId: propId, onEdit }
     <div>
       {!inModal && (
         <>
-          <Breadcrumb items={[{ label: "Inspecciones", to: "/inspecciones" }, { label: inspeccion.codigo }]} />
-
           <div className="mb-8 flex items-center gap-4">
             <Button variant="ghost" as="link" to="/inspecciones" iconLeft={<ArrowLeft className="h-4 w-4" />}>
               Inspecciones
@@ -125,7 +122,6 @@ export default function InspeccionView({ inModal, inspeccionId: propId, onEdit }
         <ObservacionesCard mode="view" values={inspeccion} />
         <RecomendacionesCard mode="view" values={inspeccion} />
         <ResultadoCard mode="view" values={inspeccion} />
-        <HistorialCard eventos={inspeccion.historial} />
       </div>
     </div>
   );

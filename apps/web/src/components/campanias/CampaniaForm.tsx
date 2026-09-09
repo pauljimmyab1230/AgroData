@@ -105,7 +105,7 @@ export function CampaniaForm({ mode, values, inModal, onSave }: CampaniaFormProp
       if (!formData.fechaInicio) newErrors.fechaInicio = "La fecha de inicio es obligatoria";
       if (!formData.fechaFin) newErrors.fechaFin = "La fecha de fin es obligatoria";
       if (!formData.responsable.trim()) newErrors.responsable = "El responsable es obligatorio";
-      if (!formData.tecnicoCoordinador) newErrors.tecnicoCoordinador = "El técnico coordinador es obligatorio";
+      if (!formData.tecnicoCoordinador.trim()) newErrors.tecnicoCoordinador = "El técnico coordinador es obligatorio";
       if (!formData.objetivo.trim()) newErrors.objetivo = "El objetivo es obligatorio";
       if (formData.fechaInicio && formData.fechaFin && formData.fechaInicio > formData.fechaFin) {
         newErrors.fechaFin = "La fecha de fin debe ser posterior a la de inicio";
@@ -148,7 +148,8 @@ export function CampaniaForm({ mode, values, inModal, onSave }: CampaniaFormProp
       }
     } catch (err: unknown) {
       console.error(err);
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Error al guardar. Verifique los datos.";
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      const msg = axiosError?.response?.data?.message || "Error al guardar. Verifique los datos.";
       toast.error(msg);
     }
   };

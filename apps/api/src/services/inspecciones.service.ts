@@ -1,6 +1,16 @@
 import prisma, { type PrismaTransaction } from '../config/database';
 import { createError } from '../middleware/error.middleware';
+import type {
+  EstadoInspeccion,
+  ResultadoInspeccion,
+  CumplimientoCriterio,
+  RiesgoNivel,
+  SeveridadNoConformidad,
+  EstadoNoConformidad,
+  EstadoAccionCorrectiva,
+} from '@agrodata/types';
 
+// ─── Code Generation ────────────────────────────────────────
 const generateCodigo = async (): Promise<string> => {
   const last = await prisma.inspecciones.findFirst({
     orderBy: { created_at: 'desc' },
@@ -26,18 +36,31 @@ const ensureUniqueCodigo = async (codigo: string): Promise<string> => {
   throw createError('No se pudo generar un código único', 500);
 };
 
-const ensureRelationExists = async (model: string, id: string | number) => {
-  const numId = Number(id);
-  const lookupId = !isNaN(numId) && String(numId) === String(id) ? numId : id;
-  const exists = await (prisma as any)[model].findUnique({ where: { id: lookupId }, select: { id: true } });
-  if (!exists) throw createError(`${model} no encontrado`, 404);
-};
+const CULTIVO_INCLUDE = {
+  select: {
+    id: true,
+    cultivo: true,
+    codigo: true,
+    campania: { select: { id: true, nombre: true, codigo: true } },
+    parcela: {
+      select: {
+        id: true,
+        nombre: true,
+        codigo: true,
+        productor: { select: { id: true, nombres: true, apellido_paterno: true, apellido_materno: true, codigo: true } },
+      },
+    },
+  },
+} as const;
+
+const NO_CONFORMIDAD_INCLUDE = {
+  acciones: true,
+} as const;
 
 const selectIncludes = {
-  cultivo: { select: { id: true, cultivo: true, codigo: true } },
+  cultivo: CULTIVO_INCLUDE,
   checklist: true,
-  no_conformidades: true,
-  acciones_correctivas: true,
+  no_conformidades: { include: NO_CONFORMIDAD_INCLUDE },
   evidencias: true,
 };
 
@@ -57,9 +80,9 @@ export const getAll = async (filters: {
 
   if (filters.search) {
     where.OR = [
-      { codigo: { contains: filters.search } },
-      { inspector: { contains: filters.search } },
-      { observaciones: { contains: filters.search } },
+      { codigo: { contains: filters.search, mode: 'insensitive' } },
+      { inspector: { contains: filters.search, mode: 'insensitive' } },
+      { observaciones: { contains: filters.search, mode: 'insensitive' } },
     ];
   }
 
@@ -70,7 +93,7 @@ export const getAll = async (filters: {
     prisma.inspecciones.findMany({
       where,
       include: {
-        cultivo: { select: { id: true, cultivo: true, codigo: true } },
+        cultivo: CULTIVO_INCLUDE,
         _count: { select: { checklist: true, no_conformidades: true, evidencias: true } },
       },
       orderBy: { created_at: 'desc' },
@@ -101,24 +124,25 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
   if (!codigo.trim()) {
     codigo = await generateCodigo();
   } else {
-    const exists = await prisma.inspecciones.findUnique({ where: { codigo } });
-    if (exists) throw createError(`El código ${codigo} ya está en uso`, 409);
+    codigo = await ensureUniqueCodigo(codigo);
   }
 
-  if (data.cultivo_id) await ensureRelationExists('cultivo', data.cultivo_id as string);
+  const cultivoId = Number(data.cultivo_id);
+  const cultivo = await prisma.cultivo.findUnique({ where: { id: cultivoId }, select: { id: true } });
+  if (!cultivo) throw createError('Cultivo no encontrado', 404);
 
-  const checklist = (data.checklist as any[]) || [];
-  const noConformidades = (data.no_conformidades as any[]) || [];
-  const evidencias = (data.evidencias as any[]) || [];
+  const checklist = (data.checklist as Record<string, unknown>[]) || [];
+  const noConformidades = (data.no_conformidades as Record<string, unknown>[]) || [];
+  const evidencias = (data.evidencias as Record<string, unknown>[]) || [];
 
   return prisma.inspecciones.create({
     data: {
       codigo,
-      cultivo_id: data.cultivo_id ? Number(data.cultivo_id) : 0,
+      cultivo_id: cultivoId,
       fecha: new Date(data.fecha as string),
       inspector: data.inspector as string,
-      estado: (data.estado as 'PENDIENTE' | 'APROBADA' | 'NO_CONFORME') || 'PENDIENTE',
-      resultado: (data.resultado as 'CONFORME' | 'CONFORME_CON_OBSERVACIONES' | 'NO_CONFORME') || null,
+      estado: (data.estado as EstadoInspeccion) || 'PENDIENTE',
+      resultado: (data.resultado as ResultadoInspeccion) || null,
       latitud: (data.latitud as string) || null,
       longitud: (data.longitud as string) || null,
       altitud: (data.altitud as string) || null,
@@ -129,37 +153,59 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
       prioridad_recomendacion: (data.prioridad_recomendacion as string) || null,
       responsable_recomendacion: (data.responsable_recomendacion as string) || null,
       fecha_recomendacion: data.fecha_recomendacion ? new Date(data.fecha_recomendacion as string) : null,
-      riesgo_general: (data.riesgo_general as 'BAJO' | 'MEDIO' | 'ALTO') || 'BAJO',
+      riesgo_general: (data.riesgo_general as RiesgoNivel) || 'BAJO',
       resumen_ejecutivo: (data.resumen_ejecutivo as string) || null,
       fecha_proxima_inspeccion: data.fecha_proxima_inspeccion ? new Date(data.fecha_proxima_inspeccion as string) : null,
       nivel_cumplimiento: (data.nivel_cumplimiento as string) || null,
       created_by: userId || null,
-      checklist: checklist.length ? { create: checklist.map((c) => ({
-        criterio: c.criterio,
-        cumplimiento: c.cumplimiento || null,
-        riesgo: c.riesgo || 'BAJO',
-        observacion: c.observacion || null,
-        evidencia: c.evidencia || null,
-      }))} : undefined,
-      no_conformidades: noConformidades.length ? { create: noConformidades.map((nc) => ({
-        codigo: nc.codigo || null,
-        tipo: nc.tipo,
-        categoria: nc.categoria,
-        descripcion: nc.descripcion,
-        severidad: nc.severidad || 'LEVE',
-        responsable: nc.responsable,
-        fecha_compromiso: nc.fecha_compromiso ? new Date(nc.fecha_compromiso) : null,
-        estado: nc.estado || 'PENDIENTE',
-        accion_correctiva: nc.accion_correctiva || null,
-      }))} : undefined,
-      evidencias: evidencias.length ? { create: evidencias.map((e) => ({
-        nombre: e.nombre,
-        descripcion: e.descripcion || null,
-        tipo: e.tipo || null,
-        ruta_archivo: e.ruta_archivo || null,
-        fecha: e.fecha ? new Date(e.fecha) : null,
-        responsable: e.responsable || null,
-      }))} : undefined,
+      checklist: checklist.length
+        ? {
+            create: checklist.map((c) => ({
+              criterio: c.criterio as string,
+              cumplimiento: (c.cumplimiento as CumplimientoCriterio) || null,
+              riesgo: (c.riesgo as RiesgoNivel) || 'BAJO',
+              observacion: (c.observacion as string) || null,
+              evidencia: (c.evidencia as string) || null,
+            })),
+          }
+        : undefined,
+      no_conformidades: noConformidades.length
+        ? {
+            create: noConformidades.map((nc) => ({
+              codigo: nc.codigo ? String(nc.codigo) : '',
+              tipo: nc.tipo as string,
+              categoria: nc.categoria as string,
+              descripcion: nc.descripcion as string,
+              severidad: (nc.severidad as SeveridadNoConformidad) || 'LEVE',
+              responsable: nc.responsable as string,
+              fecha_compromiso: nc.fecha_compromiso ? new Date(nc.fecha_compromiso as string) : null,
+              estado: (nc.estado as EstadoNoConformidad) || 'PENDIENTE',
+              accion_correctiva: (nc.accion_correctiva as string) || null,
+              acciones: {
+                create: ((nc.acciones as Record<string, unknown>[]) || []).map((ac) => ({
+                  accion: ac.accion as string,
+                  responsable: ac.responsable as string,
+                  fecha_inicio: ac.fecha_inicio ? new Date(ac.fecha_inicio as string) : null,
+                  fecha_limite: ac.fecha_limite ? new Date(ac.fecha_limite as string) : null,
+                  estado: (ac.estado as EstadoAccionCorrectiva) || 'PENDIENTE',
+                  observaciones: (ac.observaciones as string) || null,
+                })),
+              },
+            })),
+          }
+        : undefined,
+      evidencias: evidencias.length
+        ? {
+            create: evidencias.map((e) => ({
+              nombre: e.nombre as string,
+              descripcion: (e.descripcion as string) || null,
+              tipo: (e.tipo as string) || null,
+              ruta_archivo: (e.ruta_archivo as string) || null,
+              fecha: e.fecha ? new Date(e.fecha as string) : null,
+              responsable: (e.responsable as string) || null,
+            })),
+          }
+        : undefined,
     },
     include: selectIncludes,
   });
@@ -171,14 +217,16 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
 
   const updateData: Record<string, unknown> = {};
 
-  const stringFields = ['codigo', 'inspector', 'latitud', 'longitud', 'altitud', 'precision_gps', 'observaciones', 'comentarios_productor', 'recomendaciones', 'prioridad_recomendacion', 'responsable_recomendacion', 'resumen_ejecutivo', 'nivel_cumplimiento'];
+  const stringFields = [
+    'codigo', 'inspector', 'latitud', 'longitud', 'altitud', 'precision_gps',
+    'observaciones', 'comentarios_productor', 'recomendaciones', 'prioridad_recomendacion',
+    'responsable_recomendacion', 'resumen_ejecutivo', 'nivel_cumplimiento',
+  ];
   for (const field of stringFields) {
     if (data[field] !== undefined) updateData[field] = (data[field] as string) || null;
   }
 
-  if (data.inspector_id !== undefined) updateData.inspector_id = (data.inspector_id as string) || null;
-
-  if (data.cultivo_id !== undefined) updateData.cultivo_id = data.cultivo_id ? Number(data.cultivo_id) : null;
+  if (data.cultivo_id !== undefined) updateData.cultivo_id = Number(data.cultivo_id);
 
   const enumFields = ['estado', 'resultado', 'riesgo_general'];
   for (const field of enumFields) {
@@ -186,14 +234,16 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
   }
 
   if (data.fecha !== undefined) updateData.fecha = new Date(data.fecha as string);
-  if (data.fecha_recomendacion !== undefined) updateData.fecha_recomendacion = data.fecha_recomendacion ? new Date(data.fecha_recomendacion as string) : null;
-  if (data.fecha_proxima_inspeccion !== undefined) updateData.fecha_proxima_inspeccion = data.fecha_proxima_inspeccion ? new Date(data.fecha_proxima_inspeccion as string) : null;
+  if (data.fecha_recomendacion !== undefined) {
+    updateData.fecha_recomendacion = data.fecha_recomendacion ? new Date(data.fecha_recomendacion as string) : null;
+  }
+  if (data.fecha_proxima_inspeccion !== undefined) {
+    updateData.fecha_proxima_inspeccion = data.fecha_proxima_inspeccion ? new Date(data.fecha_proxima_inspeccion as string) : null;
+  }
   if (userId) updateData.updated_by = userId;
 
-  // Handle nested arrays
   const hasChecklistUpdate = data.checklist !== undefined;
   const hasNoConformidadesUpdate = data.no_conformidades !== undefined;
-  const hasAccionesCorrectivasUpdate = data.acciones_correctivas !== undefined;
   const hasEvidenciasUpdate = data.evidencias !== undefined;
 
   return prisma.$transaction(async (tx: PrismaTransaction) => {
@@ -202,81 +252,81 @@ export const update = async (id: string, data: Record<string, unknown>, userId?:
       data: updateData,
     });
 
-    // Replace checklist if provided
     if (hasChecklistUpdate) {
       await tx.inspeccion_checklist.deleteMany({ where: { inspeccion_id: Number(id) } });
-      const checklist = (data.checklist as any[]) || [];
+      const checklist = (data.checklist as Record<string, unknown>[]) || [];
       if (checklist.length) {
         await tx.inspeccion_checklist.createMany({
           data: checklist.map((c) => ({
             inspeccion_id: Number(id),
-            criterio: c.criterio,
-            cumplimiento: c.cumplimiento || null,
-            riesgo: c.riesgo || 'BAJO',
-            observacion: c.observacion || null,
-            evidencia: c.evidencia || null,
+            criterio: c.criterio as string,
+            cumplimiento: (c.cumplimiento as CumplimientoCriterio) || null,
+            riesgo: (c.riesgo as RiesgoNivel) || 'BAJO',
+            observacion: (c.observacion as string) || null,
+            evidencia: (c.evidencia as string) || null,
           })),
         });
       }
     }
 
-    // Replace no_conformidades if provided
     if (hasNoConformidadesUpdate) {
-      await tx.no_conformidades.deleteMany({ where: { inspeccion_id: Number(id) } });
-      const noConformidades = (data.no_conformidades as any[]) || [];
-      if (noConformidades.length) {
-        await tx.no_conformidades.createMany({
-          data: noConformidades.map((nc) => ({
-            inspeccion_id: Number(id),
-            codigo: nc.codigo || null,
-            tipo: nc.tipo,
-            categoria: nc.categoria,
-            descripcion: nc.descripcion,
-            severidad: nc.severidad || 'LEVE',
-            responsable: nc.responsable,
-            fecha_compromiso: nc.fecha_compromiso ? new Date(nc.fecha_compromiso) : null,
-            estado: nc.estado || 'PENDIENTE',
-            accion_correctiva: nc.accion_correctiva || null,
-          })),
-        });
+      const existingNC = await tx.no_conformidades.findMany({
+        where: { inspeccion_id: Number(id) },
+        select: { id: true },
+      });
+      if (existingNC.length) {
+        const ncIds = existingNC.map((nc) => nc.id);
+        await tx.acciones_correctivas.deleteMany({ where: { no_conformidad_id: { in: ncIds } } });
+        await tx.no_conformidades.deleteMany({ where: { inspeccion_id: Number(id) } });
       }
-    }
 
-    // Replace acciones_correctivas if provided
-    if (hasAccionesCorrectivasUpdate) {
-      await tx.acciones_correctivas.deleteMany({ where: { no_conformidad: { inspeccion_id: Number(id) } } });
-      const accionesCorrectivas = (data.acciones_correctivas as any[]) || [];
-      if (accionesCorrectivas.length) {
-        for (const ac of accionesCorrectivas) {
-          await tx.acciones_correctivas.create({
-            data: {
-              accion: ac.accion,
-              responsable: ac.responsable,
-              fecha_inicio: ac.fecha_inicio ? new Date(ac.fecha_inicio) : null,
-              fecha_limite: ac.fecha_limite ? new Date(ac.fecha_limite) : null,
-              estado: ac.estado || 'PENDIENTE',
-              observaciones: ac.observaciones || null,
-              no_conformidad: { connect: { id: Number(id) } },
-            },
+      const noConformidades = (data.no_conformidades as Record<string, unknown>[]) || [];
+      for (const nc of noConformidades) {
+        const createdNC = await tx.no_conformidades.create({
+          data: {
+            inspeccion_id: Number(id),
+            codigo: nc.codigo ? String(nc.codigo) : '',
+            tipo: nc.tipo as string,
+            categoria: nc.categoria as string,
+            descripcion: nc.descripcion as string,
+            severidad: (nc.severidad as SeveridadNoConformidad) || 'LEVE',
+            responsable: nc.responsable as string,
+            fecha_compromiso: nc.fecha_compromiso ? new Date(nc.fecha_compromiso as string) : null,
+            estado: (nc.estado as EstadoNoConformidad) || 'PENDIENTE',
+            accion_correctiva: (nc.accion_correctiva as string) || null,
+          },
+        });
+
+        const acciones = (nc.acciones as Record<string, unknown>[]) || [];
+        if (acciones.length) {
+          await tx.acciones_correctivas.createMany({
+            data: acciones.map((ac) => ({
+              no_conformidad_id: createdNC.id,
+              accion: ac.accion as string,
+              responsable: ac.responsable as string,
+              fecha_inicio: ac.fecha_inicio ? new Date(ac.fecha_inicio as string) : null,
+              fecha_limite: ac.fecha_limite ? new Date(ac.fecha_limite as string) : null,
+              estado: (ac.estado as EstadoAccionCorrectiva) || 'PENDIENTE',
+              observaciones: (ac.observaciones as string) || null,
+            })),
           });
         }
       }
     }
 
-    // Replace evidencias if provided
     if (hasEvidenciasUpdate) {
       await tx.evidencia.deleteMany({ where: { inspeccion_id: Number(id) } });
-      const evidencias = (data.evidencias as any[]) || [];
+      const evidencias = (data.evidencias as Record<string, unknown>[]) || [];
       if (evidencias.length) {
         await tx.evidencia.createMany({
           data: evidencias.map((e) => ({
             inspeccion_id: Number(id),
-            nombre: e.nombre,
-            descripcion: e.descripcion || null,
-            tipo: e.tipo || null,
-            ruta_archivo: e.ruta_archivo || null,
-            fecha: e.fecha ? new Date(e.fecha) : null,
-            responsable: e.responsable || null,
+            nombre: e.nombre as string,
+            descripcion: (e.descripcion as string) || null,
+            tipo: (e.tipo as string) || null,
+            ruta_archivo: (e.ruta_archivo as string) || null,
+            fecha: e.fecha ? new Date(e.fecha as string) : null,
+            responsable: (e.responsable as string) || null,
           })),
         });
       }

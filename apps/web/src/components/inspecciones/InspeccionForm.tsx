@@ -8,10 +8,10 @@ import { MapaCard } from "./MapaCard";
 import { ObservacionesCard } from "./ObservacionesCard";
 import { RecomendacionesCard } from "./RecomendacionesCard";
 import { ResultadoCard } from "./ResultadoCard";
-import { HistorialCard } from "./HistorialCard";
 import ActionButtons from "./ActionButtons";
 import type { FormMode } from "../shared/formControls";
 import type { Inspeccion } from "../../services/inspecciones";
+import { toast } from "../../utils/toast";
 
 interface InspeccionFormProps {
   mode: Extract<FormMode, "create" | "edit">;
@@ -24,7 +24,21 @@ export default function InspeccionForm({ mode, values, inModal, onSave }: Inspec
   const navigate = useNavigate();
   const detailTo = `/inspecciones/${values?.id ?? ""}`;
 
+  const validate = (): boolean => {
+    const required: string[] = [];
+    if (!values?.fecha) required.push("Fecha");
+    if (!values?.inspector) required.push("Inspector");
+    if (!values?.parcelaId) required.push("Parcela");
+    if (required.length > 0) {
+      toast.error(`Complete los campos obligatorios: ${required.join(", ")}`);
+      return false;
+    }
+    return true;
+  };
+
   const handleSave = () => {
+    if (!validate()) return;
+
     if (!inModal) {
       navigate(mode === "create" ? "/inspecciones" : detailTo);
     } else {
@@ -43,8 +57,6 @@ export default function InspeccionForm({ mode, values, inModal, onSave }: Inspec
       <ObservacionesCard mode={mode} values={values} />
       <RecomendacionesCard mode={mode} values={values} />
       <ResultadoCard mode={mode} values={values} />
-
-      {values?.historial && <HistorialCard eventos={values.historial} />}
 
       <ActionButtons
         cancelTo={mode === "create" ? "/inspecciones" : detailTo}

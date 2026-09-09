@@ -9,7 +9,7 @@ import {
   ClipboardList,
   Plus,
 } from "lucide-react";
-import { Badge, Breadcrumb, Button, Card, SectionHeader, LoadingSpinner } from "../../components/ui";
+import { Badge, Button, Card, SectionHeader, LoadingSpinner } from "../../components/ui";
 import { useDashboard } from "../../hooks/queries";
 
 type Stat = {
@@ -59,7 +59,7 @@ export default function Dashboard() {
       iconClass: "bg-forest-600/10 text-forest-600",
     },
     {
-      label: "Campa\u00f1as",
+      label: "Campañas",
       value: String(data?.campanias ?? 0),
       hint: data?.campaniaActiva ? "1 activa" : "ninguna activa",
       icon: CalendarDays,
@@ -77,16 +77,14 @@ export default function Dashboard() {
 
   return (
     <div>
-      <Breadcrumb items={[{ label: "Dashboard" }]} />
-
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <SectionHeader
           title="Dashboard"
-          description="Resumen general de la cooperativa y sus actividades agr\u00edcolas."
+          description="Resumen general de la cooperativa y sus actividades agrícolas."
         />
         <div className="flex items-center gap-2">
           <Button as="link" to="/campanias/nueva" iconLeft={<Plus className="h-4 w-4" />}>
-            Nueva Campa\u00f1a
+            Nueva Campaña
           </Button>
         </div>
       </div>
@@ -101,7 +99,7 @@ export default function Dashboard() {
               <ArrowUpRight className="h-4 w-4 text-gray-300" />
             </div>
             <p className="mt-4 text-xs font-medium uppercase tracking-wider text-gray-500">{stat.label}</p>
-            <p className="mt-1.5 text-2xl font-bold text-[#111827]">{stat.value}</p>
+            <p className="mt-1.5 text-2xl font-bold text-gray-900">{stat.value}</p>
             <p className="mt-1 text-xs text-gray-500">{stat.hint}</p>
           </Card>
         ))}
@@ -114,7 +112,7 @@ export default function Dashboard() {
               <ClipboardList className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-[#111827]">Actividades recientes</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Actividades recientes</h2>
               <p className="text-xs text-gray-500">Últimos registros del campo</p>
             </div>
           </div>
@@ -126,7 +124,7 @@ export default function Dashboard() {
               {data.actividadesRecientes.map((act) => (
                 <li key={act.id} className="flex items-center justify-between gap-4 py-3.5">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-[#111827]">{act.tipoActividad}</p>
+                    <p className="truncate text-sm font-medium text-gray-900">{act.tipoActividad}</p>
                     <p className="mt-0.5 truncate text-xs text-gray-500">{act.codigo}</p>
                   </div>
                   {estadoBadge(act.estado)}
@@ -144,7 +142,7 @@ export default function Dashboard() {
             <div>
               <h2 className="text-lg font-semibold text-white">Campa\u00f1a actual</h2>
               <p className="text-xs text-forest-300">
-                {data?.campaniaActiva ? data.campaniaActiva.nombre : "Sin campa\u00f1a activa"}
+                {data?.campaniaActiva ? data.campaniaActiva.nombre : "Sin campaña activa"}
               </p>
             </div>
           </div>
@@ -153,13 +151,13 @@ export default function Dashboard() {
             <>
               <dl className="mt-6 space-y-4">
                 <div className="flex items-center justify-between">
-                  <dt className="text-sm text-forest-200">C\u00f3digo</dt>
+                  <dt className="text-sm text-forest-200">Código</dt>
                   <dd className="text-sm font-semibold text-white">
                     {data.campaniaActiva.codigo}
                   </dd>
                 </div>
                 <div className="flex items-center justify-between">
-                  <dt className="text-sm text-forest-200">A\u00f1o agr\u00edcola</dt>
+                  <dt className="text-sm text-forest-200">Año agrícola</dt>
                   <dd className="text-sm font-semibold text-white">
                     {data.campaniaActiva.anio_agricola}
                   </dd>
@@ -168,7 +166,7 @@ export default function Dashboard() {
             </>
           ) : (
             <p className="mt-6 text-sm text-forest-300">
-              No hay campa\u00f1a activa. Crea una nueva campa\u00f1a para comenzar.
+              No hay campaña activa. Crea una nueva campaña para comenzar.
             </p>
           )}
         </div>

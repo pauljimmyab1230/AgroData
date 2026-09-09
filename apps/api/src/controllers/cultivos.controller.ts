@@ -1,27 +1,39 @@
-import { Response, NextFunction } from 'express';
+import type { Response, NextFunction } from 'express';
 import * as cultivosService from '../services/cultivos.service';
-import { AuthRequest } from '../middleware/auth.middleware';
+import type { AuthRequest } from '../middleware/auth.middleware';
 
-export const getAll = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const getAll = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const result = await cultivosService.getAll({
       search: req.query.search as string | undefined,
       estado: req.query.estado as string | undefined,
-      campanias_id: req.query.campania_id as string | undefined,
+      campania_id: req.query.campania_id as string | undefined,
       parcela_id: req.query.parcela_id as string | undefined,
       page: parseInt(req.query.page as string) || 1,
       limit: parseInt(req.query.limit as string) || 20,
     });
     res.status(200).json({
       success: true,
-      ...result,
+      data: result.data,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: result.totalPages,
     });
   } catch (error) {
     next(error);
   }
 };
 
-export const getById = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const getById = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const cultivo = await cultivosService.getById(req.params.id);
     res.status(200).json({
@@ -33,7 +45,11 @@ export const getById = async (req: AuthRequest, res: Response, next: NextFunctio
   }
 };
 
-export const create = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const create = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const cultivo = await cultivosService.create(req.body, req.user?.id);
     res.status(201).json({
@@ -46,7 +62,11 @@ export const create = async (req: AuthRequest, res: Response, next: NextFunction
   }
 };
 
-export const update = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const update = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const cultivo = await cultivosService.update(req.params.id, req.body, req.user?.id);
     res.status(200).json({
@@ -59,24 +79,32 @@ export const update = async (req: AuthRequest, res: Response, next: NextFunction
   }
 };
 
-export const remove = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const remove = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const result = await cultivosService.remove(req.params.id);
     res.status(200).json({
       success: true,
-      ...result,
+      message: result.message,
     });
   } catch (error) {
     next(error);
   }
 };
 
-export const getGlobalStats = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const getGlobalStats = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const stats = await cultivosService.getGlobalStats({
       search: req.query.search as string | undefined,
       estado: req.query.estado as string | undefined,
-      campanias_id: req.query.campania_id as string | undefined,
+      campania_id: req.query.campania_id as string | undefined,
     });
     res.status(200).json({
       success: true,

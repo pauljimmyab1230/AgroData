@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { UserPlus, Users, Pencil, Trash2, Loader2 } from "lucide-react";
 import { Badge, Button, ConfirmDialog, DataTable } from "../ui";
 import { CardHeader, CardShell, type FormMode } from "../shared/formControls";
@@ -9,6 +9,7 @@ import {
   updateFamiliar,
   deleteFamiliar,
   type Familiar,
+  type ProductorId,
 } from "../../services/productores";
 import { FamiliarModal } from "./FamiliarModal";
 import type { FamiliarFormData } from "./FamiliarModal";
@@ -16,10 +17,8 @@ import { toast } from "../../utils/toast";
 
 type FamiliarTableProps = {
   mode: FormMode;
-  productorId?: number;
+  productorId?: ProductorId;
 };
-
-let tempIdCounter = 0;
 
 export function FamiliarTable({ mode, productorId }: FamiliarTableProps) {
   const readOnly = mode === "view";
@@ -27,6 +26,7 @@ export function FamiliarTable({ mode, productorId }: FamiliarTableProps) {
   const { data: fetchedFamiliares, isLoading: loadingFamiliares } = useFamiliares(
     mode !== "create" && productorId ? productorId : null
   );
+  const tempIdCounter = useRef(0);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Familiar | null>(null);
@@ -39,7 +39,7 @@ export function FamiliarTable({ mode, productorId }: FamiliarTableProps) {
     }
   }, [mode, fetchedFamiliares, setFamiliares]);
 
-  const handleSave = async (form: FamiliarFormData) => {
+  const handleSave = useCallback(async (form: FamiliarFormData) => {
     setSaving(true);
     try {
       if (editTarget) {
@@ -51,7 +51,7 @@ export function FamiliarTable({ mode, productorId }: FamiliarTableProps) {
         }
       } else {
         if (mode === "create") {
-          setFamiliares([...familiares, { id: -(++tempIdCounter), ...form }]);
+          setFamiliares([...familiares, { id: -(++tempIdCounter.current), ...form }]);
         } else if (productorId) {
           const created = await createFamiliar(productorId, form);
           setFamiliares([...familiares, created]);
@@ -65,9 +65,9 @@ export function FamiliarTable({ mode, productorId }: FamiliarTableProps) {
     } finally {
       setSaving(false);
     }
-  };
+  }, [editTarget, mode, productorId, familiares, setFamiliares]);
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     if (!deleteTarget) return;
     try {
       if (mode === "create") {
@@ -81,7 +81,7 @@ export function FamiliarTable({ mode, productorId }: FamiliarTableProps) {
       console.error("Error al eliminar familiar:", error);
       toast.error("Error al eliminar el familiar.");
     }
-  };
+  }, [deleteTarget, mode, productorId, familiares, setFamiliares]);
 
   const columns = [
     {

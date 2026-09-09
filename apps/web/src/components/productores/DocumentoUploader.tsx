@@ -1,6 +1,5 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
 import type { LucideIcon } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
 import {
   Fingerprint,
   FileText,
@@ -17,8 +16,8 @@ import {
 } from "lucide-react";
 import { Badge, Button, Modal, Select } from "../ui";
 import { CardHeader, CardShell, type FormMode } from "../shared/formControls";
-import { useDocumentos, useCreateDocumento, useDeleteDocumento } from "../../hooks/queries";
-import { updateDocumentoEstado, uploadArchivo, type Documento } from "../../services/productores";
+import { useDocumentos, useCreateDocumento, useDeleteDocumento, useUpdateDocumentoEstado } from "../../hooks/queries";
+import { uploadArchivo, type Documento, type DocumentoId, type ProductorId, type EstadoDocumento, getApiErrorMessage } from "../../services/productores";
 import { toast } from "../../utils/toast";
 
 type DocTipo = {
@@ -51,7 +50,7 @@ const categorias: Categoria[] = [
 
 type DocumentoUploaderProps = {
   mode: FormMode;
-  productorId?: number;
+  productorId?: ProductorId | null;
 };
 
 const formatSize = (bytes: number) =>
@@ -76,7 +75,7 @@ const estadoOptions = [
   { value: "RECHAZADO", label: "Rechazado" },
 ];
 
-const estadoIcon = (estado: string) => {
+const estadoIcon = (estado: EstadoDocumento) => {
   switch (estado) {
     case "VERIFICADO":
       return <CheckCircle className="h-3.5 w-3.5 text-green-600" />;
@@ -89,23 +88,23 @@ const estadoIcon = (estado: string) => {
 
 export function DocumentoUploader({ mode, productorId }: DocumentoUploaderProps) {
   const readOnly = mode === "view";
-  const qc = useQueryClient();
   const validProductorId = productorId && productorId > 0 ? productorId : null;
   const { data: documentos = [] } = useDocumentos(
     validProductorId && mode !== "create" ? validProductorId : null
   );
-  const createDocumentoMutation = useCreateDocumento(validProductorId || 0);
-  const deleteDocumentoMutation = useDeleteDocumento(validProductorId || 0);
+  const createDocumentoMutation = useCreateDocumento(validProductorId ?? 0 as ProductorId);
+  const deleteDocumentoMutation = useDeleteDocumento(validProductorId ?? 0 as ProductorId);
+  const updateEstadoMutation = useUpdateDocumentoEstado(validProductorId ?? 0 as ProductorId);
   const [verDoc, setVerDoc] = useState<Documento | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const uploadTargetRef = useRef<{ categoria: string; tipo: string } | null>(null);
 
-  const handleUploadClick = (categoria: string, tipo: string) => {
+  const handleUploadClick = useCallback((categoria: string, tipo: string) => {
     uploadTargetRef.current = { categoria, tipo };
     inputRef.current?.click();
-  };
+  }, []);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     const target = uploadTargetRef.current;
     if (file && target && productorId) {
@@ -127,26 +126,26 @@ export function DocumentoUploader({ mode, productorId }: DocumentoUploaderProps)
           mime_type: uploaded.mime_type,
         });
         toast.success("Documento subido correctamente");
-    } catch (error) {
-      console.error("Error al subir documento:", error);
-      toast.error("Error al subir el documento");
-    }
+      } catch (error) {
+        console.error("Error al subir documento:", error);
+        toast.error(getApiErrorMessage(error, "Error al subir el documento"));
+      }
     }
     if (inputRef.current) inputRef.current.value = "";
-  };
+  }, [productorId, createDocumentoMutation]);
 
-  const handleDelete = async (doc: Documento) => {
+  const handleDelete = useCallback(async (doc: Documento) => {
     if (!validProductorId) return;
     try {
       await deleteDocumentoMutation.mutateAsync(doc.id);
       toast.success("Documento eliminado");
     } catch (error) {
       console.error("Error al eliminar documento:", error);
-      toast.error("Error al eliminar el documento");
+      toast.error(getApiErrorMessage(error, "Error al eliminar el documento"));
     }
-  };
+  }, [validProductorId, deleteDocumentoMutation]);
 
-  const handleDownload = (doc: Documento) => {
+  const handleDownload = useCallback((doc: Documento) => {
     if (doc.rutaArchivo && isUrlSegura(doc.rutaArchivo)) {
       const link = document.createElement("a");
       link.href = doc.rutaArchivo;
@@ -157,19 +156,18 @@ export function DocumentoUploader({ mode, productorId }: DocumentoUploaderProps)
       link.click();
       document.body.removeChild(link);
     }
-  };
+  }, []);
 
-  const handleEstadoChange = async (doc: Documento, nuevoEstado: string) => {
+  const handleEstadoChange = useCallback(async (doc: Documento, nuevoEstado: string) => {
     if (!validProductorId) return;
     if (nuevoEstado !== "PENDIENTE" && nuevoEstado !== "VERIFICADO" && nuevoEstado !== "RECHAZADO") return;
     try {
-      await updateDocumentoEstado(validProductorId, doc.id, nuevoEstado);
-      qc.invalidateQueries({ queryKey: ["documentos", validProductorId] });
+      await updateEstadoMutation.mutateAsync({ documentoId: doc.id, estado: nuevoEstado });
       toast.success(`Documento ${nuevoEstado.toLowerCase()}`);
     } catch {
       toast.error("Error al cambiar el estado del documento");
     }
-  };
+  }, [validProductorId, updateEstadoMutation]);
 
   return (
     <div className="space-y-6">

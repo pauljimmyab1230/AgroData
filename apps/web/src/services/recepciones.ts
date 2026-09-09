@@ -1,11 +1,6 @@
 import api from "./api";
 
-export interface Evidencia {
-  id?: string;
-  nombre: string;
-  tipo?: string;
-  ruta_archivo: string;
-}
+// ─── Types (synced with Prisma recepcion model) ───────────
 
 export interface RecepcionSaco {
   id?: number;
@@ -15,17 +10,16 @@ export interface RecepcionSaco {
 }
 
 export interface Recepcion {
-  id: string;
+  id: number;
   codigo: string;
-  campaniaId: string;
-  campaniaNombre: string;
-  acopioId: string;
+  acopioId: number | null;
   acopioCodigo: string;
   loteProductor: string;
   fecha: string;
   responsable: string;
   planta: string;
   sacos: number;
+  pesoTotal: number;
   pesoCampo: number;
   pesoBruto: number;
   tara: number;
@@ -48,33 +42,30 @@ export interface Recepcion {
   documentoFirmado: boolean;
   firmaResponsableUrl: string;
   activo: boolean;
-  evidencias: Evidencia[];
   sacosDetalle: RecepcionSaco[];
   createdAt: string;
   updatedAt: string;
 }
 
 interface RecepcionDTO {
-  id: string;
+  id: number;
   codigo: string;
-  campania_id: string;
-  campania: { id: string; codigo: string; nombre: string } | null;
-  acopio_id: string;
-  acopio: { id: string; codigo: string } | null;
+  acopio_id: number | null;
+  acopio: { id: number; codigo: string } | null;
   lote_productor: string | null;
   fecha: string;
   responsable: string;
   planta: string;
   sacos: number;
-  peso_campo: number;
-  peso_bruto: number;
-  tara: number;
-  peso_neto: number;
-  diferencia: number;
-  merma: number;
-  humedad: number;
-  impurezas: number;
-  materia_extrana: number;
+  peso_campo: number | string | null;
+  peso_bruto: number | string | null;
+  tara: number | string | null;
+  peso_neto: number | string | null;
+  diferencia: number | string | null;
+  merma: number | string | null;
+  humedad: number | string | null;
+  impurezas: number | string | null;
+  materia_extrana: number | string | null;
   color: string | null;
   olor: string | null;
   presencia_insectos: string | null;
@@ -88,18 +79,24 @@ interface RecepcionDTO {
   documento_firmado: boolean;
   firma_responsable_url: string | null;
   activo: boolean;
-  evidencias: Array<{ id: string; nombre: string; tipo?: string; ruta_archivo: string | null }>;
   sacos_detalle: Array<{ id: number; codigo: string; peso: number | string; observaciones: string | null }>;
   created_at: string;
   updated_at: string;
 }
 
 function toFrontend(dto: RecepcionDTO): Recepcion {
+  const sacosDetalle = (dto.sacos_detalle ?? []).map(s => ({
+    id: s.id,
+    codigo: s.codigo,
+    peso: Number(s.peso) || 0,
+    observaciones: s.observaciones ?? "",
+  }));
+
+  const pesoTotal = sacosDetalle.reduce((sum, s) => sum + s.peso, 0);
+
   return {
     id: dto.id,
     codigo: dto.codigo,
-    campaniaId: dto.campania_id,
-    campaniaNombre: dto.campania?.nombre ?? "",
     acopioId: dto.acopio_id,
     acopioCodigo: dto.acopio?.codigo ?? "",
     loteProductor: dto.lote_productor ?? "",
@@ -107,6 +104,7 @@ function toFrontend(dto: RecepcionDTO): Recepcion {
     responsable: dto.responsable,
     planta: dto.planta,
     sacos: dto.sacos,
+    pesoTotal: Math.round(pesoTotal * 100) / 100,
     pesoCampo: Number(dto.peso_campo) || 0,
     pesoBruto: Number(dto.peso_bruto) || 0,
     tara: Number(dto.tara) || 0,
@@ -129,18 +127,7 @@ function toFrontend(dto: RecepcionDTO): Recepcion {
     documentoFirmado: dto.documento_firmado,
     firmaResponsableUrl: dto.firma_responsable_url ?? "",
     activo: dto.activo,
-    evidencias: (dto.evidencias ?? []).map(e => ({
-      id: e.id,
-      nombre: e.nombre,
-      tipo: e.tipo ?? "",
-      ruta_archivo: e.ruta_archivo ?? "",
-    })),
-    sacosDetalle: (dto.sacos_detalle ?? []).map(s => ({
-      id: s.id,
-      codigo: s.codigo,
-      peso: Number(s.peso) || 0,
-      observaciones: s.observaciones ?? "",
-    })),
+    sacosDetalle,
     createdAt: dto.created_at,
     updatedAt: dto.updated_at,
   };
@@ -148,8 +135,6 @@ function toFrontend(dto: RecepcionDTO): Recepcion {
 
 function toBackend(data: Partial<Recepcion>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
-  if (data.codigo !== undefined) out.codigo = data.codigo;
-  if (data.campaniaId !== undefined) out.campania_id = data.campaniaId;
   if (data.acopioId !== undefined) out.acopio_id = data.acopioId || null;
   if (data.loteProductor !== undefined) out.lote_productor = data.loteProductor;
   if (data.fecha !== undefined) out.fecha = data.fecha;
@@ -177,17 +162,13 @@ function toBackend(data: Partial<Recepcion>): Record<string, unknown> {
   if (data.observaciones !== undefined) out.observaciones = data.observaciones || null;
   if (data.documentoFirmado !== undefined) out.documento_firmado = data.documentoFirmado;
   if (data.firmaResponsableUrl !== undefined) out.firma_responsable_url = data.firmaResponsableUrl || null;
-  if (data.activo !== undefined) out.activo = data.activo;
-  if (data.evidencias !== undefined) out.evidencias = data.evidencias;
   if (data.sacosDetalle !== undefined) out.sacos_detalle = data.sacosDetalle;
   return out;
 }
 
-// ─── Types ─────────────────────────────────────────────────
+// ─── Form Types ───────────────────────────────────────────
 
 export interface RecepcionFormData {
-  codigo: string;
-  campaniaId: string;
   acopioId: string;
   loteProductor: string;
   fecha: string;
@@ -198,8 +179,6 @@ export interface RecepcionFormData {
   pesoBruto: number;
   tara: number;
   pesoNeto: number;
-  diferencia: number;
-  merma: number;
   humedad: number;
   impurezas: number;
   materiaExtrana: number;
@@ -215,14 +194,10 @@ export interface RecepcionFormData {
   observaciones: string;
   documentoFirmado: boolean;
   firmaResponsableUrl: string;
-  activo: boolean;
-  evidencias: Evidencia[];
   sacosDetalle: RecepcionSaco[];
 }
 
 export const emptyRecepcionForm: RecepcionFormData = {
-  codigo: "",
-  campaniaId: "",
   acopioId: "",
   loteProductor: "",
   fecha: new Date().toISOString().split("T")[0],
@@ -233,8 +208,6 @@ export const emptyRecepcionForm: RecepcionFormData = {
   pesoBruto: 0,
   tara: 0,
   pesoNeto: 0,
-  diferencia: 0,
-  merma: 0,
   humedad: 0,
   impurezas: 0,
   materiaExtrana: 0,
@@ -250,33 +223,32 @@ export const emptyRecepcionForm: RecepcionFormData = {
   observaciones: "",
   documentoFirmado: false,
   firmaResponsableUrl: "",
-  activo: true,
-  evidencias: [],
   sacosDetalle: [],
 };
 
+// ─── Constants ────────────────────────────────────────────
+
 export const recepcionEstados = ["PENDIENTE_PESAJE", "EN_CONTROL_CALIDAD", "DISPONIBLE", "RECHAZADA"] as const;
+export const recepcionCategorias = ["PRIMERA", "SEGUNDA", "INDUSTRIAL", "DESCARTE"] as const;
+export const recepcionDestinos = ["PROCESAMIENTO", "ALMACEN_TEMPORAL", "RECHAZADO"] as const;
 export const recepcionResultado = ["ACEPTADO", "ACEPTADO_CON_OBSERVACIONES", "RECHAZADO"] as const;
+export const recepcionEstadoProducto = ["EXCELENTE", "BUENO", "REGULAR", "RECHAZADO"] as const;
+
+// ─── Query Type ───────────────────────────────────────────
 
 export interface RecepcionesQuery {
   search?: string;
   estado?: string;
-  campania_id?: string;
-  acopio_id?: string;
-  planta?: string;
-  categoria?: string;
   page?: number;
   limit?: number;
 }
+
+// ─── API Calls ────────────────────────────────────────────
 
 export async function fetchRecepciones(params?: RecepcionesQuery): Promise<{ data: Recepcion[]; total: number; page: number; limit: number; totalPages: number }> {
   const query: Record<string, string> = {};
   if (params?.search) query.search = params.search;
   if (params?.estado) query.estado = params.estado;
-  if (params?.campania_id) query.campania_id = params.campania_id;
-  if (params?.acopio_id) query.acopio_id = params.acopio_id;
-  if (params?.planta) query.planta = params.planta;
-  if (params?.categoria) query.categoria = params.categoria;
   if (params?.page) query.page = String(params.page);
   if (params?.limit) query.limit = String(params.limit);
 
@@ -308,6 +280,8 @@ export async function updateRecepcion(id: string, data: Partial<Recepcion>): Pro
 export async function deleteRecepcion(id: string): Promise<void> {
   await api.delete(`/recepciones/${id}`);
 }
+
+// ─── Formatters ───────────────────────────────────────────
 
 export function formatearFecha(fecha: string): string {
   if (!fecha) return "";

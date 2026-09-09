@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Save } from "lucide-react";
-import { Breadcrumb, Button, Card, FormField, Input, Select, Textarea, DatePicker, SectionHeader } from "../../components/ui";
+import { Button, Card, FormField, Input, Select, Textarea, DatePicker, SectionHeader } from "../../components/ui";
 import {
   createKardexItem,
   emptyKardexItemForm,
@@ -67,8 +67,6 @@ export default function KardexCreate() {
 
   return (
     <div>
-      <Breadcrumb items={[{ label: "Kardex", to: "/kardex" }, { label: "Nuevo Item" }]} />
-
       <div className="mb-8 flex items-center gap-4">
         <Button variant="ghost" as="link" to="/kardex" iconLeft={<ArrowLeft className="h-4 w-4" />}>
           Volver

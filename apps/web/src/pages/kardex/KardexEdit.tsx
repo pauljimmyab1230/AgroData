@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Save } from "lucide-react";
-import { Breadcrumb, Button, Card, FormField, Input, Select, Textarea, DatePicker, SectionHeader } from "../../components/ui";
+import { Button, Card, FormField, Input, Select, Textarea, DatePicker, SectionHeader } from "../../components/ui";
 import {
   fetchKardexItem,
   updateKardexItem,
@@ -117,14 +117,6 @@ export default function KardexEdit() {
 
   return (
     <div>
-      <Breadcrumb
-        items={[
-          { label: "Kardex", to: "/kardex" },
-          { label: item.codigo, to: `/kardex/${item.id}` },
-          { label: "Editar Item" },
-        ]}
-      />
-
       <div className="mb-8 flex items-center gap-4">
         <Button
           variant="ghost"

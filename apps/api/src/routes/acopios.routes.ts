@@ -13,9 +13,12 @@ const router = Router();
 
 router.use(authMiddleware);
 
+// Static routes first to avoid conflicts with /:id
 router.get('/stats', acopiosController.getStats);
 router.get('/buscar/:codigo', acopiosController.getByCodigo);
-router.get('/', validate(getAllAcopiosSchema), acopiosController.getAll);
+
+// CRUD routes
+router.get('/', validate(getAllAcopiosSchema, 'query'), acopiosController.getAll);
 router.get('/:id', validate(idParamSchema, 'params'), acopiosController.getById);
 router.post('/', adminMiddleware, validate(createAcopioSchema), acopiosController.create);
 router.put('/:id', adminMiddleware, validate(idParamSchema, 'params'), validate(updateAcopioSchema), acopiosController.update);

@@ -1,13 +1,19 @@
-import { forwardRef, type TextareaHTMLAttributes } from "react";
+import { forwardRef, useId, type TextareaHTMLAttributes } from "react";
 
 interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   error?: string;
 }
 
-const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(({ className = "", error, ...props }, ref) => {
+const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(({ className = "", error, id: externalId, ...props }, ref) => {
+  const generatedId = useId();
+  const errorId = `${externalId || generatedId}-error`;
+
   return (
     <textarea
       ref={ref}
+      id={externalId || generatedId}
+      aria-invalid={!!error || undefined}
+      aria-describedby={error ? errorId : undefined}
       className={`w-full rounded-xl border bg-gray-50/50 px-4 py-2.5 text-sm text-[#111827] outline-none transition-all ${
         error
           ? "border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"

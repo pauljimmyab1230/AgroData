@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Save } from "lucide-react";
 import {
-  Breadcrumb,
   Button,
   Card,
   Input,
@@ -101,14 +100,6 @@ export default function UsuarioEdit() {
 
   return (
     <div>
-      <Breadcrumb
-        items={[
-          { label: "Usuarios", to: "/usuarios" },
-          { label: form.nombre, to: `/usuarios/${id}` },
-          { label: "Editar" },
-        ]}
-      />
-
       <div className="mb-8 flex items-center justify-between">
         <SectionHeader
           title="Editar Usuario"

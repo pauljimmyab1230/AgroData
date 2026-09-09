@@ -1,42 +1,112 @@
 import api from "./api";
 
+// ─── Error Type ────────────────────────────────────────────
+
+export interface ApiError {
+  response?: {
+    status?: number;
+    data?: {
+      success?: boolean;
+      message?: string;
+    };
+  };
+  message?: string;
+}
+
+export function isApiError(error: unknown): error is ApiError {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error &&
+    typeof (error as ApiError).response === "object"
+  );
+}
+
+export function getApiErrorMessage(error: unknown, fallback = "Error al guardar. Verifique los datos."): string {
+  if (isApiError(error)) {
+    return error.response?.data?.message || fallback;
+  }
+  return fallback;
+}
+
+// ─── Enums ────────────────────────────────────────────────
+
+export const SexoEnum = ['MASCULINO', 'FEMENINO'] as const;
+export type Sexo = (typeof SexoEnum)[number];
+
+export const EstadoCivilEnum = ['SOLTERO', 'CASADO', 'CONVIVIENTE', 'VIUDO'] as const;
+export type EstadoCivil = (typeof EstadoCivilEnum)[number];
+
+export const NivelEducativoEnum = ['SIN_ESTUDIOS', 'PRIMARIA', 'SECUNDARIA', 'TECNICO', 'UNIVERSITARIO'] as const;
+export type NivelEducativo = (typeof NivelEducativoEnum)[number];
+
+export const IdiomaEnum = ['QUECHUA', 'ESPANOL', 'OTRO', 'NINGUNO'] as const;
+export type Idioma = (typeof IdiomaEnum)[number];
+
+export const EstadoProductorEnum = ['ACTIVO', 'INACTIVO', 'SUSPENDIDO'] as const;
+export type EstadoProductor = (typeof EstadoProductorEnum)[number];
+
+export const CargoProductorEnum = ['SOCIO', 'DIRECTIVO', 'PRESIDENTE', 'VICEPRESIDENTE', 'SECRETARIO', 'TESORERO', 'VOCAL', 'OTRO'] as const;
+export type CargoProductor = (typeof CargoProductorEnum)[number];
+
+export const CategoriaDocumentoEnum = ['PERSONAL', 'INSTITUCIONAL', 'OTROS'] as const;
+export type CategoriaDocumento = (typeof CategoriaDocumentoEnum)[number];
+
+export const EstadoDocumentoEnum = ['PENDIENTE', 'VERIFICADO', 'RECHAZADO'] as const;
+export type EstadoDocumento = (typeof EstadoDocumentoEnum)[number];
+
+// ─── Branded Types ────────────────────────────────────────
+
+type Brand<T, B extends string> = T & { readonly __brand: B };
+export type ProductorId = Brand<number, 'ProductorId'>;
+export type FamiliarId = Brand<number, 'FamiliarId'>;
+export type DocumentoId = Brand<number, 'DocumentoId'>;
+
+export const toProductorId = (id: number): ProductorId => id as ProductorId;
+export const toFamiliarId = (id: number): FamiliarId => id as FamiliarId;
+export const toDocumentoId = (id: number): DocumentoId => id as DocumentoId;
+
+// ─── Frontend Types ───────────────────────────────────────
+
 export interface Productor {
-  id: number;
+  id: ProductorId;
   codigo: string;
   dni: string;
   nombres: string;
   apellidoPaterno: string;
   apellidoMaterno: string;
-  sexo: string;
+  sexo: Sexo;
   fechaNacimiento: string;
-  estadoCivil: string;
-  telefono: string;
-  correo: string;
+  estadoCivil: EstadoCivil;
+  telefono: string | null;
+  correo: string | null;
   departamento: string;
   provincia: string;
   distrito: string;
   comunidad: string;
-  direccion: string;
-  nivelEducativo: string;
-  idiomaPrincipal: string;
-  idiomaSecundario: string;
-  materialVivienda: string;
-  accesoAgua: string;
-  accesoEnergia: string;
-  accesoInternet: string;
-  seguroSalud: string;
-  accesoCredito: string;
-  servicioSanitario: string;
-  estado: string;
+  direccion: string | null;
+  nivelEducativo: NivelEducativo;
+  idiomaPrincipal: Exclude<Idioma, 'NINGUNO'>;
+  idiomaSecundario: Idioma;
+  materialVivienda: string | null;
+  accesoAgua: string | null;
+  accesoEnergia: string | null;
+  accesoInternet: string | null;
+  seguroSalud: string | null;
+  accesoCredito: string | null;
+  servicioSanitario: string | null;
+  estado: EstadoProductor;
   fechaIngreso: string;
   organizacion: string;
-  cargo: string;
+  cargo: CargoProductor;
   fotoUrl: string | null;
   firmaUrl: string | null;
   createdAt: string;
   updatedAt: string;
   _count?: { familiares: number; parcelas: number; documentos: number };
 }
+
+// ─── DTO Types (snake_case from API) ──────────────────────
 
 interface ProductorDTO {
   id: number;
@@ -45,30 +115,30 @@ interface ProductorDTO {
   nombres: string;
   apellido_paterno: string;
   apellido_materno: string;
-  sexo: string;
+  sexo: Sexo;
   fecha_nacimiento: string;
-  estado_civil: string;
-  telefono: string;
-  correo: string;
+  estado_civil: EstadoCivil;
+  telefono: string | null;
+  correo: string | null;
   departamento: string;
   provincia: string;
   distrito: string;
   comunidad: string;
-  direccion: string;
-  nivel_educativo: string;
-  idioma_principal: string;
-  idioma_secundario: string;
-  material_vivienda: string;
-  acceso_agua: string;
-  acceso_energia: string;
-  acceso_internet: string;
-  seguro_salud: string;
-  acceso_credito: string;
-  servicio_sanitario: string;
-  estado: string;
+  direccion: string | null;
+  nivel_educativo: NivelEducativo;
+  idioma_principal: Exclude<Idioma, 'NINGUNO'>;
+  idioma_secundario: Idioma;
+  material_vivienda: string | null;
+  acceso_agua: string | null;
+  acceso_energia: string | null;
+  acceso_internet: string | null;
+  seguro_salud: string | null;
+  acceso_credito: string | null;
+  servicio_sanitario: string | null;
+  estado: EstadoProductor;
   fecha_ingreso: string;
   organizacion: string;
-  cargo: string;
+  cargo: CargoProductor;
   foto_url: string | null;
   firma_url: string | null;
   created_at: string;
@@ -76,9 +146,11 @@ interface ProductorDTO {
   _count?: { familiares: number; parcelas: number; documentos: number };
 }
 
+// ─── Mappers ──────────────────────────────────────────────
+
 function toFrontend(dto: ProductorDTO): Productor {
   return {
-    id: dto.id,
+    id: dto.id as ProductorId,
     codigo: dto.codigo,
     dni: dto.dni,
     nombres: dto.nombres,
@@ -97,13 +169,13 @@ function toFrontend(dto: ProductorDTO): Productor {
     nivelEducativo: dto.nivel_educativo,
     idiomaPrincipal: dto.idioma_principal,
     idiomaSecundario: dto.idioma_secundario,
-    materialVivienda: dto.material_vivienda ?? "",
-    accesoAgua: dto.acceso_agua ?? "",
-    accesoEnergia: dto.acceso_energia ?? "",
-    accesoInternet: dto.acceso_internet ?? "",
-    seguroSalud: dto.seguro_salud ?? "",
-    accesoCredito: dto.acceso_credito ?? "",
-    servicioSanitario: dto.servicio_sanitario ?? "",
+    materialVivienda: dto.material_vivienda,
+    accesoAgua: dto.acceso_agua,
+    accesoEnergia: dto.acceso_energia,
+    accesoInternet: dto.acceso_internet,
+    seguroSalud: dto.seguro_salud,
+    accesoCredito: dto.acceso_credito,
+    servicioSanitario: dto.servicio_sanitario,
     estado: dto.estado,
     fechaIngreso: dto.fecha_ingreso?.split("T")[0] ?? "",
     organizacion: dto.organizacion,
@@ -125,23 +197,23 @@ function toBackend(data: Partial<Productor>): Record<string, unknown> {
   if (data.sexo !== undefined) out.sexo = data.sexo;
   if (data.fechaNacimiento !== undefined) out.fecha_nacimiento = data.fechaNacimiento;
   if (data.estadoCivil !== undefined) out.estado_civil = data.estadoCivil;
-  if (data.telefono !== undefined) out.telefono = data.telefono;
-  if (data.correo !== undefined) out.correo = data.correo;
+  if (data.telefono !== undefined) out.telefono = data.telefono || null;
+  if (data.correo !== undefined) out.correo = data.correo || null;
   if (data.departamento !== undefined) out.departamento = data.departamento;
   if (data.provincia !== undefined) out.provincia = data.provincia;
   if (data.distrito !== undefined) out.distrito = data.distrito;
   if (data.comunidad !== undefined) out.comunidad = data.comunidad;
-  if (data.direccion !== undefined) out.direccion = data.direccion;
+  if (data.direccion !== undefined) out.direccion = data.direccion || null;
   if (data.nivelEducativo !== undefined) out.nivel_educativo = data.nivelEducativo;
   if (data.idiomaPrincipal !== undefined) out.idioma_principal = data.idiomaPrincipal;
   if (data.idiomaSecundario !== undefined) out.idioma_secundario = data.idiomaSecundario;
-  if (data.materialVivienda !== undefined) out.material_vivienda = data.materialVivienda;
-  if (data.accesoAgua !== undefined) out.acceso_agua = data.accesoAgua;
-  if (data.accesoEnergia !== undefined) out.acceso_energia = data.accesoEnergia;
-  if (data.accesoInternet !== undefined) out.acceso_internet = data.accesoInternet;
-  if (data.seguroSalud !== undefined) out.seguro_salud = data.seguroSalud;
-  if (data.accesoCredito !== undefined) out.acceso_credito = data.accesoCredito;
-  if (data.servicioSanitario !== undefined) out.servicio_sanitario = data.servicioSanitario;
+  if (data.materialVivienda !== undefined) out.material_vivienda = data.materialVivienda || null;
+  if (data.accesoAgua !== undefined) out.acceso_agua = data.accesoAgua || null;
+  if (data.accesoEnergia !== undefined) out.acceso_energia = data.accesoEnergia || null;
+  if (data.accesoInternet !== undefined) out.acceso_internet = data.accesoInternet || null;
+  if (data.seguroSalud !== undefined) out.seguro_salud = data.seguroSalud || null;
+  if (data.accesoCredito !== undefined) out.acceso_credito = data.accesoCredito || null;
+  if (data.servicioSanitario !== undefined) out.servicio_sanitario = data.servicioSanitario || null;
   if (data.estado !== undefined) out.estado = data.estado;
   if (data.fechaIngreso !== undefined) out.fecha_ingreso = data.fechaIngreso;
   if (data.organizacion !== undefined) out.organizacion = data.organizacion;
@@ -180,7 +252,7 @@ export async function fetchProductores(params?: {
   };
 }
 
-export async function fetchProductor(id: number): Promise<Productor> {
+export async function fetchProductor(id: ProductorId): Promise<Productor> {
   const res = await api.get(`/productores/${id}`);
   return toFrontend(res.data.data);
 }
@@ -202,14 +274,14 @@ export async function deleteProductor(id: number): Promise<void> {
 // ─── Familiares ─────────────────────────────────────────────
 
 export interface Familiar {
-  id: number;
+  id: FamiliarId;
   nombres: string;
   parentesco: string;
   dni: string | null;
-  sexo: string;
+  sexo: Sexo;
   fechaNacimiento: string;
   ocupacion: string | null;
-  nivelEducativo: string | null;
+  nivelEducativo: NivelEducativo | null;
   telefono: string | null;
   dependiente: boolean;
   viveConProductor: boolean;
@@ -220,10 +292,10 @@ interface FamiliarDTO {
   nombres: string;
   parentesco: string;
   dni: string | null;
-  sexo: string;
+  sexo: Sexo;
   fecha_nacimiento: string;
   ocupacion: string | null;
-  nivel_educativo: string | null;
+  nivel_educativo: NivelEducativo | null;
   telefono: string | null;
   dependiente: boolean;
   vive_con_productor: boolean;
@@ -231,7 +303,7 @@ interface FamiliarDTO {
 
 function familiarToFrontend(dto: FamiliarDTO): Familiar {
   return {
-    id: dto.id,
+    id: dto.id as FamiliarId,
     nombres: dto.nombres,
     parentesco: dto.parentesco,
     dni: dto.dni,
@@ -260,30 +332,36 @@ function familiarToBackend(data: Partial<Familiar>): Record<string, unknown> {
   return out;
 }
 
-export async function fetchFamiliares(productorId: number): Promise<Familiar[]> {
+export async function fetchFamiliares(productorId: ProductorId): Promise<Familiar[]> {
   const res = await api.get(`/productores/${productorId}/familiares`);
   return (res.data.data ?? []).map(familiarToFrontend);
 }
 
-export async function createFamiliar(productorId: number, data: Partial<Familiar>): Promise<Familiar> {
+export async function createFamiliar(productorId: ProductorId, data: Partial<Familiar>): Promise<Familiar> {
   const res = await api.post(`/productores/${productorId}/familiares`, familiarToBackend(data));
   return familiarToFrontend(res.data.data);
 }
 
 export async function updateFamiliar(
-  productorId: number,
-  familiarId: number,
+  productorId: ProductorId,
+  familiarId: FamiliarId,
   data: Partial<Familiar>,
 ): Promise<Familiar> {
   const res = await api.put(`/productores/${productorId}/familiares/${familiarId}`, familiarToBackend(data));
   return familiarToFrontend(res.data.data);
 }
 
-export async function deleteFamiliar(productorId: number, familiarId: number): Promise<void> {
+export async function deleteFamiliar(productorId: ProductorId, familiarId: FamiliarId): Promise<void> {
   await api.delete(`/productores/${productorId}/familiares/${familiarId}`);
 }
 
 // ─── Parcelas ───────────────────────────────────────────────
+
+export const CertificacionParcelaEnum = ['CONVENCIONAL', 'ORGANICO', 'TRANSICION'] as const;
+export type CertificacionParcela = (typeof CertificacionParcelaEnum)[number];
+
+export const EstadoParcelaEnum = ['ACTIVA', 'INACTIVA', 'EN_PROCESO'] as const;
+export type EstadoParcela = (typeof EstadoParcelaEnum)[number];
 
 export interface Parcela {
   id: number;
@@ -292,10 +370,10 @@ export interface Parcela {
   cultivo: string;
   area: number;
   areaUnidad: string;
-  ubicacion: string;
-  certificacion: string;
-  estado: string;
-  productor_id?: number;
+  ubicacion: string | null;
+  certificacion: CertificacionParcela;
+  estado: EstadoParcela;
+  productorId: number;
 }
 
 interface ParcelaDTO {
@@ -305,10 +383,10 @@ interface ParcelaDTO {
   cultivo: string;
   area: string;
   area_unidad: string;
-  ubicacion: string;
-  certificacion: string;
-  estado: string;
-  productor_id?: string;
+  ubicacion: string | null;
+  certificacion: CertificacionParcela;
+  estado: EstadoParcela;
+  productor_id: number;
 }
 
 function parcelaToFrontend(dto: ParcelaDTO): Parcela {
@@ -322,7 +400,7 @@ function parcelaToFrontend(dto: ParcelaDTO): Parcela {
     ubicacion: dto.ubicacion,
     certificacion: dto.certificacion,
     estado: dto.estado,
-    productor_id: dto.productor_id,
+    productorId: dto.productor_id,
   };
 }
 
@@ -333,19 +411,18 @@ function parcelaToBackend(data: Partial<Parcela>): Record<string, unknown> {
   if (data.cultivo !== undefined) out.cultivo = data.cultivo;
   if (data.area !== undefined) out.area = data.area;
   if (data.areaUnidad !== undefined) out.area_unidad = data.areaUnidad;
-  if (data.ubicacion !== undefined) out.ubicacion = data.ubicacion;
+  if (data.ubicacion !== undefined) out.ubicacion = data.ubicacion || null;
   if (data.certificacion !== undefined) out.certificacion = data.certificacion;
   if (data.estado !== undefined) out.estado = data.estado;
-  if (data.productor_id !== undefined) out.productor_id = data.productor_id;
   return out;
 }
 
-export async function fetchParcelas(productorId: number): Promise<Parcela[]> {
+export async function fetchParcelas(productorId: ProductorId): Promise<Parcela[]> {
   const res = await api.get(`/parcelas?productor_id=${productorId}`);
   return (res.data.data ?? []).map(parcelaToFrontend);
 }
 
-export async function createParcela(productorId: number, data: Partial<Parcela>): Promise<Parcela> {
+export async function createParcela(productorId: ProductorId, data: Partial<Parcela>): Promise<Parcela> {
   const payload = { ...parcelaToBackend(data), productor_id: productorId };
   const res = await api.post("/parcelas", payload);
   return parcelaToFrontend(res.data.data);
@@ -366,32 +443,34 @@ export async function deleteParcela(parcelaId: number): Promise<void> {
 // ─── Documentos ─────────────────────────────────────────────
 
 export interface Documento {
-  id: number;
+  id: DocumentoId;
   tipo: string;
-  categoria: string;
+  categoria: CategoriaDocumento;
   nombreArchivo: string;
   rutaArchivo: string;
   tamanoBytes: number;
   mimeType: string;
-  estado: string;
+  estado: EstadoDocumento;
   createdAt: string;
+  updatedAt: string;
 }
 
 interface DocumentoDTO {
   id: number;
   tipo: string;
-  categoria: string;
+  categoria: CategoriaDocumento;
   nombre_archivo: string;
   ruta_archivo: string;
   tamano_bytes: number;
   mime_type: string;
-  estado: string;
+  estado: EstadoDocumento;
   created_at: string;
+  updated_at: string;
 }
 
 function documentoToFrontend(dto: DocumentoDTO): Documento {
   return {
-    id: dto.id,
+    id: dto.id as DocumentoId,
     tipo: dto.tipo,
     categoria: dto.categoria,
     nombreArchivo: dto.nombre_archivo,
@@ -400,23 +479,24 @@ function documentoToFrontend(dto: DocumentoDTO): Documento {
     mimeType: dto.mime_type,
     estado: dto.estado,
     createdAt: dto.created_at,
+    updatedAt: dto.updated_at,
   };
 }
 
-export async function fetchDocumentos(productorId: number): Promise<Documento[]> {
+export async function fetchDocumentos(productorId: ProductorId): Promise<Documento[]> {
   const res = await api.get(`/productores/${productorId}/documentos`);
   return (res.data.data ?? []).map(documentoToFrontend);
 }
 
 export async function createDocumento(
-  productorId: number,
-  data: { tipo: string; categoria: string; nombre_archivo: string; ruta_archivo: string; tamano_bytes: number; mime_type: string }
+  productorId: ProductorId,
+  data: { tipo: string; categoria: CategoriaDocumento; nombre_archivo: string; ruta_archivo: string; tamano_bytes: number; mime_type: string }
 ): Promise<Documento> {
   const res = await api.post(`/productores/${productorId}/documentos`, data);
   return documentoToFrontend(res.data.data);
 }
 
-export async function deleteDocumento(productorId: number, documentoId: number): Promise<void> {
+export async function deleteDocumento(productorId: ProductorId, documentoId: DocumentoId): Promise<void> {
   await api.delete(`/productores/${productorId}/documentos/${documentoId}`);
 }
 
@@ -456,12 +536,12 @@ export async function fetchProductorStats(): Promise<ProductorStats> {
 // ─── Documento Estado ────────────────────────────────────
 
 export async function updateDocumentoEstado(
-  productorId: number,
-  documentoId: number,
-  estado: 'PENDIENTE' | 'VERIFICADO' | 'RECHAZADO',
+  productorId: ProductorId,
+  documentoId: DocumentoId,
+  estado: EstadoDocumento,
 ): Promise<Documento> {
   const res = await api.put(`/productores/${productorId}/documentos/${documentoId}/estado`, { estado });
-  return res.data.data;
+  return documentoToFrontend(res.data.data);
 }
 
 // ─── Fetch all for CSV ───────────────────────────────────

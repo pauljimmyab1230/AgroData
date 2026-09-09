@@ -1,9 +1,17 @@
-import type { Productor } from "../services/productores";
+import type { Productor, EstadoProductor } from "../services/productores";
+
+const mesesCortos = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
 export function formatFecha(fecha?: string): string {
   if (!fecha) return "—";
   const d = new Date(fecha.includes("T") ? fecha : fecha + "T00:00:00");
   return d.toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+export function formatFechaCorta(fecha?: string): string {
+  if (!fecha) return "—";
+  const [y, m, d] = fecha.split("-").map(Number);
+  return `${d} ${mesesCortos[m - 1]} ${y}`;
 }
 
 export function formatKg(peso: number): string {
@@ -15,7 +23,7 @@ export function formatPct(valor: number | undefined): string {
   return `${Intl.NumberFormat("es-PE", { maximumFractionDigits: 2 }).format(valor)}%`;
 }
 
-export function getEstadoProductorBadgeVariant(estado: string): "green" | "yellow" | "gray" {
+export function getEstadoProductorBadgeVariant(estado: EstadoProductor): "green" | "yellow" | "gray" {
   switch (estado) {
     case "ACTIVO":
       return "green";
@@ -27,7 +35,7 @@ export function getEstadoProductorBadgeVariant(estado: string): "green" | "yello
   }
 }
 
-export function getEstadoProductorLabel(estado: string): string {
+export function getEstadoProductorLabel(estado: EstadoProductor): string {
   switch (estado) {
     case "ACTIVO":
       return "Activo";

@@ -1,12 +1,12 @@
 import Joi from 'joi';
 
-const estadoInspeccionEnum = ['PENDIENTE', 'APROBADA', 'NO_CONFORME'];
-const resultadoInspeccionEnum = ['CONFORME', 'CONFORME_CON_OBSERVACIONES', 'NO_CONFORME'];
-const cumplimientoEnum = ['CUMPLE', 'NO_CUMPLE', 'NO_APLICA'];
-const riesgoEnum = ['BAJO', 'MEDIO', 'ALTO'];
-const severidadEnum = ['LEVE', 'MODERADA', 'CRITICA'];
-const estadoNoConformidadEnum = ['PENDIENTE', 'EN_PROCESO', 'CORREGIDA', 'VERIFICADA'];
-const estadoAccionCorrectivaEnum = ['PENDIENTE', 'EN_PROCESO', 'COMPLETADA', 'VERIFICADA'];
+const estadoInspeccionEnum = ['PENDIENTE', 'APROBADA', 'NO_CONFORME'] as const;
+const resultadoInspeccionEnum = ['CONFORME', 'CONFORME_CON_OBSERVACIONES', 'NO_CONFORME'] as const;
+const cumplimientoEnum = ['CUMPLE', 'NO_CUMPLE', 'NO_APLICA'] as const;
+const riesgoEnum = ['BAJO', 'MEDIO', 'ALTO'] as const;
+const severidadEnum = ['LEVE', 'MODERADA', 'CRITICA'] as const;
+const estadoNoConformidadEnum = ['PENDIENTE', 'EN_PROCESO', 'CORREGIDA', 'VERIFICADA'] as const;
+const estadoAccionCorrectivaEnum = ['PENDIENTE', 'EN_PROCESO', 'COMPLETADA', 'VERIFICADA'] as const;
 
 const checklistItemSchema = Joi.object({
   criterio: Joi.string().max(200).required(),
@@ -14,6 +14,15 @@ const checklistItemSchema = Joi.object({
   riesgo: Joi.string().valid(...riesgoEnum).default('BAJO'),
   observacion: Joi.string().allow('', null),
   evidencia: Joi.string().max(500).allow('', null),
+});
+
+const accionCorrectivaSchema = Joi.object({
+  accion: Joi.string().required(),
+  responsable: Joi.string().max(150).required(),
+  fecha_inicio: Joi.date().iso().allow(null),
+  fecha_limite: Joi.date().iso().allow(null),
+  estado: Joi.string().valid(...estadoAccionCorrectivaEnum).default('PENDIENTE'),
+  observaciones: Joi.string().allow('', null),
 });
 
 const noConformidadSchema = Joi.object({
@@ -26,15 +35,7 @@ const noConformidadSchema = Joi.object({
   fecha_compromiso: Joi.date().iso().allow(null),
   estado: Joi.string().valid(...estadoNoConformidadEnum).default('PENDIENTE'),
   accion_correctiva: Joi.string().allow('', null),
-});
-
-const accionCorrectivaSchema = Joi.object({
-  accion: Joi.string().required(),
-  responsable: Joi.string().max(150).required(),
-  fecha_inicio: Joi.date().iso().allow(null),
-  fecha_limite: Joi.date().iso().allow(null),
-  estado: Joi.string().valid(...estadoAccionCorrectivaEnum).default('PENDIENTE'),
-  observaciones: Joi.string().allow('', null),
+  acciones: Joi.array().items(accionCorrectivaSchema),
 });
 
 const evidenciaSchema = Joi.object({
@@ -46,21 +47,21 @@ const evidenciaSchema = Joi.object({
   responsable: Joi.string().max(150).allow('', null),
 });
 
-const historialSchema = Joi.object({
-  titulo: Joi.string().max(200).required(),
-  descripcion: Joi.string().allow('', null),
-  tipo: Joi.string().max(50).required(),
-});
-
 export const createInspeccionSchema = Joi.object({
   codigo: Joi.string().max(20).allow(''),
-  campania_id: Joi.string().uuid().required().messages({ 'any.required': 'La campaña es obligatoria' }),
-  productor_id: Joi.string().uuid().required().messages({ 'any.required': 'El productor es obligatorio' }),
-  parcela_id: Joi.string().uuid().required().messages({ 'any.required': 'La parcela es obligatoria' }),
-  cultivo_id: Joi.string().uuid().allow(null),
-  fecha: Joi.date().iso().required().messages({ 'any.required': 'La fecha es obligatoria' }),
-  inspector: Joi.string().max(150).required().messages({ 'any.required': 'El inspector es obligatorio' }),
-  inspector_id: Joi.string().uuid().allow(null),
+  cultivo_id: Joi.number().integer().positive().required().messages({
+    'any.required': 'El cultivo es obligatorio',
+    'number.base': 'El cultivo debe ser un número',
+    'number.positive': 'El cultivo debe ser un ID válido',
+  }),
+  fecha: Joi.date().iso().required().messages({
+    'any.required': 'La fecha es obligatoria',
+    'date.base': 'La fecha debe ser una fecha válida',
+  }),
+  inspector: Joi.string().max(150).required().messages({
+    'any.required': 'El inspector es obligatorio',
+    'string.max': 'El nombre del inspector no puede exceder 150 caracteres',
+  }),
   estado: Joi.string().valid(...estadoInspeccionEnum).default('PENDIENTE'),
   resultado: Joi.string().valid(...resultadoInspeccionEnum).allow(null),
   latitud: Joi.string().max(30).allow('', null),
@@ -79,20 +80,14 @@ export const createInspeccionSchema = Joi.object({
   nivel_cumplimiento: Joi.string().max(50).allow('', null),
   checklist: Joi.array().items(checklistItemSchema),
   no_conformidades: Joi.array().items(noConformidadSchema),
-  acciones_correctivas: Joi.array().items(accionCorrectivaSchema),
   evidencias: Joi.array().items(evidenciaSchema),
-  historial: Joi.array().items(historialSchema),
 });
 
 export const updateInspeccionSchema = Joi.object({
   codigo: Joi.string().max(20).allow(''),
-  campania_id: Joi.string().uuid(),
-  productor_id: Joi.string().uuid(),
-  parcela_id: Joi.string().uuid(),
-  cultivo_id: Joi.string().uuid().allow(null),
+  cultivo_id: Joi.number().integer().positive(),
   fecha: Joi.date().iso(),
   inspector: Joi.string().max(150),
-  inspector_id: Joi.string().uuid().allow(null),
   estado: Joi.string().valid(...estadoInspeccionEnum),
   resultado: Joi.string().valid(...resultadoInspeccionEnum).allow(null),
   latitud: Joi.string().max(30).allow('', null),
@@ -111,17 +106,13 @@ export const updateInspeccionSchema = Joi.object({
   nivel_cumplimiento: Joi.string().max(50).allow('', null),
   checklist: Joi.array().items(checklistItemSchema),
   no_conformidades: Joi.array().items(noConformidadSchema),
-  acciones_correctivas: Joi.array().items(accionCorrectivaSchema),
   evidencias: Joi.array().items(evidenciaSchema),
-  historial: Joi.array().items(historialSchema),
 }).min(1);
 
 export const getAllInspeccionesSchema = Joi.object({
   search: Joi.string().max(100).allow('', null),
   estado: Joi.string().valid(...estadoInspeccionEnum),
-  campania_id: Joi.string().uuid(),
-  productor_id: Joi.string().uuid(),
-  parcela_id: Joi.string().uuid(),
+  cultivo_id: Joi.number().integer().positive(),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
 });

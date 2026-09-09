@@ -6,7 +6,6 @@ import { EstadoNoConformidadBadge, SeveridadBadge } from "./badges";
 import {
   categoriasNoConformidadOpciones,
   estadosNoConformidadOpciones,
-  responsablesOpciones,
   severidadesOpciones,
   tiposNoConformidadOpciones,
   type EstadoNoConformidad,
@@ -69,6 +68,7 @@ export function NoConformidadesCard({ mode, values }: NoConformidadesCardProps) 
       fechaCompromiso: draft.fechaCompromiso,
       estado: draft.estado,
       accionCorrectiva: draft.accionCorrectiva,
+      acciones: [],
     };
     setNoConformidades((prev) => [...prev, next]);
     setModalOpen(false);
@@ -203,11 +203,12 @@ export function NoConformidadesCard({ mode, values }: NoConformidadesCardProps) 
             />
           </FormField>
           <FormField label="Responsable" required>
-            <Select
-              options={toOptions(responsablesOpciones)}
-              placeholder="Seleccione el responsable"
+            <input
+              type="text"
+              placeholder="Nombre del responsable"
               value={draft.responsable}
-              onChange={(value) => setDraft((prev) => ({ ...prev, responsable: value }))}
+              onChange={(e) => setDraft((prev) => ({ ...prev, responsable: e.target.value }))}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
             />
           </FormField>
           <FormField label="Fecha Compromiso" required>

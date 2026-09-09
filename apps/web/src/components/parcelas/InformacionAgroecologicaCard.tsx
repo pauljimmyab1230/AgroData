@@ -1,7 +1,7 @@
 import { Leaf } from "lucide-react";
 import { Select, Textarea } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
-import { useParcelaForm } from "../../contexts/ParcelaFormContext";
+import { useOptionalParcelaForm } from "../../contexts/ParcelaFormContext";
 import { useCatalogoOptions } from "../../hooks/useCatalogoOptions";
 import {
   disponibilidadAguaOpciones,
@@ -18,7 +18,9 @@ type InformacionAgroecologicaCardProps = {
 
 export function InformacionAgroecologicaCard({ mode, values }: InformacionAgroecologicaCardProps) {
   const editable = mode !== "view";
-  const { data, updateData } = useParcelaForm();
+  const formCtx = useOptionalParcelaForm();
+  const data = formCtx?.data;
+  const updateData = formCtx?.updateData;
 
   const tipoSuelo = useCatalogoOptions("tipos-suelo");
   const fuentesAgua = useCatalogoOptions("fuentes-agua");

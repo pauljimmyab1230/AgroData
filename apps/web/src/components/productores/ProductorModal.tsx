@@ -2,13 +2,14 @@ import { useEffect, useCallback } from "react";
 import { X } from "lucide-react";
 import ProductorCreate from "../../pages/productores/ProductorCreate";
 import ProductorEdit from "../../pages/productores/ProductorEdit";
+import type { ProductorId } from "../../services/productores";
 
 interface ProductorModalProps {
   open: boolean;
   onClose: () => void;
   onSave?: () => void;
   mode: "create" | "edit";
-  productorId?: string;
+  productorId?: ProductorId;
 }
 
 export default function ProductorModal({ open, onClose, onSave, mode, productorId }: ProductorModalProps) {

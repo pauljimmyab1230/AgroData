@@ -304,6 +304,25 @@ export async function fetchParcelas(params?: ParcelasQuery): Promise<{ data: Par
   };
 }
 
+export interface ParcelasStats {
+  total: number;
+  areaTotal: number;
+  productoresUnicos: number;
+  certificadas: number;
+}
+
+export async function fetchParcelasStats(params?: ParcelasQuery): Promise<ParcelasStats> {
+  const query: Record<string, string> = {};
+  if (params?.search) query.search = params.search;
+  if (params?.comunidad) query.comunidad = params.comunidad;
+  if (params?.cultivo) query.cultivo = params.cultivo;
+  if (params?.estado) query.estado = params.estado;
+  if (params?.productorId) query.productor_id = params.productorId;
+
+  const res = await api.get("/parcelas/stats", { params: query });
+  return res.data.data;
+}
+
 export async function fetchParcela(id: string): Promise<Parcela> {
   const res = await api.get(`/parcelas/${id}`);
   return toFrontend(res.data.data);
@@ -321,6 +340,31 @@ export async function updateParcela(id: string, data: Partial<Parcela>): Promise
 
 export async function deleteParcela(id: string): Promise<void> {
   await api.delete(`/parcelas/${id}`);
+}
+
+// ─── Historial ──────────────────────────────────────────────
+
+export interface ParcelaHistorialItem {
+  id: string;
+  parcelaId: string;
+  tipo: string;
+  titulo: string;
+  descripcion: string | null;
+  usuario: string | null;
+  createdAt: string;
+}
+
+export async function fetchParcelaHistorial(parcelaId: string): Promise<ParcelaHistorialItem[]> {
+  const res = await api.get(`/parcelas/${parcelaId}/historial`);
+  return (res.data.data ?? []).map((item: Record<string, unknown>) => ({
+    id: String(item.id),
+    parcelaId: String(item.parcela_id),
+    tipo: item.tipo as string,
+    titulo: item.titulo as string,
+    descripcion: item.descripcion as string | null,
+    usuario: item.usuario as string | null,
+    createdAt: item.created_at as string,
+  }));
 }
 
 // ─── Opciones de productores (para el select del formulario) ─

@@ -24,7 +24,7 @@ export default function RecepcionHeader({ recepcion, actions }: RecepcionHeaderP
           </div>
           <p className="mt-1 text-sm text-gray-500">
             LP: <span className="font-medium text-[#111827]">{recepcion.loteProductor}</span>
-            {" · "}Campaña: <span className="font-medium text-[#111827]">{recepcion.campaniaNombre || "—"}</span>
+            {" · "}Acopio: <span className="font-medium text-[#111827]">{recepcion.acopioCodigo || "—"}</span>
           </p>
           <p className="mt-1 text-sm text-gray-500">
             Fecha: <span className="font-medium text-[#111827]">{formatearFecha(recepcion.fecha)}</span>

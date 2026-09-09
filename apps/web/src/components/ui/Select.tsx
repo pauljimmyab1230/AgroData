@@ -57,7 +57,9 @@ export default function Select({
   }, [options, search]);
 
   const highlightedRef = useRef(highlightedIndex);
-  highlightedRef.current = highlightedIndex;
+  useEffect(() => {
+    highlightedRef.current = highlightedIndex;
+  });
 
   const scrollToHighlighted = useCallback(() => {
     if (highlightedRef.current < 0 || !listRef.current) return;
@@ -183,6 +185,8 @@ export default function Select({
     onChange?.("");
   };
 
+  const listboxId = `select-listbox-${name || "listbox"}`;
+
   const dropdown = isOpen
     ? createPortal(
         <div
@@ -190,6 +194,9 @@ export default function Select({
             (dropdownRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
             (listRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
           }}
+          id={listboxId}
+          role="listbox"
+          aria-label={placeholder}
           style={{
             position: "absolute",
             top: position.top,
@@ -233,7 +240,10 @@ export default function Select({
                   <button
                     key={option.value}
                     type="button"
+                    role="option"
+                    aria-selected={isSelected}
                     data-option
+                    id={`${listboxId}-option-${index}`}
                     onClick={() => handleSelect(option.value)}
                     onMouseEnter={() => setHighlightedIndex(index)}
                     className={`flex w-full items-center justify-between px-4 py-2.5 text-sm transition-colors ${
@@ -265,6 +275,11 @@ export default function Select({
         name={name}
         disabled={disabled}
         required={required}
+        role="combobox"
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
+        aria-controls={isOpen ? listboxId : undefined}
+        aria-activedescendant={highlightedIndex >= 0 ? `${listboxId}-option-${highlightedIndex}` : undefined}
         onClick={() => { if (!disabled) { isOpen ? setIsOpen(false) : openDropdown(); } }}
         onKeyDown={handleKeyDown}
         className={`flex w-full items-center justify-between gap-2 rounded-xl border bg-white px-4 py-2.5 text-left text-sm outline-none transition-all ${

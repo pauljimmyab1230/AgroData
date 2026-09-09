@@ -120,13 +120,15 @@ function DrawLayer({
       group.addLayer(layer);
       onChangedRef.current?.(ringToCoords(polygonRing(layer)));
     };
+
     const handleEdited = (e: L.LeafletEvent) => {
-      const coords: Coord[] = [];
-      (e as L.DrawEvents.Edited).layers.eachLayer((layer) => {
-        coords.push(...ringToCoords(polygonRing(layer as L.Polygon)));
+      const editedLayers = (e as L.DrawEvents.Edited).layers;
+      editedLayers.eachLayer((layer) => {
+        const coords = ringToCoords(polygonRing(layer as L.Polygon));
+        onChangedRef.current?.(coords);
       });
-      onChangedRef.current?.(coords);
     };
+
     const handleDeleted = () => {
       onChangedRef.current?.(null);
     };
@@ -136,10 +138,10 @@ function DrawLayer({
     map.on(L.Draw.Event.DELETED, handleDeleted);
 
     return () => {
-      map.removeControl(control);
       map.off(L.Draw.Event.CREATED, handleCreated);
       map.off(L.Draw.Event.EDITED, handleEdited);
       map.off(L.Draw.Event.DELETED, handleDeleted);
+      map.removeControl(control);
       map.removeLayer(group);
     };
   }, [map, readOnly, initialPoligono]);

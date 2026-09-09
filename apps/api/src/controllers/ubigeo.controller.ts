@@ -1,7 +1,11 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import * as ubigeoService from '../services/ubigeo.service';
 
-export async function getAll(req: Request, res: Response, next: NextFunction) {
+export async function getAll(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const { dpto, prov } = req.query;
     const filters: ubigeoService.UbigeoQuery = {};
@@ -15,7 +19,11 @@ export async function getAll(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-export async function getDepartamentos(_req: Request, res: Response, next: NextFunction) {
+export async function getDepartamentos(
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const data = await ubigeoService.getDepartamentos();
     res.json({ success: true, data });
@@ -24,7 +32,11 @@ export async function getDepartamentos(_req: Request, res: Response, next: NextF
   }
 }
 
-export async function getProvincias(req: Request, res: Response, next: NextFunction) {
+export async function getProvincias(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const { dpto } = req.params;
     if (!dpto) {
@@ -38,7 +50,11 @@ export async function getProvincias(req: Request, res: Response, next: NextFunct
   }
 }
 
-export async function getDistritos(req: Request, res: Response, next: NextFunction) {
+export async function getDistritos(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const { dpto, prov } = req.params;
     if (!dpto || !prov) {
@@ -52,7 +68,11 @@ export async function getDistritos(req: Request, res: Response, next: NextFuncti
   }
 }
 
-export async function getByCodigo(req: Request, res: Response, next: NextFunction) {
+export async function getByCodigo(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const { codigo } = req.params;
     const data = await ubigeoService.getUbigeoByCodigo(codigo);

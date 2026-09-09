@@ -1,15 +1,33 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import api from "../services/api";
+import type { Rol, RolSic } from "@agrodata/types";
 
+// ─── Types ──────────────────────────────────────────────────
 export interface User {
   id: string;
   nombre: string;
   email: string;
-  rol: "ADMIN" | "USER";
+  rol: Rol;
+  rol_sic: RolSic | null;
   activo: boolean;
 }
 
+interface AuthApiResponse {
+  success: boolean;
+  message: string;
+  data: {
+    user: User;
+    token: string;
+  };
+}
+
+interface ProfileApiResponse {
+  success: boolean;
+  data: User;
+}
+
+// ─── Store ──────────────────────────────────────────────────
 interface AuthState {
   user: User | null;
   token: string | null;
@@ -22,7 +40,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       token: null,
       loading: false,
@@ -30,10 +48,11 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string) => {
         set({ loading: true });
         try {
-          const res = await api.post("/auth/login", { email, password });
+          const res = await api.post<AuthApiResponse>("/auth/login", {
+            email,
+            password,
+          });
           const { user, token } = res.data.data;
-          localStorage.setItem("token", token);
-          localStorage.setItem("user", JSON.stringify(user));
           set({ user, token, loading: false });
         } catch (error) {
           set({ loading: false });
@@ -42,26 +61,17 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+        localStorage.removeItem("agrodata-auth");
         set({ user: null, token: null });
       },
 
       loadProfile: async () => {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          set({ loading: false });
-          return;
-        }
         set({ loading: true });
         try {
-          const res = await api.get("/auth/profile");
+          const res = await api.get<ProfileApiResponse>("/auth/profile");
           const user = res.data.data;
-          localStorage.setItem("user", JSON.stringify(user));
-          set({ user, token, loading: false });
+          set({ user, loading: false });
         } catch {
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
           set({ user: null, token: null, loading: false });
         }
       },

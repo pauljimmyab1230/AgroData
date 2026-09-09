@@ -44,6 +44,7 @@ export default function Button({
   className = "",
   disabled,
   as,
+  type = "button",
   ...props
 }: ButtonProps) {
   const base =
@@ -52,7 +53,7 @@ export default function Button({
 
   const content = (
     <>
-      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : iconLeft}
+      {loading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : iconLeft}
       {children}
       {!loading && iconRight}
     </>
@@ -67,7 +68,13 @@ export default function Button({
   }
 
   return (
-    <button className={classes} disabled={disabled || loading} {...(props as ButtonHTMLAttributes<HTMLButtonElement>)}>
+    <button
+      type={type}
+      className={classes}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      {...(props as ButtonHTMLAttributes<HTMLButtonElement>)}
+    >
       {content}
     </button>
   );

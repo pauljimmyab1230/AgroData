@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { Breadcrumb, LoadingSpinner } from "../../components/ui";
+import { LoadingSpinner } from "../../components/ui";
 import { ActividadHeader } from "../../components/actividades/ActividadHeader";
 import { ActividadForm } from "../../components/actividades/ActividadForm";
 import { fetchActividad, tipoActividadLabels, type Actividad } from "../../services/actividades";
@@ -40,14 +40,6 @@ export default function ActividadEdit({ inModal, actividadId: propId, onSave }: 
     <div>
       {!inModal && (
         <>
-          <Breadcrumb
-            items={[
-              { label: "Actividades Agrícolas", to: "/actividades" },
-              { label: actividad.codigo, to: `/actividades/${actividad.id}` },
-              { label: "Editar Actividad" },
-            ]}
-          />
-
           <ActividadHeader
             title="Editar Actividad"
             description={`Actualizando la información de ${actividad.codigo} (${tipoLabel})`}

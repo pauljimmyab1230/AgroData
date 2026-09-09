@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { BadgeCheck, CalendarClock, ClipboardCheck, Plus, TriangleAlert, X } from "lucide-react";
-import { Button, ConfirmDialog, LoadingSpinner, SearchInput, SectionHeader, Select } from "../../components/ui";
+import { Button, ConfirmDialog, FilterSelect, LoadingSpinner, SearchInput, SectionHeader } from "../../components/ui";
 import InspeccionKPI from "../../components/inspecciones/InspeccionKPI";
 import InspeccionTable from "../../components/inspecciones/InspeccionTable";
 import {
@@ -9,8 +9,7 @@ import {
   type Inspeccion,
 } from "../../services/inspecciones";
 import InspeccionModal from "../../components/inspecciones/InspeccionModal";
-
-const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: item }));
+import { toast } from "../../utils/toast";
 
 const estadoLabels: Record<string, string> = {
   PENDIENTE: "Pendiente",
@@ -18,30 +17,8 @@ const estadoLabels: Record<string, string> = {
   NO_CONFORME: "No Conforme",
 };
 
-function FilterSelect({
-  label,
-  placeholder,
-  options,
-  value,
-  onChange,
-}: {
-  label: string;
-  placeholder: string;
-  options: { value: string; label: string }[];
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div className="w-44">
-      <label className="mb-1 block text-xs font-medium text-gray-500">{label}</label>
-      <Select options={options} placeholder={placeholder} value={value} onChange={onChange} />
-    </div>
-  );
-}
-
 export default function InspeccionList() {
   const [search, setSearch] = useState("");
-  const [filtroCampania, setFiltroCampania] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
   const [page, setPage] = useState(1);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -60,7 +37,6 @@ export default function InspeccionList() {
       const result = await fetchInspecciones({
         search: search || undefined,
         estado: filtroEstado || undefined,
-        campania_id: filtroCampania || undefined,
         page,
         limit: 10,
       });
@@ -68,11 +44,11 @@ export default function InspeccionList() {
       setTotal(result.total);
       setTotalPages(result.totalPages);
     } catch {
-      // handled silently
+      toast.error("Error al cargar inspecciones");
     } finally {
       setLoading(false);
     }
-  }, [search, filtroEstado, filtroCampania, page]);
+  }, [search, filtroEstado, page]);
 
   useEffect(() => {
     loadData();
@@ -109,12 +85,10 @@ export default function InspeccionList() {
 
   const hasFilters =
     Boolean(search) ||
-    Boolean(filtroCampania) ||
     Boolean(filtroEstado);
 
   const clearFilters = () => {
     setSearch("");
-    setFiltroCampania("");
     setFiltroEstado("");
     setPage(1);
   };
@@ -132,8 +106,9 @@ export default function InspeccionList() {
       await deleteInspeccion(deleteId);
       setDeleteId(null);
       loadData();
+      toast.success("Inspección eliminada correctamente");
     } catch {
-      // handled silently
+      toast.error("Error al eliminar la inspección");
     }
   };
 
@@ -193,9 +168,9 @@ export default function InspeccionList() {
           currentPage={page}
           totalPages={totalPages}
           onPageChange={setPage}
-          onView={(inspeccion) => setViewId(inspeccion.id)}
-          onEdit={(inspeccion) => setEditId(inspeccion.id)}
-          onDelete={(inspeccion) => setDeleteId(inspeccion.id)}
+          onView={(inspeccion) => setViewId(String(inspeccion.id))}
+          onEdit={(inspeccion) => setEditId(String(inspeccion.id))}
+          onDelete={(inspeccion) => setDeleteId(String(inspeccion.id))}
         />
       )}
 

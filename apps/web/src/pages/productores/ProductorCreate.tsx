@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, ChevronLeft, Save } from "lucide-react";
 import {
-  Breadcrumb,
   Button,
   SectionHeader,
 } from "../../components/ui";
@@ -14,7 +13,8 @@ import { OrganizacionCard } from "../../components/productores/OrganizacionCard"
 import { FamiliarTable } from "../../components/productores/FamiliarTable";
 import { DocumentoUploader } from "../../components/productores/DocumentoUploader";
 import { ProductorFormProvider, useProductorForm } from "../../contexts/ProductorFormContext";
-import { createProductor, updateProductor, createFamiliar, deleteFamiliar } from "../../services/productores";
+import { createProductor, updateProductor, createFamiliar, deleteFamiliar, getApiErrorMessage } from "../../services/productores";
+import type { ProductorId, FamiliarId } from "../../services/productores";
 import { toast } from "../../utils/toast";
 import { useProductorStepper } from "../../hooks/useProductorStepper";
 
@@ -28,10 +28,10 @@ function ProductorCreateForm({ inModal, onSave }: ProductorCreateProps) {
   const navigate = useNavigate();
   const { pasoActual, pasoMaximoAlcanzado, totalPasos, isFirstStep, isLastStep, handleNext, handleBack, handlePasoChange } = useProductorStepper();
   const [saving, setSaving] = useState(false);
-  const [createdId, setCreatedId] = useState<number | null>(null);
-  const [savedFamiliarIds, setSavedFamiliarIds] = useState<Map<number, number>>(new Map());
+  const [createdId, setCreatedId] = useState<ProductorId | null>(null);
+  const [savedFamiliarIds, setSavedFamiliarIds] = useState<Map<number, FamiliarId>>(new Map());
 
-  const syncFamiliares = async (productorId: number) => {
+  const syncFamiliares = async (productorId: ProductorId) => {
     const existingIds = new Set(savedFamiliarIds.values());
     const currentTempIds = new Set(familiares.map(f => f.id).filter(id => id < 0));
 
@@ -67,8 +67,7 @@ function ProductorCreateForm({ inModal, onSave }: ProductorCreateProps) {
           await syncFamiliares(createdId);
           handleNext();
         } catch (err: unknown) {
-          const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Error al guardar. Verifique los datos.";
-          toast.error(msg);
+          toast.error(getApiErrorMessage(err));
         } finally {
           setSaving(false);
         }
@@ -83,8 +82,7 @@ function ProductorCreateForm({ inModal, onSave }: ProductorCreateProps) {
         await syncFamiliares(result.id);
         handleNext();
       } catch (err: unknown) {
-        const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Error al guardar. Verifique los datos.";
-        toast.error(msg);
+        toast.error(getApiErrorMessage(err));
       } finally {
         setSaving(false);
       }
@@ -111,8 +109,6 @@ function ProductorCreateForm({ inModal, onSave }: ProductorCreateProps) {
     <div>
       {!inModal && (
         <>
-          <Breadcrumb items={[{ label: "Productores", to: "/productores" }, { label: "Nuevo Productor" }]} />
-
           <div className="mb-8 flex items-center gap-4">
             <Button variant="ghost" as="link" to="/productores" iconLeft={<ArrowLeft className="h-4 w-4" />}>
               Volver
@@ -141,7 +137,7 @@ function ProductorCreateForm({ inModal, onSave }: ProductorCreateProps) {
 
         {pasoActual === 2 && <FamiliarTable mode="create" />}
 
-        {pasoActual === 3 && <DocumentoUploader mode="create" productorId={createdId || undefined} />}
+        {pasoActual === 3 && <DocumentoUploader mode="create" productorId={createdId} />}
       </div>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm">
