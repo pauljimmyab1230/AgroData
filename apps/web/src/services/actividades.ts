@@ -21,6 +21,8 @@ export interface ActividadManoObra {
   funcion?: string;
   horas?: number | null;
   jornales?: number | null;
+  costoJornal?: number | null;
+  costoTotal?: number | null;
   observaciones?: string;
 }
 
@@ -29,6 +31,8 @@ export interface ActividadMaquinaria {
   equipo: string;
   operador?: string;
   horasUso?: number | null;
+  costoHora?: number | null;
+  costoTotal?: number | null;
   combustible?: number | null;
   observaciones?: string;
 }
@@ -39,6 +43,9 @@ export interface Actividad {
   cultivoId: number;
   cultivoNombre: string;
   cultivoCodigo: string;
+  parcelaId: number;
+  parcelaNombre: string;
+  parcelaCodigo: string;
   fecha: string;
   tipoActividad: string;
   descripcion: string;
@@ -69,7 +76,12 @@ interface ActividadDTO {
   id: number;
   codigo: string;
   cultivo_id: number;
-  cultivo: { id: number; cultivo: string; codigo: string } | null;
+  cultivo: {
+    id: number;
+    cultivo: string;
+    codigo: string;
+    parcela: { id: number; nombre: string; codigo: string } | null;
+  } | null;
   fecha: string;
   tipo_actividad: string;
   descripcion: string | null;
@@ -96,23 +108,30 @@ interface ActividadDTO {
   }>;
   mano_obra: Array<{
     id?: string; trabajador: string; funcion: string | null;
-    jornales: number | null; horas: number | null; observaciones: string | null;
+    jornales: number | null; horas: number | null;
+    costo_jornal: number | null; costo_total: number | null;
+    observaciones: string | null;
   }>;
   maquinaria: Array<{
     id?: string; equipo: string; operador: string | null;
-    horas_uso: number | null; combustible: number | null; observaciones: string | null;
+    horas_uso: number | null; costo_hora: number | null; costo_total: number | null;
+    combustible: number | null; observaciones: string | null;
   }>;
   created_at: string;
   updated_at: string;
 }
 
 function toFrontend(dto: ActividadDTO): Actividad {
+  const parcela = dto.cultivo?.parcela;
   return {
     id: dto.id,
     codigo: dto.codigo,
     cultivoId: dto.cultivo_id,
     cultivoNombre: dto.cultivo?.cultivo ?? "",
     cultivoCodigo: dto.cultivo?.codigo ?? "",
+    parcelaId: parcela?.id ?? 0,
+    parcelaNombre: parcela?.nombre ?? "",
+    parcelaCodigo: parcela?.codigo ?? "",
     fecha: dto.fecha?.split("T")[0] ?? "",
     tipoActividad: dto.tipo_actividad,
     descripcion: dto.descripcion ?? "",
@@ -141,11 +160,14 @@ function toFrontend(dto: ActividadDTO): Actividad {
     })),
     manoObra: (dto.mano_obra ?? []).map((m) => ({
       id: m.id, trabajador: m.trabajador, funcion: m.funcion ?? undefined,
-      horas: m.horas, jornales: m.jornales, observaciones: m.observaciones ?? undefined,
+      horas: m.horas, jornales: m.jornales,
+      costoJornal: m.costo_jornal, costoTotal: m.costo_total,
+      observaciones: m.observaciones ?? undefined,
     })),
     maquinaria: (dto.maquinaria ?? []).map((m) => ({
       id: m.id, equipo: m.equipo, operador: m.operador ?? undefined,
-      horasUso: m.horas_uso, combustible: m.combustible,
+      horasUso: m.horas_uso, costoHora: m.costo_hora, costoTotal: m.costo_total,
+      combustible: m.combustible,
       observaciones: m.observaciones ?? undefined,
     })),
     createdAt: dto.created_at,
@@ -184,11 +206,15 @@ function toBackend(data: Partial<Actividad>): Record<string, unknown> {
   }));
   if (data.manoObra !== undefined) out.mano_obra = data.manoObra.map((m) => ({
     id: m.id, trabajador: m.trabajador, funcion: m.funcion || null,
-    horas: m.horas, jornales: m.jornales, observaciones: m.observaciones || null,
+    horas: m.horas, jornales: m.jornales,
+    costo_jornal: m.costoJornal,
+    costo_total: m.costoTotal,
+    observaciones: m.observaciones || null,
   }));
   if (data.maquinaria !== undefined) out.maquinaria = data.maquinaria.map((m) => ({
     id: m.id, equipo: m.equipo, operador: m.operador || null,
-    horas_uso: m.horasUso, combustible: m.combustible, observaciones: m.observaciones || null,
+    horas_uso: m.horasUso, costo_hora: m.costoHora, costo_total: m.costoTotal,
+    combustible: m.combustible, observaciones: m.observaciones || null,
   }));
   return out;
 }
@@ -247,6 +273,8 @@ export async function deleteActividad(id: string): Promise<void> {
 export type ActividadFormData = {
   codigo: string;
   fecha: string;
+  parcelaId: string;
+  parcelaNombre: string;
   cultivoId: string;
   cultivo: string;
   responsableTecnico: string;
@@ -276,6 +304,8 @@ export function actividadToFormData(a: Actividad): ActividadFormData {
   return {
     codigo: a.codigo,
     fecha: a.fecha,
+    parcelaId: String(a.parcelaId ?? ""),
+    parcelaNombre: a.parcelaNombre,
     cultivoId: String(a.cultivoId ?? ""),
     cultivo: a.cultivoNombre,
     responsableTecnico: a.responsableTecnico,
@@ -305,6 +335,8 @@ export function actividadToFormData(a: Actividad): ActividadFormData {
 export const emptyActividad: ActividadFormData = {
   codigo: "",
   fecha: "",
+  parcelaId: "",
+  parcelaNombre: "",
   cultivoId: "",
   cultivo: "",
   responsableTecnico: "",
@@ -368,12 +400,16 @@ export function formDataToActividad(data: ActividadFormData): Partial<Actividad>
       funcion: m.funcion,
       horas: m.horas,
       jornales: m.jornales,
+      costoJornal: m.costoJornal,
+      costoTotal: m.costoTotal,
       observaciones: m.observaciones,
     })),
     maquinaria: data.maquinaria.map((m) => ({
       equipo: m.equipo,
       operador: m.operador,
       horasUso: m.horasUso,
+      costoHora: m.costoHora,
+      costoTotal: m.costoTotal,
       combustible: m.combustible,
       observaciones: m.observaciones,
     })),

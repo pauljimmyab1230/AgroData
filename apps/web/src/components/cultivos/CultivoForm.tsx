@@ -45,13 +45,18 @@ export default function CultivoForm({ mode, values, inModal, onSave }: CultivoFo
     if (!formData.campaniaId) newErrors.campaniaId = "La campaña es obligatoria";
     if (!formData.parcelaId) newErrors.parcelaId = "La parcela es obligatoria";
     if (!formData.cultivo?.trim()) newErrors.cultivo = "El cultivo es obligatorio";
+    if (!formData.variedad?.trim()) newErrors.variedad = "La variedad es obligatoria";
+    if (!formData.areaSembrada || formData.areaSembrada <= 0) newErrors.areaSembrada = "El área sembrada es obligatoria";
+    if (!formData.fechaSiembra) newErrors.fechaSiembra = "La fecha de siembra es obligatoria";
+    if (!formData.metodoSiembra?.trim()) newErrors.metodoSiembra = "El método de siembra es obligatorio";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSave = async () => {
     if (!validate()) {
-      toast.error("Complete los campos obligatorios");
+      const msgs = Object.values(errors);
+      toast.error(msgs.length ? `Campos obligatorios:\n• ${msgs.join("\n• ")}` : "Complete los campos obligatorios");
       return;
     }
     try {
@@ -84,7 +89,7 @@ export default function CultivoForm({ mode, values, inModal, onSave }: CultivoFo
   return (
     <div className="space-y-6">
       <DatosGeneralesCard mode={mode} values={formData} onChange={updateField} errors={errors} />
-      <InformacionCultivoCard mode={mode} values={formData} onChange={updateField} />
+      <InformacionCultivoCard mode={mode} values={formData} onChange={updateField} errors={errors} />
       <InformacionTecnicaCard mode={mode} values={formData} onChange={updateField} />
       <EstimacionProduccionCard mode={mode} values={formData} onChange={updateField} />
       <ObservacionesCard mode={mode} value={formData.observaciones} onChange={(v) => updateField({ observaciones: v })} />

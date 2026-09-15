@@ -120,8 +120,10 @@ export const getById = async (id: string): Promise<RecepcionResponse> => {
 };
 
 export const create = async (data: RecepcionCreateInput, userId?: string) => {
-  // Validate acopio exists
-  await ensureAcopioExists(data.acopio_id);
+  // Validate acopio exists if provided
+  if (data.acopio_id) {
+    await ensureAcopioExists(data.acopio_id);
+  }
 
   // Generate or validate codigo
   let codigo = '';

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Plus, Pencil, Eye, Trash2, MapPin, Ruler, Users, BadgeCheck, X, Download } from "lucide-react";
 import {
   Badge,
@@ -15,10 +15,10 @@ import { useParcelas, useDeleteParcela, useParcelasStats } from "../../hooks/que
 import { fetchParcelas, type Parcela } from "../../services/parcelas";
 import {
   comunidadesOpciones,
-  cultivosOpciones,
   estadosOpciones,
   toOptions,
 } from "../../constants/parcelaOpciones";
+import { fetchCatalogoActivos } from "../../services/catalogos";
 import ParcelaModal from "../../components/parcelas/ParcelaModal";
 import { toast } from "../../utils/toast";
 
@@ -56,6 +56,13 @@ export default function ParcelaList() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [viewId, setViewId] = useState<string | null>(null);
+  const [cultivosOptions, setCultivosOptions] = useState<{ value: string; label: string }[]>([]);
+
+  useEffect(() => {
+    fetchCatalogoActivos("tipos-cultivo")
+      .then((items) => setCultivosOptions(items.map((i) => ({ value: i.nombre, label: i.nombre }))))
+      .catch(() => {});
+  }, []);
 
   const filters = useMemo(() => ({
     search: search || undefined,
@@ -286,7 +293,7 @@ export default function ParcelaList() {
         <FilterSelect
           label="Cultivo"
           placeholder="Todos"
-          options={toOptions(cultivosOpciones)}
+          options={cultivosOptions}
           value={filtroCultivo}
           onChange={(val) => {
             setFiltroCultivo(val);

@@ -4,11 +4,14 @@ import { DatePicker, Input, Select } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import type { Inspeccion } from "../../services/inspecciones";
 import { useUsuariosBasic } from "../../services/usuarios";
+import { fetchCultivos, type Cultivo } from "../../services/cultivos";
 import api from "../../services/api";
 
 type InformacionGeneralCardProps = {
   mode: FormMode;
   values?: Partial<Inspeccion>;
+  onChange?: (patch: Partial<Inspeccion>) => void;
+  errors?: Record<string, string>;
 };
 
 const parseDate = (s?: string) => (s ? new Date(s + "T00:00:00") : null);
@@ -18,14 +21,14 @@ interface SelectOption {
   label: string;
 }
 
-export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardProps) {
+export function InformacionGeneralCard({ mode, values, onChange, errors }: InformacionGeneralCardProps) {
   const editable = mode !== "view";
   const [fecha, setFecha] = useState<Date | null>(() => parseDate(values?.fecha));
   const { usuarios: inspectores } = useUsuariosBasic("INSPECTOR");
   const [campanias, setCampanias] = useState<SelectOption[]>([]);
   const [productores, setProductores] = useState<SelectOption[]>([]);
   const [parcelas, setParcelas] = useState<SelectOption[]>([]);
-  const [cultivos, setCultivos] = useState<SelectOption[]>([]);
+  const [allCultivos, setAllCultivos] = useState<Cultivo[]>([]);
   const [selectedProductorId, setSelectedProductorId] = useState<string>(values?.productorId ? String(values.productorId) : "");
 
   const inspectoresOptions = inspectores.map((u) => ({ value: u.nombre, label: u.nombre }));
@@ -52,9 +55,15 @@ export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardP
   }, [editable]);
 
   useEffect(() => {
+    if (!editable) return;
+    fetchCultivos({ limit: 500 })
+      .then((res) => setAllCultivos(res.data))
+      .catch(() => {});
+  }, [editable]);
+
+  useEffect(() => {
     if (!editable || !selectedProductorId) {
       setParcelas([]);
-      setCultivos([]);
       return;
     }
     api.get("/parcelas", { params: { productor_id: selectedProductorId, limit: 200 } })
@@ -69,6 +78,16 @@ export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardP
       .catch(() => setParcelas([]));
   }, [editable, selectedProductorId]);
 
+  const handleParcelaChange = (parcelaId: string) => {
+    onChange?.({ parcelaId: Number(parcelaId), cultivoId: 0 });
+  };
+
+  const cultivosOptions = values?.parcelaId
+    ? allCultivos
+        .filter((c) => String(c.parcelaId) === String(values.parcelaId))
+        .map((c) => ({ value: String(c.id), label: `${c.codigo} - ${c.cultivo}` }))
+    : [];
+
   return (
     <CardShell>
       <CardHeader
@@ -82,7 +101,7 @@ export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardP
           <Input placeholder="Se genera automáticamente" disabled value={editable ? values?.codigo : undefined} />
         </Field>
 
-        <Field label="Fecha de Inspección" mode={mode} value={values?.fecha}>
+        <Field label="Fecha de Inspección" mode={mode} value={values?.fecha} required error={errors?.fecha}>
           <DatePicker selected={fecha} onChange={(date) => setFecha(date)} disabled={!editable} />
         </Field>
 
@@ -91,6 +110,7 @@ export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardP
             options={campanias}
             placeholder="Seleccione"
             value={values?.campaniaId ? String(values.campaniaId) : undefined}
+            onChange={(val) => onChange?.({ campaniaId: Number(val) })}
           />
         </Field>
 
@@ -102,34 +122,37 @@ export function InformacionGeneralCard({ mode, values }: InformacionGeneralCardP
             onChange={(val) => {
               setSelectedProductorId(val);
               setParcelas([]);
-              setCultivos([]);
+              onChange?.({ productorId: Number(val), parcelaId: 0, cultivoId: 0 });
             }}
           />
         </Field>
 
-        <Field label="Parcela" mode={mode} value={values?.parcelaNombre}>
+        <Field label="Parcela" mode={mode} value={values?.parcelaNombre} required error={errors?.parcelaId}>
           <Select
             options={parcelas}
             placeholder={selectedProductorId ? "Seleccione" : "Primero seleccione un productor"}
             value={values?.parcelaId ? String(values.parcelaId) : undefined}
             disabled={!selectedProductorId}
+            onChange={handleParcelaChange}
           />
         </Field>
 
         <Field label="Cultivo" mode={mode} value={values?.cultivoNombre}>
           <Select
-            options={cultivos}
-            placeholder={values?.parcelaId ? "Seleccione" : "Primero seleccione una parcela"}
+            options={cultivosOptions}
+            placeholder={!values?.parcelaId ? "Primero seleccione una parcela" : "Seleccione"}
             value={values?.cultivoId ? String(values.cultivoId) : undefined}
             disabled={!values?.parcelaId}
+            onChange={(val) => onChange?.({ cultivoId: Number(val) })}
           />
         </Field>
 
-        <Field label="Inspector" mode={mode} value={values?.inspector}>
+        <Field label="Inspector" mode={mode} value={values?.inspector} required error={errors?.inspector}>
           <Select
             options={inspectoresOptions}
             placeholder="Seleccione"
             value={editable ? values?.inspector : undefined}
+            onChange={(val) => onChange?.({ inspector: val })}
           />
         </Field>
       </div>

@@ -72,3 +72,20 @@ export const remove = async (
     next(error);
   }
 };
+
+export const getGlobalStats = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const stats = await inspeccionesService.getGlobalStats({
+      search: req.query.search as string | undefined,
+      estado: req.query.estado as string | undefined,
+      cultivo_id: req.query.cultivo_id as string | undefined,
+    });
+    res.status(200).json({ success: true, data: stats });
+  } catch (error) {
+    next(error);
+  }
+};

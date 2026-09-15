@@ -39,6 +39,8 @@ const emptyDraft: EquipoDraft = {
   equipo: "",
   operador: "",
   horasUso: null,
+  costoHora: null,
+  costoTotal: null,
   combustible: null,
   observaciones: "",
 };
@@ -135,7 +137,34 @@ export function MaquinariaCard({ mode, value, onChange }: MaquinariaCardProps) {
               inputMode="decimal"
               placeholder="Ej. 3.5"
               value={draft.horasUso ?? ""}
-              onChange={(e) => setDraft((d) => ({ ...d, horasUso: e.target.value ? Number(e.target.value) : null }))}
+              onChange={(e) => {
+                const horasUso = e.target.value ? Number(e.target.value) : null;
+                const costoTotal = horasUso != null && draft.costoHora != null ? horasUso * draft.costoHora : null;
+                setDraft((d) => ({ ...d, horasUso, costoTotal }));
+              }}
+            />
+          </FormField>
+
+          <FormField label="Costo por Hora (S/)" required>
+            <Input
+              type="text"
+              inputMode="decimal"
+              placeholder="Ej. 80"
+              value={draft.costoHora ?? ""}
+              onChange={(e) => {
+                const costoHora = e.target.value ? Number(e.target.value) : null;
+                const costoTotal = draft.horasUso != null && costoHora != null ? draft.horasUso * costoHora : null;
+                setDraft((d) => ({ ...d, costoHora, costoTotal }));
+              }}
+            />
+          </FormField>
+
+          <FormField label="Costo Total Equipo (S/)" className="sm:col-span-2">
+            <Input
+              type="text"
+              value={draft.costoTotal ?? ""}
+              disabled
+              placeholder="Se calcula automáticamente"
             />
           </FormField>
 

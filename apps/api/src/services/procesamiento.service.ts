@@ -60,11 +60,11 @@ export const getAll = async (filters: ProcesamientoFilters) => {
 
   if (filters.search) {
     where.OR = [
-      { codigo: { contains: filters.search, mode: 'insensitive' } },
-      { producto: { contains: filters.search, mode: 'insensitive' } },
-      { responsable: { contains: filters.search, mode: 'insensitive' } },
-      { planta: { contains: filters.search, mode: 'insensitive' } },
-      { observaciones: { contains: filters.search, mode: 'insensitive' } },
+      { codigo: { contains: filters.search } },
+      { producto: { contains: filters.search } },
+      { responsable: { contains: filters.search } },
+      { planta: { contains: filters.search } },
+      { observaciones: { contains: filters.search } },
     ];
   }
 

@@ -4,12 +4,11 @@ import { Input, Select } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import { useOptionalParcelaForm } from "../../contexts/ParcelaFormContext";
 import {
-  cultivosOpciones,
   estadosOpciones,
-  toOptions,
   type ParcelaSelectOption,
 } from "../../constants/parcelaOpciones";
 import { fetchProductoresOpciones } from "../../services/parcelas";
+import { fetchCatalogoActivos } from "../../services/catalogos";
 import type { Parcela } from "../../services/parcelas";
 
 type DatosGeneralesCardProps = {
@@ -25,12 +24,16 @@ export function DatosGeneralesCard({ mode, values }: DatosGeneralesCardProps) {
   const errors = formCtx?.errors;
   const clearFieldError = formCtx?.clearFieldError;
   const [productores, setProductores] = useState<ParcelaSelectOption[]>([]);
+  const [cultivosOptions, setCultivosOptions] = useState<ParcelaSelectOption[]>([]);
 
   useEffect(() => {
     if (!editable) return;
     fetchProductoresOpciones()
       .then(setProductores)
       .catch(console.error);
+    fetchCatalogoActivos("tipos-cultivo")
+      .then((items) => setCultivosOptions([{ value: "", label: "Seleccione..." }, ...items.map((i) => ({ value: i.nombre, label: i.nombre }))]))
+      .catch(() => {});
   }, [editable]);
 
   const str = (val: unknown): string => (typeof val === "string" ? val : "");
@@ -119,7 +122,7 @@ export function DatosGeneralesCard({ mode, values }: DatosGeneralesCardProps) {
 
         <Field label="Cultivo Principal" mode={mode} value={values?.cultivo} required error={errors?.cultivo}>
           <Select
-            options={toOptions(cultivosOpciones)}
+            options={cultivosOptions}
             placeholder="Seleccione"
             value={display("cultivo")}
             onChange={(val) => {

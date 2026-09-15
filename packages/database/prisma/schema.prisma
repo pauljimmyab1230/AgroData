@@ -627,6 +627,8 @@ model Mano_de_obra {
   funcion       String?  @db.VarChar(100)
   jornales      Decimal? @db.Decimal(5, 2)
   horas         Decimal? @db.Decimal(5, 2)
+  costo_jornal  Decimal? @db.Decimal(10, 2)
+  costo_total   Decimal? @db.Decimal(10, 2)
   observaciones String?  @db.Text
   created_at    DateTime @default(now()) @db.DateTime(3)
   updated_at    DateTime @updatedAt @db.DateTime(3)
@@ -639,6 +641,8 @@ model Maquinaria {
   equipo        String   @db.VarChar(150)
   operador      String?  @db.VarChar(150)
   horas_uso     Decimal? @db.Decimal(5, 2)
+  costo_hora    Decimal? @db.Decimal(10, 2)
+  costo_total   Decimal? @db.Decimal(10, 2)
   combustible   Decimal? @db.Decimal(10, 2)
   observaciones String?  @db.Text
   created_at    DateTime @default(now()) @db.DateTime(3)

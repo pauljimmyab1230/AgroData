@@ -12,6 +12,7 @@ export const getAll = async (
       search: req.query.search as string | undefined,
       estado: req.query.estado as string | undefined,
       anio_agricola: req.query.anio_agricola as string | undefined,
+      responsable: req.query.responsable as string | undefined,
       page: Number(req.query.page) || 1,
       limit: Number(req.query.limit) || 20,
     });

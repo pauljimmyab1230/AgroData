@@ -120,7 +120,7 @@ export const getAllProcesamientosSchema = Joi.object({
   linea_procesamiento: Joi.string().valid(...lineaProcesamientoEnum),
   recepcion_id: Joi.number().integer().positive(),
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(20),
+  limit: Joi.number().integer().min(1).max(500).default(20),
 });
 
 // ─── Additional Schemas ────────────────────────────────────

@@ -87,6 +87,7 @@ export const getAllCampaniasSchema = Joi.object({
   search: Joi.string().max(100).trim().allow('', null),
   estado: Joi.string().valid(...estadoCampaniaEnum),
   anio_agricola: Joi.string().max(10).allow('', null),
+  responsable: Joi.string().max(150).allow('', null),
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(20),
+  limit: Joi.number().integer().min(1).max(500).default(20),
 });

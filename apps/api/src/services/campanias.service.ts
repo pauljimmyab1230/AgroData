@@ -48,6 +48,7 @@ export const getAll = async (
     search?: string;
     estado?: string;
     anio_agricola?: string;
+    responsable?: string;
     page?: number;
     limit?: number;
   },
@@ -56,13 +57,14 @@ export const getAll = async (
 
   if (filters.estado) where.estado = filters.estado;
   if (filters.anio_agricola) where.anio_agricola = filters.anio_agricola;
+  if (filters.responsable) where.responsable = { contains: filters.responsable };
 
   if (filters.search) {
     where.OR = [
-      { codigo: { contains: filters.search, mode: 'insensitive' } },
-      { nombre: { contains: filters.search, mode: 'insensitive' } },
-      { anio_agricola: { contains: filters.search, mode: 'insensitive' } },
-      { responsable: { contains: filters.search, mode: 'insensitive' } },
+      { codigo: { contains: filters.search } },
+      { nombre: { contains: filters.search } },
+      { anio_agricola: { contains: filters.search } },
+      { responsable: { contains: filters.search } },
     ];
   }
 
@@ -266,10 +268,10 @@ export const getGlobalStats = async (filters?: {
 
   if (filters?.search) {
     where.OR = [
-      { codigo: { contains: filters.search, mode: 'insensitive' } },
-      { nombre: { contains: filters.search, mode: 'insensitive' } },
-      { anio_agricola: { contains: filters.search, mode: 'insensitive' } },
-      { responsable: { contains: filters.search, mode: 'insensitive' } },
+      { codigo: { contains: filters.search } },
+      { nombre: { contains: filters.search } },
+      { anio_agricola: { contains: filters.search } },
+      { responsable: { contains: filters.search } },
     ];
   }
 

@@ -47,12 +47,12 @@ export const getAllKardexSchema = Joi.object({
   estado: Joi.string().valid(...estadoKardexEnum),
   categoria: Joi.string().max(100).allow('', null),
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(20),
+  limit: Joi.number().integer().min(1).max(500).default(20),
 });
 
 export const getMovimientosSchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(50),
+  limit: Joi.number().integer().min(1).max(500).default(50),
 });
 
 export const addMovimientoSchema = Joi.object({

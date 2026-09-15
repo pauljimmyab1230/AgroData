@@ -1,14 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sprout } from "lucide-react";
 import { DatePicker, Input, Select } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import {
-  cultivosOpciones,
   metodosSiembraValues,
   variedadesOpciones,
   estadosCultivoValues,
   type Cultivo,
 } from "../../services/cultivos";
+import { fetchCatalogoActivos } from "../../services/catalogos";
 
 const parseDate = (s?: string) => (s ? new Date(s + "T00:00:00") : null);
 
@@ -16,10 +16,18 @@ type InformacionCultivoCardProps = {
   mode: FormMode;
   values?: Partial<Cultivo>;
   onChange?: (patch: Partial<Cultivo>) => void;
+  errors?: Record<string, string>;
 };
 
-export function InformacionCultivoCard({ mode, values, onChange }: InformacionCultivoCardProps) {
+export function InformacionCultivoCard({ mode, values, onChange, errors }: InformacionCultivoCardProps) {
   const [fechaSiembra, setFechaSiembra] = useState<Date | null>(parseDate(values?.fechaSiembra));
+  const [cultivosOptions, setCultivosOptions] = useState<{ value: string; label: string }[]>([]);
+
+  useEffect(() => {
+    fetchCatalogoActivos("tipos-cultivo")
+      .then((items) => setCultivosOptions([{ value: "", label: "Seleccione..." }, ...items.map((i) => ({ value: i.nombre, label: i.nombre }))]))
+      .catch(() => {});
+  }, []);
 
   return (
     <CardShell>
@@ -30,9 +38,9 @@ export function InformacionCultivoCard({ mode, values, onChange }: InformacionCu
       />
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <Field label="Cultivo" mode={mode} value={values?.cultivo} required>
+        <Field label="Cultivo" mode={mode} value={values?.cultivo} required error={errors?.cultivo}>
           <Select
-            options={cultivosOpciones.map((c) => ({ value: c, label: c }))}
+            options={cultivosOptions}
             placeholder="Seleccione el cultivo"
             value={values?.cultivo}
             onChange={(val) => onChange?.({ cultivo: val })}
@@ -40,7 +48,7 @@ export function InformacionCultivoCard({ mode, values, onChange }: InformacionCu
           />
         </Field>
 
-        <Field label="Variedad" mode={mode} value={values?.variedad} required>
+        <Field label="Variedad" mode={mode} value={values?.variedad} required error={errors?.variedad}>
           <Select
             options={variedadesOpciones.map((v) => ({ value: v, label: v }))}
             placeholder="Seleccione la variedad"
@@ -50,7 +58,7 @@ export function InformacionCultivoCard({ mode, values, onChange }: InformacionCu
           />
         </Field>
 
-        <Field label="Área Sembrada (ha)" mode={mode} value={values?.areaSembrada?.toFixed(2)} required>
+        <Field label="Área Sembrada (ha)" mode={mode} value={values?.areaSembrada?.toFixed(2)} required error={errors?.areaSembrada}>
           <Input
             type="number"
             min="0"
@@ -62,7 +70,7 @@ export function InformacionCultivoCard({ mode, values, onChange }: InformacionCu
           />
         </Field>
 
-        <Field label="Fecha de Siembra" mode={mode} value={values?.fechaSiembra} required>
+        <Field label="Fecha de Siembra" mode={mode} value={values?.fechaSiembra} required error={errors?.fechaSiembra}>
           <DatePicker
             selected={fechaSiembra}
             onChange={(d) => {
@@ -72,7 +80,7 @@ export function InformacionCultivoCard({ mode, values, onChange }: InformacionCu
           />
         </Field>
 
-        <Field label="Método de Siembra" mode={mode} value={values?.metodoSiembra} required>
+        <Field label="Método de Siembra" mode={mode} value={values?.metodoSiembra} required error={errors?.metodoSiembra}>
           <Select
             options={metodosSiembraValues.map((v) => ({ value: v, label: v }))}
             placeholder="Seleccione el método"

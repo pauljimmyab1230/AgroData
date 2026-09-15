@@ -34,7 +34,7 @@ export const getAllCatalogosSchema = Joi.object({
   search: Joi.string().max(100).allow('', null),
   activo: Joi.boolean(),
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(50),
+  limit: Joi.number().integer().min(1).max(500).default(50),
 });
 
 export const catalogoTipoSchema = Joi.object({

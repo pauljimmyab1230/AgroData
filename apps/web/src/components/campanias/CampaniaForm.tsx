@@ -1,24 +1,20 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, ChevronLeft, Info, Activity, Settings, MessageSquare, Save } from "lucide-react";
-import { Button, Stepper, type StepperStep } from "../ui";
-import type { FormMode } from "../shared/formControls";
-import { DatosGeneralesCard } from "./DatosGeneralesCard";
-import { CampaniaStatusCard } from "./CampaniaStatusCard";
-import { ConfiguracionCard } from "./ConfiguracionCard";
-import { ObservacionesCard } from "./ObservacionesCard";
+import { Save } from "lucide-react";
+import { Button, DatePicker, Input, Select, Textarea } from "../ui";
 import { useCreateCampania, useUpdateCampania } from "../../hooks/queries";
 import type { Campania, CampaniaFormData } from "../../services/campanias";
+import { aniosAgricolas } from "../../constants/campanias";
 import { toast } from "../../utils/toast";
 
-const pasos: StepperStep[] = [
-  { id: 1, label: "Información General", icon: Info },
-  { id: 2, label: "Estado", icon: Activity },
-  { id: 3, label: "Configuración", icon: Settings },
-  { id: 4, label: "Observaciones", icon: MessageSquare },
-];
+const toOptions = (items: string[]) => items.map((item) => ({ value: item, label: item }));
 
-const totalPasos = pasos.length;
+const estadoOptions = [
+  { value: "PLANIFICADA", label: "Planificada" },
+  { value: "ACTIVA", label: "Activa" },
+  { value: "FINALIZADA", label: "Finalizada" },
+  { value: "CANCELADA", label: "Cancelada" },
+];
 
 const emptyForm: CampaniaFormData = {
   codigo: "",
@@ -67,14 +63,13 @@ function campaniaToForm(c: Campania): CampaniaFormData {
 }
 
 type CampaniaFormProps = {
-  mode: Extract<FormMode, "create" | "edit">;
+  mode: "create" | "edit";
   values?: Campania;
   inModal?: boolean;
   onSave?: () => void;
 };
 
 export function CampaniaForm({ mode, values, inModal, onSave }: CampaniaFormProps) {
-  const [paso, setPaso] = useState(1);
   const [formData, setFormData] = useState<CampaniaFormData>(() =>
     values ? campaniaToForm(values) : { ...emptyForm },
   );
@@ -96,104 +91,128 @@ export function CampaniaForm({ mode, values, inModal, onSave }: CampaniaFormProp
     });
   };
 
-  const validatePaso = (p: number): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (p === 1) {
-      if (!formData.nombre.trim()) newErrors.nombre = "El nombre es obligatorio";
-      if (!formData.anioAgricola) newErrors.anioAgricola = "El año agrícola es obligatorio";
-      if (!formData.fechaInicio) newErrors.fechaInicio = "La fecha de inicio es obligatoria";
-      if (!formData.fechaFin) newErrors.fechaFin = "La fecha de fin es obligatoria";
-      if (!formData.responsable.trim()) newErrors.responsable = "El responsable es obligatorio";
-      if (!formData.tecnicoCoordinador.trim()) newErrors.tecnicoCoordinador = "El técnico coordinador es obligatorio";
-      if (!formData.objetivo.trim()) newErrors.objetivo = "El objetivo es obligatorio";
-      if (formData.fechaInicio && formData.fechaFin && formData.fechaInicio > formData.fechaFin) {
-        newErrors.fechaFin = "La fecha de fin debe ser posterior a la de inicio";
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
   const validate = (): boolean => {
-    return validatePaso(1);
-  };
-
-  const handleNext = () => {
-    if (paso === 1 && !validatePaso(1)) return;
-    setPaso((p) => Math.min(totalPasos, p + 1));
+    const e: Record<string, string> = {};
+    if (!formData.nombre.trim()) e.nombre = "El nombre es obligatorio";
+    if (!formData.anioAgricola) e.anioAgricola = "El año agrícola es obligatorio";
+    if (!formData.fechaInicio) e.fechaInicio = "La fecha de inicio es obligatoria";
+    if (!formData.fechaFin) e.fechaFin = "La fecha de fin es obligatoria";
+    if (!formData.responsable.trim()) e.responsable = "El responsable es obligatorio";
+    if (!formData.tecnicoCoordinador.trim()) e.tecnicoCoordinador = "El técnico coordinador es obligatorio";
+    if (!formData.objetivo.trim()) e.objetivo = "El objetivo es obligatorio";
+    if (formData.fechaInicio && formData.fechaFin && formData.fechaInicio > formData.fechaFin) {
+      e.fechaFin = "La fecha de fin debe ser posterior a la de inicio";
+    }
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
   const handleSave = async () => {
-    if (!validate()) return;
+    if (!validate()) {
+      toast.error("Complete los campos obligatorios");
+      return;
+    }
     try {
       if (mode === "create") {
         await createMutation.mutateAsync(formData);
         toast.success("Campaña creada exitosamente");
-        if (!inModal) {
-          navigate("/campanias");
-        } else {
-          onSave?.();
-        }
+        if (!inModal) navigate("/campanias");
+        else onSave?.();
       } else {
         if (!values?.id) return;
         await updateMutation.mutateAsync({ id: values.id, data: formData });
         toast.success("Campaña actualizada exitosamente");
-        if (!inModal) {
-          navigate(`/campanias/${values.id}`);
-        } else {
-          onSave?.();
-        }
+        if (!inModal) navigate(`/campanias/${values.id}`);
+        else onSave?.();
       }
     } catch (err: unknown) {
       console.error(err);
       const axiosError = err as { response?: { data?: { message?: string } } };
-      const msg = axiosError?.response?.data?.message || "Error al guardar. Verifique los datos.";
-      toast.error(msg);
+      toast.error(axiosError?.response?.data?.message || "Error al guardar. Verifique los datos.");
     }
   };
 
-  const stepErrors = paso === 1 ? errors : {};
-
   return (
-    <div>
-      <Stepper steps={pasos} active={paso} onChange={(p) => {
-        if (p > paso && paso === 1 && !validatePaso(1)) return;
-        setPaso(p);
-      }} />
+    <div className="space-y-6">
+      {/* Datos Generales */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h3 className="mb-4 text-sm font-semibold text-gray-900">Información General</h3>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-500">Código</label>
+            <Input value={formData.codigo} disabled placeholder="Se genera automáticamente" />
+          </div>
 
-      <div className="space-y-6">
-        {paso === 1 && <DatosGeneralesCard mode={mode} value={formData} onChange={update} errors={stepErrors} />}
-        {paso === 2 && <CampaniaStatusCard mode={mode} value={formData} onChange={update} />}
-        {paso === 3 && <ConfiguracionCard mode={mode} value={formData} onChange={update} />}
-        {paso === 4 && <ObservacionesCard mode={mode} value={formData} onChange={update} />}
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-500">Nombre <span className="text-red-500">*</span></label>
+            <Input value={formData.nombre} onChange={(e) => update({ nombre: e.target.value })} placeholder="Ej. Campaña 2025-2026" />
+            {errors.nombre && <p className="mt-1 text-xs text-red-500">{errors.nombre}</p>}
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-500">Año Agrícola <span className="text-red-500">*</span></label>
+            <Select options={toOptions(aniosAgricolas)} placeholder="Seleccione" value={formData.anioAgricola} onChange={(v) => update({ anioAgricola: v })} />
+            {errors.anioAgricola && <p className="mt-1 text-xs text-red-500">{errors.anioAgricola}</p>}
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-500">Fecha de Inicio <span className="text-red-500">*</span></label>
+            <DatePicker
+              selected={formData.fechaInicio ? new Date(formData.fechaInicio + "T00:00:00") : null}
+              onChange={(date) => update({ fechaInicio: date?.toISOString().split("T")[0] ?? "" })}
+            />
+            {errors.fechaInicio && <p className="mt-1 text-xs text-red-500">{errors.fechaInicio}</p>}
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-500">Fecha de Fin <span className="text-red-500">*</span></label>
+            <DatePicker
+              selected={formData.fechaFin ? new Date(formData.fechaFin + "T00:00:00") : null}
+              onChange={(date) => update({ fechaFin: date?.toISOString().split("T")[0] ?? "" })}
+            />
+            {errors.fechaFin && <p className="mt-1 text-xs text-red-500">{errors.fechaFin}</p>}
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-500">Estado</label>
+            <Select options={estadoOptions} placeholder="Seleccione" value={formData.estado} onChange={(v) => update({ estado: v as CampaniaFormData["estado"] })} />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-500">Responsable <span className="text-red-500">*</span></label>
+            <Input value={formData.responsable} onChange={(e) => update({ responsable: e.target.value })} placeholder="Nombre del responsable" />
+            {errors.responsable && <p className="mt-1 text-xs text-red-500">{errors.responsable}</p>}
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className="mb-1 block text-xs font-medium text-gray-500">Técnico Coordinador <span className="text-red-500">*</span></label>
+            <Input value={formData.tecnicoCoordinador} onChange={(e) => update({ tecnicoCoordinador: e.target.value })} placeholder="Nombre del técnico coordinador" />
+            {errors.tecnicoCoordinador && <p className="mt-1 text-xs text-red-500">{errors.tecnicoCoordinador}</p>}
+          </div>
+
+          <div className="sm:col-span-2 lg:col-span-3">
+            <label className="mb-1 block text-xs font-medium text-gray-500">Descripción</label>
+            <Textarea rows={2} value={formData.descripcion} onChange={(e) => update({ descripcion: e.target.value })} placeholder="Alcance general de la campaña..." />
+          </div>
+
+          <div className="sm:col-span-2 lg:col-span-3">
+            <label className="mb-1 block text-xs font-medium text-gray-500">Objetivo <span className="text-red-500">*</span></label>
+            <Textarea rows={2} value={formData.objetivo} onChange={(e) => update({ objetivo: e.target.value })} placeholder="Describe el objetivo principal..." />
+            {errors.objetivo && <p className="mt-1 text-xs text-red-500">{errors.objetivo}</p>}
+          </div>
+
+          <div className="sm:col-span-2 lg:col-span-3">
+            <label className="mb-1 block text-xs font-medium text-gray-500">Observaciones</label>
+            <Textarea rows={2} value={formData.observaciones} onChange={(e) => update({ observaciones: e.target.value })} placeholder="Notas generales..." />
+          </div>
+        </div>
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm">
-        <Button
-          variant="secondary"
-          onClick={() => setPaso((p) => Math.max(1, p - 1))}
-          disabled={paso === 1}
-          iconLeft={<ChevronLeft className="h-4 w-4" />}
-        >
-          Anterior
+      {/* Save button */}
+      <div className="flex justify-end">
+        <Button onClick={handleSave} disabled={saving} iconLeft={<Save className="h-4 w-4" />}>
+          {saving ? "Guardando..." : mode === "create" ? "Crear Campaña" : "Guardar Cambios"}
         </Button>
-
-        <p className="text-sm text-gray-500">
-          Paso <span className="font-semibold text-forest-700">{paso}</span> de{" "}
-          <span className="font-semibold text-[#111827]">{totalPasos}</span>
-        </p>
-
-        {paso === totalPasos ? (
-          <Button onClick={handleSave} disabled={saving} iconLeft={<Save className="h-4 w-4" />}>
-            {saving ? "Guardando..." : mode === "create" ? "Crear Campaña" : "Guardar Cambios"}
-          </Button>
-        ) : (
-          <Button onClick={handleNext} iconRight={<ArrowRight className="h-4 w-4" />}>
-            Siguiente
-          </Button>
-        )}
       </div>
     </div>
   );

@@ -157,6 +157,7 @@ export function ChecklistCard({ mode, values }: ChecklistCardProps) {
 
               {editable ? (
                 <div className="flex shrink-0 flex-wrap gap-2">
+                  <span className="text-xs font-medium text-gray-500 self-center mr-1">Cumplimiento:</span>
                   {opciones.map((op) => (
                     <button
                       key={op.value}
@@ -204,7 +205,7 @@ export function ChecklistCard({ mode, values }: ChecklistCardProps) {
                       { value: "MEDIO", label: "Medio" },
                       { value: "ALTO", label: "Alto" },
                     ]}
-                    placeholder="Seleccione"
+                    placeholder="Seleccione el nivel de riesgo"
                     value={criterio.riesgo}
                     onChange={(val) => setCampo(index, "riesgo", val as Riesgo)}
                   />

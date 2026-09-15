@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { InformacionGeneralCard } from "./InformacionGeneralCard";
 import { ChecklistCard } from "./ChecklistCard";
@@ -20,17 +21,24 @@ interface InspeccionFormProps {
   onSave?: () => void;
 }
 
-export default function InspeccionForm({ mode, values, inModal, onSave }: InspeccionFormProps) {
+export default function InspeccionForm({ mode, values: initialValues, inModal, onSave }: InspeccionFormProps) {
   const navigate = useNavigate();
+  const [values, setValues] = useState<Inspeccion | undefined>(initialValues);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const detailTo = `/inspecciones/${values?.id ?? ""}`;
 
+  const updateValues = (patch: Partial<Inspeccion>) => {
+    setValues((prev) => prev ? { ...prev, ...patch } : prev);
+  };
+
   const validate = (): boolean => {
-    const required: string[] = [];
-    if (!values?.fecha) required.push("Fecha");
-    if (!values?.inspector) required.push("Inspector");
-    if (!values?.parcelaId) required.push("Parcela");
-    if (required.length > 0) {
-      toast.error(`Complete los campos obligatorios: ${required.join(", ")}`);
+    const e: Record<string, string> = {};
+    if (!values?.fecha) e.fecha = "La fecha es obligatoria";
+    if (!values?.inspector) e.inspector = "El inspector es obligatorio";
+    if (!values?.parcelaId) e.parcelaId = "La parcela es obligatoria";
+    setErrors(e);
+    if (Object.keys(e).length > 0) {
+      toast.error(`Campos obligatorios:\n• ${Object.values(e).join("\n• ")}`);
       return false;
     }
     return true;
@@ -48,7 +56,7 @@ export default function InspeccionForm({ mode, values, inModal, onSave }: Inspec
 
   return (
     <div className="space-y-6">
-      <InformacionGeneralCard mode={mode} values={values} />
+      <InformacionGeneralCard mode={mode} values={values} onChange={updateValues} errors={errors} />
       <ChecklistCard mode={mode} values={values} />
       <NoConformidadesCard mode={mode} values={values} />
       <AccionesCorrectivasCard mode={mode} values={values} />

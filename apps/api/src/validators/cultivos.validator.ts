@@ -101,7 +101,7 @@ export const getAllCultivosSchema = Joi.object({
   campania_id: Joi.number().integer().positive(),
   parcela_id: Joi.number().integer().positive(),
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(20),
+  limit: Joi.number().integer().min(1).max(500).default(20),
 });
 
 export const getStatsCultivosSchema = Joi.object({

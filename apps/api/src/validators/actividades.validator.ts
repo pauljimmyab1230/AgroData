@@ -93,5 +93,5 @@ export const getAllActividadesSchema = Joi.object({
   tipo_actividad: Joi.string().valid(...tipoActividadEnum),
   cultivo_id: Joi.number().integer().positive(),
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(20),
+  limit: Joi.number().integer().min(1).max(500).default(20),
 });

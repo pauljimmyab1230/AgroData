@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import {
   fetchCampanias,
   fetchCampania,
@@ -20,6 +20,7 @@ export function useCampanias(filters?: CampaniasQuery) {
   return useQuery({
     queryKey: ["campanias", filters],
     queryFn: () => fetchCampanias(filters),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -81,6 +82,7 @@ export function useCampaniaGlobalStats(filters?: CampaniasQuery) {
     queryKey: ["campaniaGlobalStats", filters],
     queryFn: () => fetchCampaniaGlobalStats(filters),
     staleTime: 1000 * 60 * 5,
+    placeholderData: keepPreviousData,
   });
 }
 

@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import api from "../../services/api";
 import { fetchRecepciones, type Recepcion, type RecepcionesQuery } from "../../services/recepciones";
 import {
@@ -9,84 +9,31 @@ import {
   type Inspeccion,
   type InspeccionesQuery,
 } from "../../services/inspecciones";
+import {
+  fetchActividades as fetchActividadesService,
+  fetchActividad as fetchActividadService,
+  createActividad as createActividadService,
+  updateActividad as updateActividadService,
+  deleteActividad as deleteActividadService,
+  type Actividad,
+  type ActividadesQuery,
+} from "../../services/actividades";
 
-// ─── Actividades ──────────────────────────────────────────
-export interface Actividad {
-  id: string;
-  codigo: string;
-  cultivoId: string | null;
-  fecha: string;
-  tipoActividad: string;
-  descripcion: string;
-  responsableTecnico: string;
-  horaInicio: string;
-  horaFin: string;
-  prioridad: string;
-  estado: string;
-  jornales: number;
-  latitud: string;
-  longitud: string;
-  observacionesTecnicas: string;
-  recomendaciones: string;
-  activo: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+// Re-export Actividad type from canonical source
+export type { Actividad } from "../../services/actividades";
 
-function mapActividad(dto: Record<string, unknown>): Actividad {
-  const d = dto as Record<string, string | number | boolean | null>;
-  return {
-    id: String(d.id),
-    codigo: String(d.codigo),
-    cultivoId: d.cultivo_id != null ? String(d.cultivo_id) : null,
-    fecha: String(d.fecha ?? "").split("T")[0],
-    tipoActividad: String(d.tipo_actividad),
-    descripcion: String(d.descripcion ?? ""),
-    responsableTecnico: String(d.responsable_tecnico),
-    horaInicio: String(d.hora_inicio ?? ""),
-    horaFin: String(d.hora_fin ?? ""),
-    prioridad: String(d.prioridad),
-    estado: String(d.estado),
-    jornales: Number(d.jornales ?? 0),
-    latitud: String(d.latitud ?? ""),
-    longitud: String(d.longitud ?? ""),
-    observacionesTecnicas: String(d.observaciones_tecnicas ?? ""),
-    recomendaciones: String(d.recomendaciones ?? ""),
-    activo: Boolean(d.activo),
-    createdAt: String(d.created_at),
-    updatedAt: String(d.updated_at),
-  };
-}
-
-export function useActividades(filters?: Record<string, string | number | undefined>) {
+export function useActividades(filters?: ActividadesQuery) {
   return useQuery({
     queryKey: ["actividades", filters],
-    queryFn: async () => {
-      const params: Record<string, string> = {};
-      if (filters) {
-        Object.entries(filters).forEach(([k, v]) => {
-          if (v !== undefined && v !== "") params[k] = String(v);
-        });
-      }
-      const res = await api.get("/actividades", { params });
-      return {
-        data: (res.data.data ?? []).map(mapActividad),
-        total: res.data.total ?? 0,
-        page: res.data.page ?? 1,
-        limit: res.data.limit ?? 20,
-        totalPages: res.data.totalPages ?? 1,
-      };
-    },
+    queryFn: () => fetchActividadesService(filters),
+    placeholderData: keepPreviousData,
   });
 }
 
 export function useActividad(id: string | null) {
   return useQuery<Actividad>({
     queryKey: ["actividad", id],
-    queryFn: async () => {
-      const res = await api.get(`/actividades/${id}`);
-      return mapActividad(res.data.data);
-    },
+    queryFn: () => fetchActividadService(id!),
     enabled: id !== null,
   });
 }
@@ -94,10 +41,7 @@ export function useActividad(id: string | null) {
 export function useCreateActividad() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: Record<string, unknown>) => {
-      const res = await api.post("/actividades", data);
-      return mapActividad(res.data.data);
-    },
+    mutationFn: (data: Partial<Actividad>) => createActividadService(data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["actividades"] }),
   });
 }
@@ -105,10 +49,8 @@ export function useCreateActividad() {
 export function useUpdateActividad() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Record<string, unknown> }) => {
-      const res = await api.put(`/actividades/${id}`, data);
-      return mapActividad(res.data.data);
-    },
+    mutationFn: ({ id, data }: { id: string; data: Partial<Actividad> }) =>
+      updateActividadService(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["actividades"] }),
   });
 }
@@ -116,9 +58,7 @@ export function useUpdateActividad() {
 export function useDeleteActividad() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      await api.delete(`/actividades/${id}`);
-    },
+    mutationFn: (id: string) => deleteActividadService(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["actividades"] }),
   });
 }
@@ -128,6 +68,7 @@ export function useInspecciones(filters?: InspeccionesQuery) {
   return useQuery({
     queryKey: ["inspecciones", filters],
     queryFn: () => fetchInspecciones(filters),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -185,6 +126,7 @@ export function useAcopios(filters?: Record<string, string | number | undefined>
         totalPages: res.data.totalPages ?? 1,
       };
     },
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -212,6 +154,7 @@ export function useRecepciones(filters?: Record<string, string | number | undefi
       }
       return fetchRecepciones(params);
     },
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -245,6 +188,7 @@ export function useProcesamientos(filters?: Record<string, string | number | und
         totalPages: res.data.totalPages ?? 1,
       };
     },
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -278,6 +222,7 @@ export function useLotes(filters?: Record<string, string | number | undefined>) 
         totalPages: res.data.totalPages ?? 1,
       };
     },
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -311,6 +256,7 @@ export function useInventario(filters?: Record<string, string | number | undefin
         totalPages: res.data.totalPages ?? 1,
       };
     },
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -344,6 +290,7 @@ export function useUsuarios(filters?: Record<string, string | number | undefined
         totalPages: res.data.totalPages ?? 1,
       };
     },
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -400,7 +347,44 @@ export function useDashboard() {
       }
 
       const actividadesRecientes = actRes.status === "fulfilled"
-        ? (actRes.value.data.data ?? []).map(mapActividad)
+        ? (actRes.value.data.data ?? []).map((dto: Record<string, unknown>) => {
+            const d = dto as Record<string, string | number | boolean | null>;
+            const cultivo = d.cultivo as { cultivo?: string; codigo?: string; parcela?: { id?: number; nombre?: string; codigo?: string } } | null;
+            return {
+              id: Number(d.id),
+              codigo: String(d.codigo),
+              cultivoId: Number(d.cultivo_id),
+              cultivoNombre: cultivo?.cultivo ?? "",
+              cultivoCodigo: cultivo?.codigo ?? "",
+              parcelaId: cultivo?.parcela?.id ?? 0,
+              parcelaNombre: cultivo?.parcela?.nombre ?? "",
+              parcelaCodigo: cultivo?.parcela?.codigo ?? "",
+              fecha: String(d.fecha ?? "").split("T")[0],
+              tipoActividad: String(d.tipo_actividad),
+              descripcion: String(d.descripcion ?? ""),
+              responsableTecnico: String(d.responsable_tecnico),
+              horaInicio: String(d.hora_inicio ?? ""),
+              horaFin: String(d.hora_fin ?? ""),
+              duracionEstimada: String(d.duracion_estimada ?? ""),
+              prioridad: String(d.prioridad),
+              estado: String(d.estado),
+              jornales: Number(d.jornales ?? 0),
+              latitud: String(d.latitud ?? ""),
+              longitud: String(d.longitud ?? ""),
+              altitud: String(d.altitud ?? ""),
+              precisionGps: String(d.precision_gps ?? ""),
+              observacionesTecnicas: String(d.observaciones_tecnicas ?? ""),
+              recomendaciones: String(d.recomendaciones ?? ""),
+              objetivo: String(d.objetivo ?? ""),
+              resultado: String(d.resultado ?? ""),
+              proximaActividad: String(d.proxima_actividad ?? ""),
+              insumos: [],
+              manoObra: [],
+              maquinaria: [],
+              createdAt: String(d.created_at),
+              updatedAt: String(d.updated_at),
+            };
+          })
         : [];
 
       return { productores, parcelas, cultivos, campanias, campaniaActiva, actividadesRecientes };

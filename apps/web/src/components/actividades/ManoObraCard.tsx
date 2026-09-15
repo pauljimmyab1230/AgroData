@@ -40,6 +40,8 @@ const emptyDraft: TrabajadorDraft = {
   funcion: "",
   jornales: null,
   horas: null,
+  costoJornal: null,
+  costoTotal: null,
   observaciones: "",
 };
 
@@ -146,6 +148,29 @@ export function ManoObraCard({ mode, value, onChange }: ManoObraCardProps) {
               placeholder="Ej. 16"
               value={draft.horas ?? ""}
               onChange={(e) => setDraft((d) => ({ ...d, horas: e.target.value ? Number(e.target.value) : null }))}
+            />
+          </FormField>
+
+          <FormField label="Costo por Jornal (S/)" required>
+            <Input
+              type="text"
+              inputMode="decimal"
+              placeholder="Ej. 45"
+              value={draft.costoJornal ?? ""}
+              onChange={(e) => {
+                const costoJornal = e.target.value ? Number(e.target.value) : null;
+                const costoTotal = draft.jornales != null && costoJornal != null ? draft.jornales * costoJornal : null;
+                setDraft((d) => ({ ...d, costoJornal, costoTotal }));
+              }}
+            />
+          </FormField>
+
+          <FormField label="Costo Total Mano de Obra (S/)">
+            <Input
+              type="text"
+              value={draft.costoTotal ?? ""}
+              disabled
+              placeholder="Se calcula automáticamente"
             />
           </FormField>
 

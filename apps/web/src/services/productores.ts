@@ -408,8 +408,8 @@ function parcelaToBackend(data: Partial<Parcela>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   if (data.codigo !== undefined) out.codigo = data.codigo;
   if (data.nombre !== undefined) out.nombre = data.nombre;
-  if (data.cultivo !== undefined) out.cultivo = data.cultivo;
-  if (data.area !== undefined) out.area = data.area;
+  if (data.cultivo !== undefined) out.cultivo_principal = data.cultivo;
+  if (data.area !== undefined) out.area_total = data.area;
   if (data.areaUnidad !== undefined) out.area_unidad = data.areaUnidad;
   if (data.ubicacion !== undefined) out.ubicacion = data.ubicacion || null;
   if (data.certificacion !== undefined) out.certificacion = data.certificacion;
@@ -423,7 +423,7 @@ export async function fetchParcelas(productorId: ProductorId): Promise<Parcela[]
 }
 
 export async function createParcela(productorId: ProductorId, data: Partial<Parcela>): Promise<Parcela> {
-  const payload = { ...parcelaToBackend(data), productor_id: productorId };
+  const payload = { ...parcelaToBackend(data), productores_id: productorId };
   const res = await api.post("/parcelas", payload);
   return parcelaToFrontend(res.data.data);
 }

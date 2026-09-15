@@ -130,10 +130,13 @@ export const getStats = async (filters: {
   if (filters.search) {
     const searchTerm = filters.search.toLowerCase();
     where.OR = [
-      { codigo: { contains: searchTerm, mode: 'insensitive' } },
-      { nombre: { contains: searchTerm, mode: 'insensitive' } },
-      { cultivo: { contains: searchTerm, mode: 'insensitive' } },
-      { comunidad: { contains: searchTerm, mode: 'insensitive' } },
+      { codigo: { contains: searchTerm } },
+      { nombre: { contains: searchTerm } },
+      { cultivo: { contains: searchTerm } },
+      { comunidad: { contains: searchTerm } },
+      { productor: { nombres: { contains: searchTerm } } },
+      { productor: { apellido_paterno: { contains: searchTerm } } },
+      { productor: { apellido_materno: { contains: searchTerm } } },
     ];
   }
   const [total, areaResult, productoresResult, certificadasResult] = await Promise.all([
@@ -185,10 +188,13 @@ export const getAll = async (filters: {
   if (filters.search) {
     const searchTerm = filters.search.toLowerCase();
     where.OR = [
-      { codigo: { contains: searchTerm, mode: 'insensitive' } },
-      { nombre: { contains: searchTerm, mode: 'insensitive' } },
-      { cultivo: { contains: searchTerm, mode: 'insensitive' } },
-      { comunidad: { contains: searchTerm, mode: 'insensitive' } },
+      { codigo: { contains: searchTerm } },
+      { nombre: { contains: searchTerm } },
+      { cultivo: { contains: searchTerm } },
+      { comunidad: { contains: searchTerm } },
+      { productor: { nombres: { contains: searchTerm } } },
+      { productor: { apellido_paterno: { contains: searchTerm } } },
+      { productor: { apellido_materno: { contains: searchTerm } } },
     ];
   }
   const page = filters.page || 1;
@@ -229,46 +235,49 @@ export const getById = async (id: number) => {
 };
 
 const buildCreateData = (data: Record<string, unknown>) => ({
-  nombre: data.nombre as string,
-  cultivo: (data.cultivo_principal as string) ?? (data.cultivo as string),
+  nombre: String(data.nombre ?? ''),
+  cultivo: String(data.cultivo_principal ?? data.cultivo ?? ''),
   area: Number(data.area_total ?? data.area),
   area_certificada: data.area_certificada !== undefined ? Number(data.area_certificada) : null,
-  area_unidad: (data.area_unidad as string) || 'ha',
-  acreditacion: (data.acreditacion as string) || null,
-  ubicacion: (data.ubicacion as string) || (data.comunidad as string) || null,
-  comunidad: (data.comunidad as string) || null,
-  sector: (data.sector as string) || null,
-  altitud: (data.altitud as string) || null,
-  departamento: (data.departamento as string) || null,
-  provincia: (data.provincia as string) || null,
-  distrito: (data.distrito as string) || null,
-  centro_poblado: (data.centro_poblado as string) || null,
-  ubigeo: (data.ubigeo as string) || null,
-  latitud: (data.latitud as string) || null,
-  longitud: (data.longitud as string) || null,
-  precision_gps: (data.precision_gps as string) || null,
-  utm_este: (data.utm_este as string) || null,
-  utm_norte: (data.utm_norte as string) || null,
-  utm_zona: (data.utm_zona as string) || null,
-  tipo_suelo: (data.tipo_suelo as string) || null,
-  textura: (data.textura as string) || null,
-  pendiente: (data.pendiente as string) || null,
-  fuente_agua: (data.fuente_agua as string) || null,
-  sistema_riego: (data.sistema_riego as string) || null,
-  zona_agroecologica: (data.zona_agroecologica as string) || null,
-  disponibilidad_agua: (data.disponibilidad_agua as string) || null,
-  observaciones: (data.observaciones as string) || null,
-  area_calculada: (data.area_calculada as string) || null,
-  perimetro: (data.perimetro as string) || null,
+  area_unidad: String(data.area_unidad || 'ha'),
+  acreditacion: data.acreditacion ? String(data.acreditacion) : null,
+  ubicacion: data.ubicacion ? String(data.ubicacion) : data.comunidad ? String(data.comunidad) : null,
+  comunidad: data.comunidad ? String(data.comunidad) : null,
+  sector: data.sector ? String(data.sector) : null,
+  altitud: data.altitud ? String(data.altitud) : null,
+  departamento: data.departamento ? String(data.departamento) : null,
+  provincia: data.provincia ? String(data.provincia) : null,
+  distrito: data.distrito ? String(data.distrito) : null,
+  centro_poblado: data.centro_poblado ? String(data.centro_poblado) : null,
+  ubigeo: data.ubigeo ? String(data.ubigeo) : null,
+  latitud: data.latitud ? String(data.latitud) : null,
+  longitud: data.longitud ? String(data.longitud) : null,
+  precision_gps: data.precision_gps ? String(data.precision_gps) : null,
+  utm_este: data.utm_este ? String(data.utm_este) : null,
+  utm_norte: data.utm_norte ? String(data.utm_norte) : null,
+  utm_zona: data.utm_zona ? String(data.utm_zona) : null,
+  tipo_suelo: data.tipo_suelo ? String(data.tipo_suelo) : null,
+  textura: data.textura ? String(data.textura) : null,
+  pendiente: data.pendiente ? String(data.pendiente) : null,
+  fuente_agua: data.fuente_agua ? String(data.fuente_agua) : null,
+  sistema_riego: data.sistema_riego ? String(data.sistema_riego) : null,
+  zona_agroecologica: data.zona_agroecologica ? String(data.zona_agroecologica) : null,
+  disponibilidad_agua: data.disponibilidad_agua ? String(data.disponibilidad_agua) : null,
+  observaciones: data.observaciones ? String(data.observaciones) : null,
+  area_calculada: data.area_calculada ? String(data.area_calculada) : null,
+  perimetro: data.perimetro ? String(data.perimetro) : null,
   vertices: data.vertices !== undefined ? Number(data.vertices) : null,
   fecha_levantamiento: data.fecha_levantamiento ? new Date(data.fecha_levantamiento as string) : null,
-  responsable: (data.responsable as string) || null,
+  responsable: data.responsable ? String(data.responsable) : null,
   certificacion: (data.certificacion as 'ORGANICA' | 'EN_TRANSICION' | 'CONVENCIONAL') || 'CONVENCIONAL',
   estado: (data.estado as 'ACTIVA' | 'INACTIVA') || 'ACTIVA',
 });
 
 export const create = async (data: Record<string, unknown>, userId?: string) => {
   const productorId = Number(data.productores_id);
+  if (!Number.isFinite(productorId) || productorId <= 0 || !Number.isInteger(productorId)) {
+    throw createError('ID del productor inválido', 422);
+  }
   await ensureProductorExists(productorId);
 
   let codigo = (data.codigo as string) || '';
@@ -347,7 +356,10 @@ export const update = async (id: number, data: Record<string, unknown>, userId?:
     'area_calculada', 'perimetro', 'responsable', 'area_unidad',
   ];
   for (const field of stringFields) {
-    if (data[field] !== undefined) updateData[field] = (data[field] as string) || null;
+    if (data[field] !== undefined) {
+      const val = data[field];
+      updateData[field] = val === '' || val === null ? null : String(val);
+    }
   }
 
   if (data.ubigeo_id !== undefined) {
@@ -383,8 +395,12 @@ export const update = async (id: number, data: Record<string, unknown>, userId?:
   if (data.estado !== undefined) updateData.estado = data.estado;
   if (data.codigo !== undefined) updateData.codigo = data.codigo;
   if (data.productores_id !== undefined && data.productores_id !== '') {
-    await ensureProductorExists(Number(data.productores_id));
-    updateData.productores_id = Number(data.productores_id);
+    const parsedProductorId = Number(data.productores_id);
+    if (!Number.isFinite(parsedProductorId) || parsedProductorId <= 0 || !Number.isInteger(parsedProductorId)) {
+      throw createError('ID del productor inválido', 422);
+    }
+    await ensureProductorExists(parsedProductorId);
+    updateData.productores_id = parsedProductorId;
   }
   if (userId) updateData.updated_by = userId;
 

@@ -134,7 +134,7 @@ export const getAllAcopiosSchema = Joi.object({
   page: Joi.number().integer().min(1).default(1).messages({
     'number.min': 'La página debe ser mayor a 0',
   }),
-  limit: Joi.number().integer().min(1).max(100).default(20).messages({
+  limit: Joi.number().integer().min(1).max(500).default(20).messages({
     'number.min': 'El límite debe ser mayor a 0',
     'number.max': 'El límite no puede exceder 100',
   }),

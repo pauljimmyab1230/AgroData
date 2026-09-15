@@ -30,6 +30,12 @@ const LABELS: Partial<Record<keyof Parcela, string>> = {
 
 const REQUIRED_FIELDS: Array<keyof Parcela> = ["productorId", "nombre", "cultivo", "area"];
 
+function isNumericId(value: unknown): boolean {
+  if (value === undefined || value === null || value === '') return false;
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 && Number.isInteger(n);
+}
+
 const mensajeRequerido = (label: string) => `El campo ${label} es obligatorio`;
 
 function isValidCoordArray(coords: unknown): coords is [number, number][] {
@@ -120,6 +126,10 @@ export function ParcelaFormProvider({
       const isEmpty = value === undefined || value === null || String(value).trim() === "";
       if (isEmpty) {
         nextErrors[field] = mensajeRequerido(LABELS[field] ?? field);
+        continue;
+      }
+      if (field === "productorId" && !isNumericId(value)) {
+        nextErrors[field] = "Seleccioná un productor válido";
       }
     }
 

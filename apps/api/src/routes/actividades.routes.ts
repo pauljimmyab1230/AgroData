@@ -13,6 +13,7 @@ const router = Router();
 
 router.use(authMiddleware);
 
+router.get('/stats', actividadesController.getStats);
 router.get('/', validate(getAllActividadesSchema, 'query'), actividadesController.getAll);
 router.get('/:id', validate(idParamSchema, 'params'), actividadesController.getById);
 router.post('/', adminMiddleware, validate(createActividadSchema), actividadesController.create);

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Save, X } from "lucide-react";
 import { Button, DatePicker, FormField, Input, Modal, Select } from "../ui";
 import type { Familiar } from "../../services/productores";
+import { fetchCatalogoActivos } from "../../services/catalogos";
 
 export type FamiliarFormData = {
   nombres: string;
@@ -32,24 +33,6 @@ const emptyForm: FamiliarFormData = {
 const sexoOptions = [
   { value: "MASCULINO", label: "Masculino" },
   { value: "FEMENINO", label: "Femenino" },
-];
-
-const parentescoOptions = [
-  { value: "ESPOSA", label: "Esposa" },
-  { value: "ESPOSO", label: "Esposo" },
-  { value: "HIJO", label: "Hijo" },
-  { value: "HIJA", label: "Hija" },
-  { value: "PADRE", label: "Padre" },
-  { value: "MADRE", label: "Madre" },
-  { value: "HERMANO", label: "Hermano" },
-  { value: "HERMANA", label: "Hermana" },
-  { value: "ABUELO", label: "Abuelo" },
-  { value: "ABUELA", label: "Abuela" },
-  { value: "YERNO", label: "Yerno" },
-  { value: "NUERA", label: "Nuera" },
-  { value: "NIETO", label: "Nieto" },
-  { value: "NIETA", label: "Nieta" },
-  { value: "OTRO", label: "Otro" },
 ];
 
 const nivelEducativoOptions = [
@@ -88,6 +71,13 @@ export function FamiliarModal({ open, onClose, onSave, familiar, saving }: Famil
   const [form, setForm] = useState<FamiliarFormData>(familiar ? fromFamiliar(familiar) : emptyForm);
   const [errors, setErrors] = useState<Partial<Record<keyof FamiliarFormData, string>>>({});
   const prevFamiliarRef = useRef<Familiar | null>(null);
+  const [parentescoOptions, setParentescoOptions] = useState<{ value: string; label: string }[]>([]);
+
+  useEffect(() => {
+    fetchCatalogoActivos("parentescos")
+      .then((items) => setParentescoOptions([{ value: "", label: "Seleccione..." }, ...items.map((i) => ({ value: i.nombre, label: i.nombre }))]))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (open) {

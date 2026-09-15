@@ -82,7 +82,7 @@ interface ParcelaDTO {
   id: string;
   codigo: string;
   nombre: string;
-  productor_id: string;
+  productores_id: number;
   productor: ParcelaProductorRef;
   cultivo: string;
   area: number | string;
@@ -183,7 +183,7 @@ function toFrontend(dto: ParcelaDTO): Parcela {
     id: dto.id,
     codigo: dto.codigo,
     nombre: dto.nombre,
-    productorId: String(dto.productor_id),
+    productorId: String(dto.productores_id),
     productorNombre: `${dto.productor.nombres} ${dto.productor.apellido_paterno} ${dto.productor.apellido_materno}`.trim(),
     cultivo: dto.cultivo,
     area: numToStr(dto.area),
@@ -231,7 +231,7 @@ function toFrontend(dto: ParcelaDTO): Parcela {
 
 function toBackend(data: Partial<Parcela>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
-  if (data.productorId !== undefined && data.productorId !== '') out.productor_id = data.productorId;
+  if (data.productorId !== undefined && data.productorId !== '') out.productores_id = Number(data.productorId);
   if (data.codigo !== undefined) out.codigo = data.codigo;
   if (data.nombre !== undefined) out.nombre = data.nombre;
   if (data.cultivo !== undefined) out.cultivo_principal = data.cultivo;
@@ -266,7 +266,7 @@ function toBackend(data: Partial<Parcela>): Record<string, unknown> {
   if (data.areaCalculada !== undefined) out.area_calculada = data.areaCalculada;
   if (data.perimetro !== undefined) out.perimetro = data.perimetro;
   if (data.vertices !== undefined) out.vertices = data.vertices;
-  if (data.poligono !== undefined) out.poligono = data.poligono;
+  if (data.poligono !== undefined) out.poligono = Array.isArray(data.poligono) ? data.poligono : null;
   if (data.fechaLevantamiento !== undefined) out.fecha_levantamiento = data.fechaLevantamiento || null;
   if (data.responsable !== undefined) out.responsable = data.responsable;
   if (data.certificacion !== undefined) out.certificacion = data.certificacion;
@@ -295,8 +295,17 @@ export async function fetchParcelas(params?: ParcelasQuery): Promise<{ data: Par
   if (params?.limit) query.limit = String(params.limit);
 
   const res = await api.get("/parcelas", { params: query });
+  const rawData = res.data.data ?? [];
+  const data: Parcela[] = [];
+  for (const item of rawData) {
+    try {
+      data.push(toFrontend(item));
+    } catch (err) {
+      console.error("Error transforming parcela:", item, err);
+    }
+  }
   return {
-    data: (res.data.data ?? []).map(toFrontend),
+    data,
     total: res.data.total ?? 0,
     page: res.data.page ?? 1,
     limit: res.data.limit ?? 20,

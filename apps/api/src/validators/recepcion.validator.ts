@@ -23,8 +23,7 @@ const sacoSchema = Joi.object({
 
 // ─── Create schema ───────────────────────────────────────
 export const createRecepcionSchema = Joi.object({
-  acopio_id: Joi.number().integer().positive().required().messages({
-    'any.required': 'El acopio es obligatorio',
+  acopio_id: Joi.number().integer().positive().allow(null).optional().messages({
     'number.base': 'El ID del acopio debe ser un número',
     'number.positive': 'El ID del acopio debe ser positivo',
   }),
@@ -141,7 +140,7 @@ export const getAllRecepcionesSchema = Joi.object({
   page: Joi.number().integer().min(1).default(1).messages({
     'number.min': 'La página debe ser mayor a 0',
   }),
-  limit: Joi.number().integer().min(1).max(100).default(20).messages({
+  limit: Joi.number().integer().min(1).max(500).default(20).messages({
     'number.min': 'El límite debe ser mayor a 0',
     'number.max': 'El límite no puede exceder 100',
   }),

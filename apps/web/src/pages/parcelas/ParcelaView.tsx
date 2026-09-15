@@ -31,14 +31,16 @@ const formatFecha = (fecha: string) => {
 
 type HistorialItem = {
   id: string;
-  tipo: "registro" | "documento";
+  tipo: string;
   titulo: string;
   descripcion: string;
   fecha: string;
 };
 
-const historialIcons: Record<HistorialItem["tipo"], LucideIcon> = {
+const historialIcons: Record<string, LucideIcon> = {
   registro: Layers,
+  actualizacion: Pencil,
+  baja: History,
   documento: FileText,
 };
 
@@ -253,7 +255,7 @@ export default function ParcelaView({ inModal, parcelaId: propId }: ParcelaViewP
           <ol className="relative space-y-6">
             <span className="absolute bottom-4 left-[19px] top-4 w-px bg-gray-200" aria-hidden="true" />
             {historial.map((item) => {
-              const Icon = historialIcons[item.tipo];
+              const Icon = historialIcons[item.tipo] ?? Layers;
               return (
                 <li key={item.id} className="relative flex gap-4">
                   <span className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-forest-100 text-forest-700">

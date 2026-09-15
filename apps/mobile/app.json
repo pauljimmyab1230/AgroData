@@ -3,7 +3,7 @@
     "name": "AgroData",
     "slug": "agrodata",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -22,6 +22,16 @@
         "backgroundColor": "#166534"
       },
       "package": "com.agrodata.mobile"
-    }
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-asset",
+      "expo-status-bar",
+      "expo-splash-screen",
+      "@react-native-community/datetimepicker"
+    ]
   }
 }

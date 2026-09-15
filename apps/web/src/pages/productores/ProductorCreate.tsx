@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, ChevronLeft, Save } from "lucide-react";
 import {
   Button,
@@ -26,6 +27,7 @@ interface ProductorCreateProps {
 function ProductorCreateForm({ inModal, onSave }: ProductorCreateProps) {
   const { data, familiares, validateStep } = useProductorForm();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { pasoActual, pasoMaximoAlcanzado, totalPasos, isFirstStep, isLastStep, handleNext, handleBack, handlePasoChange } = useProductorStepper();
   const [saving, setSaving] = useState(false);
   const [createdId, setCreatedId] = useState<ProductorId | null>(null);
@@ -65,6 +67,8 @@ function ProductorCreateForm({ inModal, onSave }: ProductorCreateProps) {
         try {
           await updateProductor(createdId, data);
           await syncFamiliares(createdId);
+          qc.invalidateQueries({ queryKey: ["productores"] });
+          qc.invalidateQueries({ queryKey: ["productor", createdId] });
           handleNext();
         } catch (err: unknown) {
           toast.error(getApiErrorMessage(err));
@@ -80,6 +84,7 @@ function ProductorCreateForm({ inModal, onSave }: ProductorCreateProps) {
         const result = await createProductor(data);
         setCreatedId(result.id);
         await syncFamiliares(result.id);
+        qc.invalidateQueries({ queryKey: ["productores"] });
         handleNext();
       } catch (err: unknown) {
         toast.error(getApiErrorMessage(err));

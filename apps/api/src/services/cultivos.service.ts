@@ -82,9 +82,9 @@ const ensureParcelaExists = async (id: number) => {
 
 const buildSearchWhere = (search: string) => ({
   OR: [
-    { codigo: { contains: search, mode: 'insensitive' as const } },
-    { cultivo: { contains: search, mode: 'insensitive' as const } },
-    { variedad: { contains: search, mode: 'insensitive' as const } },
+    { codigo: { contains: search } },
+    { cultivo: { contains: search } },
+    { variedad: { contains: search } },
   ],
 });
 

@@ -73,3 +73,16 @@ export const remove = async (
     next(error);
   }
 };
+
+export const getStats = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const stats = await actividadesService.getStats();
+    res.status(200).json({ success: true, data: stats });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -88,6 +88,7 @@ export interface CampaniasQuery {
   search?: string;
   estado?: EstadoCampania;
   anioAgricola?: string;
+  responsable?: string;
   page?: number;
   limit?: number;
 }
@@ -189,6 +190,7 @@ export async function fetchCampanias(params?: CampaniasQuery): Promise<{
   if (params?.search) query.search = params.search;
   if (params?.estado) query.estado = params.estado;
   if (params?.anioAgricola) query.anio_agricola = params.anioAgricola;
+  if (params?.responsable) query.responsable = params.responsable;
   if (params?.page) query.page = String(params.page);
   if (params?.limit) query.limit = String(params.limit);
 

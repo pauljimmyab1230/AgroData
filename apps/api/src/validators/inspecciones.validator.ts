@@ -114,5 +114,11 @@ export const getAllInspeccionesSchema = Joi.object({
   estado: Joi.string().valid(...estadoInspeccionEnum),
   cultivo_id: Joi.number().integer().positive(),
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(20),
+  limit: Joi.number().integer().min(1).max(500).default(20),
+});
+
+export const getStatsInspeccionesSchema = Joi.object({
+  search: Joi.string().max(100).allow('', null),
+  estado: Joi.string().valid(...estadoInspeccionEnum),
+  cultivo_id: Joi.number().integer().positive(),
 });

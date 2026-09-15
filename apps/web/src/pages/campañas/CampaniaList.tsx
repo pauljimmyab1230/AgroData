@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Plus, X } from "lucide-react";
-import { Button, ConfirmDialog, FilterSelect, LoadingSpinner, SearchInput } from "../../components/ui";
+import { Button, ConfirmDialog, FilterSelect, Input, LoadingSpinner, SearchInput } from "../../components/ui";
 import { CampaniaHeader } from "../../components/campanias/CampaniaHeader";
 import { CampaniaKPI } from "../../components/campanias/CampaniaKPI";
 import { CampaniaTable } from "../../components/campanias/CampaniaTable";
@@ -16,6 +16,7 @@ export default function CampaniaList() {
   const [search, setSearch] = useState("");
   const [filtroAnio, setFiltroAnio] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
+  const [filtroResponsable, setFiltroResponsable] = useState("");
   const [page, setPage] = useState(1);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -26,7 +27,8 @@ export default function CampaniaList() {
     search: search || undefined,
     estado: filtroEstado || undefined,
     anioAgricola: filtroAnio || undefined,
-  }), [search, filtroEstado, filtroAnio]);
+    responsable: filtroResponsable || undefined,
+  }), [search, filtroEstado, filtroAnio, filtroResponsable]);
 
   const { data: result, isLoading } = useCampanias({ ...filters, page, limit: 10 });
   const { data: globalStats } = useCampaniaGlobalStats(filters);
@@ -37,12 +39,13 @@ export default function CampaniaList() {
   const total = result?.total ?? 0;
   const stats = globalStats ?? { total: 0, estados: {} };
 
-  const hasFilters = Boolean(search) || Boolean(filtroAnio) || Boolean(filtroEstado);
+  const hasFilters = Boolean(search) || Boolean(filtroAnio) || Boolean(filtroEstado) || Boolean(filtroResponsable);
 
   const clearFilters = () => {
     setSearch("");
     setFiltroAnio("");
     setFiltroEstado("");
+    setFiltroResponsable("");
     setPage(1);
   };
 
@@ -100,6 +103,18 @@ export default function CampaniaList() {
             setPage(1);
           }}
         />
+
+        <div className="w-44">
+          <label className="mb-1 block text-xs font-medium text-gray-500">Responsable</label>
+          <Input
+            placeholder="Filtrar por responsable"
+            value={filtroResponsable}
+            onChange={(e) => {
+              setFiltroResponsable(e.target.value);
+              setPage(1);
+            }}
+          />
+        </div>
 
         {hasFilters && (
           <Button variant="ghost" onClick={clearFilters} iconLeft={<X className="h-4 w-4" />}>

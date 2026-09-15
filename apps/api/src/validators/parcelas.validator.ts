@@ -177,5 +177,5 @@ export const getAllParcelasSchema = Joi.object({
   estado: Joi.string().valid(...estadoParcelaEnum),
   productor_id: Joi.number().integer().positive(),
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(20),
+  limit: Joi.number().integer().min(1).max(500).default(20),
 });

@@ -21,6 +21,7 @@ interface ManoObraInput {
   funcion?: string | null;
   jornales?: number | null;
   horas?: number | null;
+  costo_jornal?: number | null;
   observaciones?: string | null;
 }
 
@@ -29,6 +30,7 @@ interface MaquinariaInput {
   equipo: string;
   operador?: string | null;
   horas_uso?: number | null;
+  costo_hora?: number | null;
   combustible?: number | null;
   observaciones?: string | null;
 }
@@ -60,7 +62,14 @@ const ensureUniqueCodigo = async (codigo: string): Promise<string> => {
 };
 
 const selectIncludes = {
-  cultivo: { select: { id: true, cultivo: true, codigo: true } },
+  cultivo: {
+    select: {
+      id: true,
+      cultivo: true,
+      codigo: true,
+      parcela: { select: { id: true, nombre: true, codigo: true } },
+    },
+  },
   insumos: { select: { insumo: true } },
   mano_obra: { select: { mano_de_obra: true } },
   maquinaria: { select: { maquinaria: true } },
@@ -95,9 +104,9 @@ export const getAll = async (filters: {
 
   if (filters.search) {
     where.OR = [
-      { codigo: { contains: filters.search, mode: 'insensitive' } },
-      { descripcion: { contains: filters.search, mode: 'insensitive' } },
-      { responsable_tecnico: { contains: filters.search, mode: 'insensitive' } },
+      { codigo: { contains: filters.search } },
+      { descripcion: { contains: filters.search } },
+      { responsable_tecnico: { contains: filters.search } },
     ];
   }
 
@@ -108,7 +117,14 @@ export const getAll = async (filters: {
     prisma.actividades.findMany({
       where,
       include: {
-        cultivo: { select: { id: true, cultivo: true, codigo: true } },
+        cultivo: {
+          select: {
+            id: true,
+            cultivo: true,
+            codigo: true,
+            parcela: { select: { id: true, nombre: true, codigo: true } },
+          },
+        },
         _count: { select: { insumos: true, mano_obra: true, maquinaria: true } },
       },
       orderBy: { created_at: 'desc' },
@@ -287,6 +303,33 @@ export const remove = async (id: string) => {
   return { message: 'Actividad eliminada exitosamente' };
 };
 
+// ─── Stats ─────────────────────────────────────────────────
+
+export const getStats = async () => {
+  const [total, porEstado] = await Promise.all([
+    prisma.actividades.count({ where: { activo: true } }),
+    prisma.actividades.groupBy({
+      by: ['estado'],
+      where: { activo: true },
+      _count: { id: true },
+    }),
+  ]);
+
+  const estados: Record<string, number> = {
+    PROGRAMADA: 0,
+    EN_PROCESO: 0,
+    COMPLETADA: 0,
+  };
+  for (const item of porEstado) {
+    estados[item.estado] = item._count.id;
+  }
+
+  return {
+    total,
+    estados,
+  };
+};
+
 // ─── Helpers ──────────────────────────────────────────────
 
 function buildInsumoData(i: InsumoInput) {
@@ -306,21 +349,30 @@ function buildInsumoData(i: InsumoInput) {
 }
 
 function buildManoObraData(m: ManoObraInput) {
+  const jornales = m.jornales ? Number(m.jornales) : null;
+  const costo_jornal = m.costo_jornal ? Number(m.costo_jornal) : null;
   return {
     trabajador: m.trabajador,
     funcion: m.funcion || null,
-    jornales: m.jornales ? Number(m.jornales) : null,
+    jornales,
     horas: m.horas ? Number(m.horas) : null,
+    costo_jornal,
+    costo_total: jornales !== null && costo_jornal !== null ? jornales * costo_jornal : null,
     observaciones: m.observaciones || null,
   };
 }
 
 function buildMaquinariaData(m: MaquinariaInput) {
+  const horas_uso = m.horas_uso ? Number(m.horas_uso) : null;
+  const costo_hora = m.costo_hora ? Number(m.costo_hora) : null;
+  const combustible = m.combustible ? Number(m.combustible) : null;
   return {
     equipo: m.equipo,
     operador: m.operador || null,
-    horas_uso: m.horas_uso ? Number(m.horas_uso) : null,
-    combustible: m.combustible ? Number(m.combustible) : null,
+    horas_uso,
+    costo_hora,
+    costo_total: horas_uso !== null && costo_hora !== null ? horas_uso * costo_hora : null,
+    combustible,
     observaciones: m.observaciones || null,
   };
 }

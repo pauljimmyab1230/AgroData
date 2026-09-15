@@ -80,9 +80,9 @@ export const getAll = async (filters: {
 
   if (filters.search) {
     where.OR = [
-      { codigo: { contains: filters.search, mode: 'insensitive' } },
-      { inspector: { contains: filters.search, mode: 'insensitive' } },
-      { observaciones: { contains: filters.search, mode: 'insensitive' } },
+      { codigo: { contains: filters.search } },
+      { inspector: { contains: filters.search } },
+      { observaciones: { contains: filters.search } },
     ];
   }
 
@@ -349,4 +349,48 @@ export const remove = async (id: string) => {
   });
 
   return { message: 'Inspección eliminada exitosamente' };
+};
+
+// ─── Stats ─────────────────────────────────────────────────
+
+export const getGlobalStats = async (filters?: {
+  search?: string;
+  estado?: string;
+  cultivo_id?: string;
+}) => {
+  const where: Record<string, unknown> = { activo: true };
+
+  if (filters?.estado) where.estado = filters.estado;
+  if (filters?.cultivo_id) where.cultivo_id = Number(filters.cultivo_id);
+  if (filters?.search) {
+    where.OR = [
+      { codigo: { contains: filters.search } },
+      { inspector: { contains: filters.search } },
+    ];
+  }
+
+  const [total, porEstado] = await Promise.all([
+    prisma.inspecciones.count({ where }),
+    prisma.inspecciones.groupBy({
+      by: ['estado'],
+      where,
+      _count: { id: true },
+    }),
+  ]);
+
+  const estados: Record<string, number> = {
+    PENDIENTE: 0,
+    APROBADA: 0,
+    NO_CONFORME: 0,
+  };
+  for (const item of porEstado) {
+    estados[item.estado] = item._count.id;
+  }
+
+  return {
+    total,
+    pendientes: estados.PENDIENTE,
+    aprobadas: estados.APROBADA,
+    noConformes: estados.NO_CONFORME,
+  };
 };

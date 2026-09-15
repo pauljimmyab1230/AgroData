@@ -88,7 +88,7 @@ export function MapaCard({ mode, value, onChange }: MapaCardProps) {
         <ParcelaMap
           lat={value.latitud}
           lng={value.longitud}
-          label={value.parcela || "Ubicación"}
+          label="Ubicación"
           className="h-56"
         />
 
