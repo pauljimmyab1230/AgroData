@@ -97,18 +97,20 @@ export default function AppRoutes() {
                     <Route path="/kardex/nuevo" element={<KardexCreate />} />
                     <Route path="/kardex/:id" element={<KardexView />} />
                     <Route path="/kardex/:id/editar" element={<KardexEdit />} />
-                    <Route path="/usuarios" element={<UsuarioList />} />
-                    <Route path="/usuarios/nuevo" element={<UsuarioCreate />} />
-                    <Route path="/usuarios/:id" element={<UsuarioView />} />
-                    <Route path="/usuarios/:id/editar" element={<UsuarioEdit />} />
-                    <Route path="/catalogos/:catalogoId" element={<CatalogPage />} />
+                    <Route element={<ProtectedRoute requiredRole="ADMIN" />}>
+                        <Route path="/usuarios" element={<UsuarioList />} />
+                        <Route path="/usuarios/nuevo" element={<UsuarioCreate />} />
+                        <Route path="/usuarios/:id" element={<UsuarioView />} />
+                        <Route path="/usuarios/:id/editar" element={<UsuarioEdit />} />
+                        <Route path="/catalogos/:catalogoId" element={<CatalogPage />} />
+                    </Route>
                     <Route path="/productores" element={<ProductorList />} />
                     <Route path="/productores/nueva" element={<ProductorCreate />} />
                     <Route path="/productores/:id" element={<ProductorView />} />
                     <Route path="/productores/:id/editar" element={<ProductorEdit />} />
-                    <Route path="*" element={<NotFound />} />
                 </Route>
             </Route>
+            <Route path="*" element={<NotFound />} />
         </Routes>
         </Suspense>
     );

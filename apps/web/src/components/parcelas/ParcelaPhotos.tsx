@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { Camera, Image as ImageIcon, User, StickyNote, Trash2, UploadCloud } from "lucide-react";
 import { DatePicker, Input, Textarea } from "../ui";
 import { Field, type FormMode } from "../shared/formControls";
+import ImagenAutenticada from "../shared/ImagenAutenticada";
 import type { ParcelaFoto } from "../../services/parcelas";
 import { uploadArchivo } from "../../services/productores";
 import { toast } from "../../utils/toast";
@@ -112,13 +113,10 @@ export function ParcelaPhotos({ mode, fotos = [], onDelete, onUpload }: ParcelaP
 
                 {foto.rutaArchivo && (
                   <div className="mb-3 overflow-hidden rounded-xl border border-gray-200">
-                    <img
-                      src={foto.rutaArchivo}
+                    <ImagenAutenticada
+                      rutaArchivo={foto.rutaArchivo}
                       alt={foto.titulo}
                       className="h-40 w-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
                     />
                   </div>
                 )}

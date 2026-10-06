@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
 import {
   Sprout,
   LayoutDashboard,
@@ -21,12 +22,13 @@ import {
   BookOpen,
 } from "lucide-react";
 
-type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean };
+type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean; soloAdmin?: boolean };
 type Submenu = {
   id: string;
   label: string;
   icon: LucideIcon;
   children: NavItem[];
+  soloAdmin?: boolean;
 };
 
 type SidebarEntry = NavItem | Submenu;
@@ -79,6 +81,7 @@ const navItems: SidebarEntry[] = [
     id: "configuracion",
     label: "Configuración",
     icon: Settings,
+    soloAdmin: true,
     children: [
       { to: "/usuarios", icon: Settings, label: "Usuarios" },
       { to: "/catalogos/departamentos", icon: MapPin, label: "Departamentos" },
@@ -129,7 +132,13 @@ export default function AdminSidebar({ collapsed, mobileOpen, onToggle, onMobile
     }
   }, [location.pathname]);
 
-  const filtered = navItems;
+  const { user } = useAuth();
+  const esAdmin = user?.rol === "ADMIN";
+
+  const filtered = navItems.filter((entry) => {
+    if (!entry.soloAdmin) return true;
+    return esAdmin;
+  });
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     `group relative flex items-center gap-3 text-sm font-medium transition-all duration-200 ease-in-out ${

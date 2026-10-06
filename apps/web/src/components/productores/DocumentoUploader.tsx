@@ -18,6 +18,7 @@ import { Badge, Button, Modal, Select } from "../ui";
 import { CardHeader, CardShell, type FormMode } from "../shared/formControls";
 import { useDocumentos, useCreateDocumento, useDeleteDocumento, useUpdateDocumentoEstado } from "../../hooks/queries";
 import { uploadArchivo, type Documento, type ProductorId, type EstadoDocumento, getApiErrorMessage } from "../../services/productores";
+import { descargarArchivo } from "../../hooks/useArchivoUrl";
 import { toast } from "../../utils/toast";
 
 type DocTipo = {
@@ -145,16 +146,13 @@ export function DocumentoUploader({ mode, productorId }: DocumentoUploaderProps)
     }
   }, [validProductorId, deleteDocumentoMutation]);
 
-  const handleDownload = useCallback((doc: Documento) => {
+  const handleDownload = useCallback(async (doc: Documento) => {
     if (doc.rutaArchivo && isUrlSegura(doc.rutaArchivo)) {
-      const link = document.createElement("a");
-      link.href = doc.rutaArchivo;
-      link.download = doc.nombreArchivo;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      try {
+        await descargarArchivo(doc.rutaArchivo, doc.nombreArchivo);
+      } catch {
+        toast.error("No se pudo descargar el archivo");
+      }
     }
   }, []);
 
