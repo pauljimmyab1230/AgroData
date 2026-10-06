@@ -1,4 +1,4 @@
-import api from "./api";
+﻿import api from "./api";
 
 export interface KardexMovimiento {
   id?: number;
@@ -105,7 +105,7 @@ function toFrontend(dto: KardexItemDTO): KardexItem {
   };
 }
 
-function toBackend(data: Partial<KardexItem>): Record<string, unknown> {
+function toBackend(data: Partial<KardexItemFormData>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   if (data.codigo !== undefined) out.codigo = data.codigo;
   if (data.producto !== undefined) out.producto = data.producto;
@@ -130,15 +130,15 @@ export interface KardexItemFormData {
   producto: string;
   categoria: string;
   unidad: string;
-  cantidadActual: number;
-  cantidadMinima: number;
-  cantidadMaxima: number;
+  cantidadActual: number | null;
+  cantidadMinima: number | null;
+  cantidadMaxima: number | null;
   ubicacion: string;
   estado: string;
   fechaIngreso: string;
   fechaVencimiento: string;
   proveedor: string;
-  costoUnitario: number;
+  costoUnitario: number | null;
   observaciones: string;
 }
 
@@ -193,17 +193,17 @@ export async function fetchKardexItem(id: string): Promise<KardexItem> {
   return toFrontend(res.data.data);
 }
 
-export async function createKardexItem(data: Partial<KardexItem>): Promise<KardexItem> {
+export async function createKardexItem(data: Partial<KardexItemFormData>): Promise<KardexItem> {
   const res = await api.post("/kardex", toBackend(data));
   return toFrontend(res.data.data);
 }
 
-export async function updateKardexItem(id: string, data: Partial<KardexItem>): Promise<KardexItem> {
+export async function updateKardexItem(id: string | number, data: Partial<KardexItemFormData>): Promise<KardexItem> {
   const res = await api.put(`/kardex/${id}`, toBackend(data));
   return toFrontend(res.data.data);
 }
 
-export async function deleteKardexItem(id: string): Promise<void> {
+export async function deleteKardexItem(id: string | number): Promise<void> {
   await api.delete(`/kardex/${id}`);
 }
 
@@ -231,7 +231,7 @@ export async function addKardexMovimiento(kardexId: string, data: {
   };
 }
 
-export async function removeKardexMovimiento(kardexId: string, movimientoId: string): Promise<void> {
+export async function removeKardexMovimiento(kardexId: string | number, movimientoId: string | number): Promise<void> {
   await api.delete(`/kardex/${kardexId}/movimientos/${movimientoId}`);
 }
 

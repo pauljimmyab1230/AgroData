@@ -1,4 +1,4 @@
-import { Pencil, Eye, Trash2, Wheat } from "lucide-react";
+﻿import { Pencil, Eye, Trash2, Wheat } from "lucide-react";
 import { DataTable } from "../ui";
 import type { Cultivo } from "../../services/cultivos";
 import { cultivoEstadoBadge } from "./cultivoEstadoBadge";
@@ -48,7 +48,7 @@ export default function CultivoTable({ data, onView, onEdit, onDelete, currentPa
           <button
             type="button"
             aria-label={`Ver ${c.cultivo}`}
-            onClick={() => onView(c.id)}
+            onClick={() => onView(String(c.id))}
             className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-forest-600/10 hover:text-forest-700"
           >
             <Eye className="h-4 w-4" />
@@ -56,7 +56,7 @@ export default function CultivoTable({ data, onView, onEdit, onDelete, currentPa
           <button
             type="button"
             aria-label={`Editar ${c.cultivo}`}
-            onClick={() => onEdit(c.id)}
+            onClick={() => onEdit(String(c.id))}
             className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-forest-600/10 hover:text-forest-700"
           >
             <Pencil className="h-4 w-4" />
@@ -64,7 +64,7 @@ export default function CultivoTable({ data, onView, onEdit, onDelete, currentPa
           <button
             type="button"
             aria-label={`Eliminar ${c.cultivo}`}
-            onClick={() => onDelete(c.id)}
+            onClick={() => onDelete(String(c.id))}
             className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
           >
             <Trash2 className="h-4 w-4" />

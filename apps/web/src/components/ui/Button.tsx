@@ -13,6 +13,7 @@ interface ButtonBaseProps {
   iconLeft?: ReactNode;
   iconRight?: ReactNode;
   children: ReactNode;
+  type?: "button" | "submit" | "reset";
 }
 
 type ButtonAsButton = ButtonBaseProps &

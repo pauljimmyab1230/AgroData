@@ -84,7 +84,7 @@ export function FamiliarModal({ open, onClose, onSave, familiar, saving }: Famil
       if (familiar !== prevFamiliarRef.current) {
         setForm(familiar ? fromFamiliar(familiar) : emptyForm);
         setErrors({});
-        prevFamiliarRef.current = familiar;
+        prevFamiliarRef.current = familiar ?? null;
       }
     } else {
       prevFamiliarRef.current = null;

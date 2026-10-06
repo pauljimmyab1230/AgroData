@@ -27,7 +27,7 @@ export function PoligonoCard({ mode, values }: PoligonoCardProps) {
   const editable = mode !== "view";
   const formCtx = useOptionalParcelaForm();
   const data = formCtx?.data;
-  const updateData = formCtx?.updateData;
+  const updateData = formCtx?.updateData ?? (() => {});
 
   const str = (val: unknown): string => (typeof val === "string" ? val : "");
   const display = (field: keyof Parcela) => {

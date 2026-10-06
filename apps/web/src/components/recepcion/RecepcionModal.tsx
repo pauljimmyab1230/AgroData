@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+﻿import { useEffect, useCallback } from "react";
 import { X, PackageCheck } from "lucide-react";
 import RecepcionCreate from "../../pages/recepcion/RecepcionCreate";
 import RecepcionEdit from "../../pages/recepcion/RecepcionEdit";
@@ -8,9 +8,9 @@ interface RecepcionModalProps {
   open: boolean;
   onClose: () => void;
   onSave?: () => void;
-  onEdit?: (recepcionId: string) => void;
+  onEdit?: (recepcionId: string | number) => void;
   mode: "create" | "edit" | "view";
-  recepcionId?: string;
+  recepcionId?: string | number;
 }
 
 export default function RecepcionModal({ open, onClose, onSave, onEdit, mode, recepcionId }: RecepcionModalProps) {
@@ -82,7 +82,7 @@ export default function RecepcionModal({ open, onClose, onSave, onEdit, mode, re
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 py-4">
           {mode === "view" ? (
-            <RecepcionView inModal recepcionId={recepcionId} onEdit={onEdit ? (r) => onEdit(r.id) : undefined} />
+            <RecepcionView inModal recepcionId={recepcionId} onEdit={onEdit ? (r) => onEdit(String(r.id)) : undefined} />
           ) : mode === "create" ? (
             <RecepcionCreate inModal onSave={onSave} />
           ) : (

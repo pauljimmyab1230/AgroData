@@ -1,17 +1,21 @@
-import { forwardRef, useId, type InputHTMLAttributes } from "react";
+import { forwardRef, useId, type InputHTMLAttributes, type ReactNode } from "react";
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "value"> {
   error?: string;
+  label?: ReactNode;
+  value?: string | number | readonly string[] | null;
 }
 
-const Input = forwardRef<HTMLInputElement, InputProps>(({ className = "", error, id: externalId, ...props }, ref) => {
+const Input = forwardRef<HTMLInputElement, InputProps>(({ className = "", error, label, id: externalId, value, ...props }, ref) => {
   const generatedId = useId();
-  const errorId = `${externalId || generatedId}-error`;
+  const inputId = externalId || generatedId;
+  const errorId = `${inputId}-error`;
 
-  return (
+  const control = (
     <input
       ref={ref}
-      id={externalId || generatedId}
+      id={inputId}
+      value={value ?? undefined}
       aria-invalid={!!error || undefined}
       aria-describedby={error ? errorId : undefined}
       className={`w-full rounded-xl border bg-gray-50/50 px-4 py-2.5 text-sm text-[#111827] outline-none transition-all ${
@@ -21,6 +25,22 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({ className = "", error,
       } placeholder:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
       {...props}
     />
+  );
+
+  if (!label) return control;
+
+  return (
+    <div className="w-full">
+      <label htmlFor={inputId} className="mb-1.5 block text-sm font-medium text-[#111827]">
+        {label}
+      </label>
+      {control}
+      {error ? (
+        <p id={errorId} className="mt-1 text-xs text-red-600">
+          {error}
+        </p>
+      ) : null}
+    </div>
   );
 });
 

@@ -6,7 +6,7 @@ export type FormMode = "create" | "edit" | "view";
 type FieldProps = {
   label: string;
   mode: FormMode;
-  value?: string;
+  value?: string | number | null;
   children?: ReactNode;
   className?: string;
   required?: boolean;
@@ -18,7 +18,7 @@ export function Field({ label, mode, value, children, className, required, error
     return (
       <div className={className}>
         <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{label}</p>
-        <p className="mt-1 text-sm font-medium text-[#111827]">{value || "—"}</p>
+        <p className="mt-1 text-sm font-medium text-[#111827]">{value != null && value !== "" ? String(value) : "—"}</p>
       </div>
     );
   }

@@ -1,4 +1,4 @@
-import { FileBarChart, Scale, TrendingDown, UserRound, Package } from "lucide-react";
+import { FileBarChart, Scale, TrendingDown, Package } from "lucide-react";
 import { CardHeader, CardShell, type FormMode } from "../shared/formControls";
 import { formatKg, formatPct, type OrdenProcesamiento } from "../../services/procesamientos";
 

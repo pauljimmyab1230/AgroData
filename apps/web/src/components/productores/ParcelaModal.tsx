@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { Save, X } from "lucide-react";
 import { Button, FormField, Input, Modal, Select } from "../ui";
 import type { Parcela } from "../../services/productores";
@@ -31,8 +31,8 @@ const areaUnidadOptions = [
 ];
 
 const certificacionOptions = [
-  { value: "ORGANICA", label: "Orgánica" },
-  { value: "EN_TRANSICION", label: "En Transición" },
+  { value: "ORGANICO", label: "Orgánica" },
+  { value: "TRANSICION", label: "En Transición" },
   { value: "CONVENCIONAL", label: "Convencional" },
 ];
 
@@ -48,7 +48,7 @@ function fromParcela(p: Parcela): ParcelaFormData {
     cultivo: p.cultivo,
     area: p.area,
     areaUnidad: p.areaUnidad,
-    ubicacion: p.ubicacion,
+    ubicacion: p.ubicacion ?? "",
     certificacion: p.certificacion,
     estado: p.estado,
   };
@@ -72,7 +72,7 @@ export function ParcelaModal({ open, onClose, onSave, parcela, saving }: Parcela
       if (parcela !== prevParcelaRef.current) {
         setForm(parcela ? fromParcela(parcela) : emptyForm);
         setErrors({});
-        prevParcelaRef.current = parcela;
+        prevParcelaRef.current = parcela ?? null;
       }
     } else {
       prevParcelaRef.current = null;

@@ -3,6 +3,19 @@ import * as recepcionService from '../services/recepcion.service';
 import type { AuthRequest } from '../middleware/auth.middleware';
 import type { RecepcionCreateInput, RecepcionUpdateInput, RecepcionFilters } from '../types/recepciones.types';
 
+export const getStats = async (
+  _req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const stats = await recepcionService.getStats();
+    res.status(200).json({ success: true, data: stats });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getAll = async (
   req: AuthRequest,
   res: Response,

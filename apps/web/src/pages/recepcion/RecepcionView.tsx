@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ArrowLeft, Pencil, Scale, Package } from "lucide-react";
 import { Button } from "../../components/ui";
@@ -11,7 +11,7 @@ import {
 
 interface RecepcionViewProps {
   inModal?: boolean;
-  recepcionId?: string;
+  recepcionId?: string | number;
   onEdit?: (recepcion: Recepcion) => void;
 }
 
@@ -58,7 +58,6 @@ export default function RecepcionView({ inModal, recepcionId: propId, onEdit }: 
   }
 
   const pesoNeto = (recepcion.pesoBruto || 0) - (recepcion.tara || 0);
-  const pesoTotalSacos = recepcion.pesoTotal || recepcion.sacosDetalle?.reduce((sum, s) => sum + s.peso, 0) || 0;
 
   return (
     <div className="space-y-6">

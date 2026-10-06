@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button, LoadingSpinner } from "../../components/ui";
@@ -7,7 +7,7 @@ import { fetchRecepcion, type Recepcion } from "../../services/recepciones";
 
 interface RecepcionEditProps {
   inModal?: boolean;
-  recepcionId?: string;
+  recepcionId?: string | number;
   onSave?: () => void;
 }
 

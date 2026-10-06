@@ -73,7 +73,8 @@ app.use('/api/procesamientos', procesamientoRoutes);
 app.use('/api/kardex', kardexRoutes);
 app.use('/api/catalogos', catalogosRoutes);
 app.use('/api/ubigeo', ubigeoRoutes);
-app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+// /uploads solo accesible autenticado (documentos personales, fotos y firmas)
+app.use('/uploads', authMiddleware, express.static(path.join(__dirname, '..', 'uploads')));
 
 app.use((_req, res) => {
   res.status(404).json({

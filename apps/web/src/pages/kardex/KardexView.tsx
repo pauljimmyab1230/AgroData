@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+﻿import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { ArrowLeft, Calendar, DollarSign, MapPin, Package, Pencil, Plus, TrendingUp, User, Trash2 } from "lucide-react";
 import { Button, Card, Badge, FormField, Input, Select, Textarea, DatePicker, ConfirmDialog } from "../../components/ui";
 import {
@@ -8,9 +8,7 @@ import {
   removeKardexMovimiento,
   calcularValorInventario,
   formatearFecha,
-  formatearPeso,
   type KardexItem,
-  type KardexMovimiento,
 } from "../../services/kardex";
 
 const estadoBadgeVariant: Record<string, "green" | "yellow" | "red" | "gray"> = {
@@ -49,7 +47,7 @@ export default function KardexView() {
     fecha: new Date().toISOString().split("T")[0],
   });
   const [saving, setSaving] = useState(false);
-  const [deleteMovimientoId, setDeleteMovimientoId] = useState<string | null>(null);
+  const [deleteMovimientoId, setDeleteMovimientoId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!id) return;

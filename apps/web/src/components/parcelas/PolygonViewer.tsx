@@ -11,6 +11,13 @@ import type { LatLngTuple } from "leaflet";
 
 type Coord = [number, number];
 
+// @types/leaflet-draw no declara `tooltip` en las opciones de draw/edit,
+// aunque el plugin sí lo soporta en tiempo de ejecución.
+type OpcionesDrawConTooltip = L.Control.DrawConstructorOptions & {
+  draw?: { polygon?: { tooltip?: Record<string, string> } };
+  edit?: { tooltip?: Record<string, string> };
+};
+
 interface PolygonViewerProps {
   poligono?: Coord[] | null;
   area?: string;
@@ -107,7 +114,7 @@ function DrawLayer({
         cancel: "Cancelar",
         undo: "Deshacer",
       },
-    });
+    } as OpcionesDrawConTooltip);
     map.addControl(control);
 
     const handleCreated = (e: L.LeafletEvent) => {

@@ -12,7 +12,7 @@ const formatCurrency = (amount: number | null | undefined): string => {
   return `S/ ${Number(amount).toFixed(2)}`;
 };
 
-export function CostosCard({ mode, value }: CostosCardProps) {
+export function CostosCard({ value }: CostosCardProps) {
   const costoInsumos = value.insumos.reduce((sum, i) => sum + (i.costoTotal ?? 0), 0);
   const costoManoObra = value.manoObra.reduce((sum, m) => sum + (m.costoTotal ?? 0), 0);
   const costoMaquinaria = value.maquinaria.reduce((sum, m) => sum + (m.costoTotal ?? 0), 0);

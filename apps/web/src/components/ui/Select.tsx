@@ -9,7 +9,7 @@ export interface SelectOption {
 
 export interface SelectProps {
   options: SelectOption[];
-  value?: string;
+  value?: string | null;
   defaultValue?: string;
   placeholder?: string;
   onChange?: (value: string) => void;
@@ -274,7 +274,7 @@ export default function Select({
         type="button"
         name={name}
         disabled={disabled}
-        required={required}
+        aria-required={required}
         role="combobox"
         aria-expanded={isOpen}
         aria-haspopup="listbox"

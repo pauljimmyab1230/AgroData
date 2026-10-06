@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+﻿import { useParams } from "react-router-dom";
 import {
   ArrowLeft,
   Sprout,
@@ -160,8 +160,8 @@ export default function ProductorView() {
           <ContactoUbicacionCard mode="view" values={productor} />
           <SocioculturalCard mode="view" values={productor} />
           <OrganizacionCard mode="view" values={productor} />
-          <FamiliarTable mode="view" productorId={productorId} />
-          <ParcelaTable mode="view" productorId={productorId} />
+          <FamiliarTable mode="view" productorId={productorId ?? undefined} />
+          <ParcelaTable mode="view" productorId={productorId ?? undefined} />
         </ProductorFormProvider>
         <DocumentoUploader mode="view" productorId={productorId} />
       </div>

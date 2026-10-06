@@ -11,7 +11,6 @@ import { DocumentoUploader } from "./DocumentoUploader";
 import { useProductor } from "../../hooks/queries";
 import { ProductorFormProvider } from "../../contexts/ProductorFormContext";
 import { getEstadoProductorBadgeVariant, getEstadoProductorLabel } from "../../utils/formatters";
-import { toProductorId } from "../../services/productores";
 import type { ProductorId, EstadoProductor } from "../../services/productores";
 
 interface ProductorViewModalProps {

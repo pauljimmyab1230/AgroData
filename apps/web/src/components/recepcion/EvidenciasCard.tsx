@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from "react";
+﻿import { useRef, useState, type ReactNode } from "react";
 import { Camera, FileText, Image as ImageIcon, PenLine, Plus, UserRound, X } from "lucide-react";
 import { Button, EmptyState, ImageUpload } from "../ui";
 import { CardHeader, CardShell, type FormMode } from "../shared/formControls";
@@ -136,7 +136,7 @@ export function EvidenciasCard({ mode, values, onChange }: EvidenciasCardProps) 
   const editable = mode !== "view";
   const [fotos, setFotos] = useState<EvidenciaLocal[]>(() =>
     (values?.evidencias ?? []).map((e, i) => ({
-      id: e.id ?? String(i + 1),
+      id: String(e.id ?? i + 1),
       nombre: e.nombre,
       tipo: e.tipo ?? "foto",
       ruta_archivo: e.ruta_archivo,

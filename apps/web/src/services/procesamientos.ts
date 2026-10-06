@@ -22,8 +22,10 @@ export interface RecepcionInfo {
 export interface OrdenProcesamiento {
   id: string;
   codigo: string;
+  fecha: string;
   fechaInicio: string;
   fechaFin: string;
+  campaniaNombre: string;
   producto: string;
   responsable: string;
   planta: string;
@@ -89,8 +91,10 @@ function toFrontend(dto: OrdenProcesamientoDTO): OrdenProcesamiento {
   return {
     id: dto.id,
     codigo: dto.codigo,
+    fecha: dto.fecha_inicio?.split("T")[0] ?? "",
     fechaInicio: dto.fecha_inicio?.split("T")[0] ?? "",
     fechaFin: dto.fecha_fin?.split("T")[0] ?? "",
+    campaniaNombre: "",
     producto: dto.producto,
     responsable: dto.responsable,
     planta: dto.planta,

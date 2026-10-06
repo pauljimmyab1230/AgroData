@@ -1,7 +1,7 @@
 import type { Response, NextFunction } from 'express';
 import * as usuariosService from '../services/usuarios.service';
 import type { AuthRequest } from '../middleware/auth.middleware';
-import type { CreateUsuarioInput, UpdateUsuarioInput, ListUsuariosQuery } from '../types/usuarios.types';
+import type { CreateUsuarioInput, UpdateUsuarioInput, UpdateMeInput, ListUsuariosQuery } from '../types/usuarios.types';
 
 // ─── List ───────────────────────────────────────────────────
 export const getAll = async (
@@ -71,7 +71,8 @@ export const update = async (
 ): Promise<void> => {
   try {
     const input: UpdateUsuarioInput = req.body;
-    const usuario = await usuariosService.update(req.params.id, input);
+    const actor = req.user as { id: string; rol: string };
+    const usuario = await usuariosService.update(req.params.id, input, actor);
     res.status(200).json({
       success: true,
       message: 'Usuario actualizado exitosamente',
@@ -83,6 +84,25 @@ export const update = async (
 };
 
 // ─── Remove ─────────────────────────────────────────────────
+// Update del propio usuario autenticado: solo perfil, nunca rol/activo
+export const updateMe = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const input: UpdateMeInput = req.body;
+    const usuario = await usuariosService.updateMe(req.user!.id, input);
+    res.status(200).json({
+      success: true,
+      message: 'Perfil actualizado exitosamente',
+      data: usuario,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const remove = async (
   req: AuthRequest,
   res: Response,

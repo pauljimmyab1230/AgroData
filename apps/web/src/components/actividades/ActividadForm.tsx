@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Save } from "lucide-react";
 import { Button } from "../ui";
@@ -68,7 +68,7 @@ export function ActividadForm({ mode, values, inModal, onSave }: ActividadFormPr
       if (mode === "create") {
         await createActividad(payload);
       } else {
-        await updateActividad(values!.id, payload);
+        await updateActividad(String(values!.id), payload);
       }
       toast.success(mode === "create" ? "Actividad registrada exitosamente" : "Actividad actualizada exitosamente");
       if (!inModal) {

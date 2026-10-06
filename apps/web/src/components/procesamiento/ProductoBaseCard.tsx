@@ -1,7 +1,7 @@
 import { PackageCheck } from "lucide-react";
 import { Input, Select } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
-import { formatKg, calidadesOpciones } from "../../services/procesamientos";
+import { formatKg } from "../../services/procesamientos";
 
 type ProductoBaseCardProps = {
   mode: FormMode;

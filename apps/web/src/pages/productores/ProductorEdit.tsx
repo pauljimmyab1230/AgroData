@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+﻿import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, ChevronLeft, Save } from "lucide-react";
 import {
   Button,
@@ -15,7 +15,6 @@ import { DocumentoUploader } from "../../components/productores/DocumentoUploade
 import { useProductor, useUpdateProductor } from "../../hooks/queries";
 import { ProductorFormProvider, useProductorForm } from "../../contexts/ProductorFormContext";
 import { getApiErrorMessage, toProductorId } from "../../services/productores";
-import type { ProductorId } from "../../services/productores";
 import { toast } from "../../utils/toast";
 import { useProductorStepper } from "../../hooks/useProductorStepper";
 

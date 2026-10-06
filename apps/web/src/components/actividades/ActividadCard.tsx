@@ -7,7 +7,6 @@ import {
   tiposActividad,
   prioridades,
   prioridadLabels,
-  tipoActividadLabels,
   type ActividadFormData,
 } from "../../services/actividades";
 

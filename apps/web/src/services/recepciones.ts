@@ -1,4 +1,4 @@
-import api from "./api";
+﻿import api from "./api";
 
 // ─── Types (synced with Prisma recepcion model) ───────────
 
@@ -7,6 +7,13 @@ export interface RecepcionSaco {
   codigo: string;
   peso: number;
   observaciones?: string;
+}
+
+export interface RecepcionEvidencia {
+  id?: string | number;
+  nombre: string;
+  tipo?: string;
+  ruta_archivo: string;
 }
 
 export interface Recepcion {
@@ -43,6 +50,7 @@ export interface Recepcion {
   firmaResponsableUrl: string;
   activo: boolean;
   sacosDetalle: RecepcionSaco[];
+  evidencias: RecepcionEvidencia[];
   createdAt: string;
   updatedAt: string;
 }
@@ -80,6 +88,7 @@ interface RecepcionDTO {
   firma_responsable_url: string | null;
   activo: boolean;
   sacos_detalle: Array<{ id: number; codigo: string; peso: number | string; observaciones: string | null }>;
+  evidencias?: Array<{ id?: string | number; nombre: string; tipo?: string; ruta_archivo: string }>;
   created_at: string;
   updated_at: string;
 }
@@ -128,6 +137,7 @@ function toFrontend(dto: RecepcionDTO): Recepcion {
     firmaResponsableUrl: dto.firma_responsable_url ?? "",
     activo: dto.activo,
     sacosDetalle,
+    evidencias: (dto.evidencias ?? []) as RecepcionEvidencia[],
     createdAt: dto.created_at,
     updatedAt: dto.updated_at,
   };
@@ -262,7 +272,7 @@ export async function fetchRecepciones(params?: RecepcionesQuery): Promise<{ dat
   };
 }
 
-export async function fetchRecepcion(id: string): Promise<Recepcion> {
+export async function fetchRecepcion(id: string | number): Promise<Recepcion> {
   const res = await api.get(`/recepciones/${id}`);
   return toFrontend(res.data.data);
 }
@@ -279,6 +289,24 @@ export async function updateRecepcion(id: string, data: Partial<Recepcion>): Pro
 
 export async function deleteRecepcion(id: string): Promise<void> {
   await api.delete(`/recepciones/${id}`);
+}
+
+export interface RecepcionStats {
+  total_recepciones: number;
+  peso_neto_total: number;
+  pendientes_pesaje: number;
+  lotes_distintos: number;
+}
+
+export async function fetchRecepcionStats(): Promise<RecepcionStats> {
+  const res = await api.get("/recepciones/stats");
+  const d = res.data.data ?? {};
+  return {
+    total_recepciones: d.total_recepciones ?? 0,
+    peso_neto_total: d.peso_neto_total ?? 0,
+    pendientes_pesaje: d.pendientes_pesaje ?? 0,
+    lotes_distintos: d.lotes_distintos ?? 0,
+  };
 }
 
 // ─── Formatters ───────────────────────────────────────────

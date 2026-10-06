@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+﻿import { useParams } from "react-router-dom";
 import { Pencil, Ruler, Sprout, Wheat } from "lucide-react";
 import { Badge, Button, Card, LoadingSpinner } from "../../components/ui";
 import CultivoHeader from "../../components/cultivos/CultivoHeader";
@@ -109,7 +109,7 @@ export default function CultivoView({ inModal, cultivoId: propId }: CultivoViewP
         <InformacionCultivoCard mode="view" values={cultivo} />
         <InformacionTecnicaCard mode="view" values={cultivo} />
         <EstimacionProduccionCard mode="view" values={cultivo} />
-        <ObservacionesCard mode="view" value={cultivo.observaciones} />
+        <ObservacionesCard mode="view" value={cultivo.observaciones ?? undefined} />
         <CultivoHistorial />
       </div>
     </div>

@@ -56,6 +56,13 @@ export interface UpdateUsuarioInput {
   activo?: boolean;
 }
 
+// Autoupdate del usuario autenticado: nunca incluye rol/activo/rol_sic
+export interface UpdateMeInput {
+  nombre?: string;
+  email?: string;
+  password?: string;
+}
+
 // ─── Query Params ─────────────────────────────────────────
 export interface ListUsuariosQuery {
   search?: string;

@@ -3,7 +3,7 @@ import { Badge } from "../ui";
 const estadoLabels: Record<string, string> = {
   REGISTRADA: "Registrada",
   EN_PROCESO: "En Proceso",
-  COMPLETADA: "Completada",
+  FINALIZADO: "Finalizado",
   PAUSADA: "Pausada",
   CANCELADA: "Cancelada",
 };
@@ -15,7 +15,7 @@ export function EstadoProcesamientoBadge({ estado }: { estado: string }) {
       return <Badge variant="purple">{label}</Badge>;
     case "EN_PROCESO":
       return <Badge variant="yellow">{label}</Badge>;
-    case "COMPLETADA":
+    case "FINALIZADO":
       return <Badge variant="forest">{label}</Badge>;
     case "PAUSADA":
       return <Badge variant="red">{label}</Badge>;

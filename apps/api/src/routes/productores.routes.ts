@@ -36,9 +36,9 @@ router.delete('/:id', adminMiddleware, validate(idParamSchema, 'params'), produc
 router.get('/:id/familiares', validate(idParamSchema, 'params'), productoresController.getFamiliares);
 router.post('/:id/familiares', adminMiddleware, validate(idParamSchema, 'params'), validate(createFamiliarSchema), productoresController.createFamiliar);
 
-router.put('/:id/familiares/:familiarId', adminMiddleware, validate(idParamSchema, 'params'), validate(idFamiliarParamSchema, 'params'), validate(updateFamiliarSchema), productoresController.updateFamiliar);
+router.put('/:id/familiares/:familiarId', adminMiddleware, validate(idFamiliarParamSchema, 'params'), validate(updateFamiliarSchema), productoresController.updateFamiliar);
 
-router.delete('/:id/familiares/:familiarId', adminMiddleware, validate(idParamSchema, 'params'), validate(idFamiliarParamSchema, 'params'), productoresController.removeFamiliar);
+router.delete('/:id/familiares/:familiarId', adminMiddleware, validate(idFamiliarParamSchema, 'params'), productoresController.removeFamiliar);
 
 // ─── Parcelas ───────────────────────────────────────────────
 // Las parcelas se gestionan desde /api/parcelas con filtro ?productor_id=
@@ -47,8 +47,8 @@ router.delete('/:id/familiares/:familiarId', adminMiddleware, validate(idParamSc
 
 router.get('/:id/documentos', validate(idParamSchema, 'params'), productoresController.getDocumentos);
 router.post('/:id/documentos', adminMiddleware, validate(idParamSchema, 'params'), validate(createDocumentoSchema), productoresController.createDocumento);
-router.put('/:id/documentos/:documentoId/estado', adminMiddleware, validate(idParamSchema, 'params'), validate(idDocumentoParamSchema, 'params'), validate(updateDocumentoEstadoSchema), productoresController.updateDocumentoEstado);
-router.delete('/:id/documentos/:documentoId', adminMiddleware, validate(idParamSchema, 'params'), validate(idDocumentoParamSchema, 'params'), productoresController.removeDocumento);
+router.put('/:id/documentos/:documentoId/estado', adminMiddleware, validate(idDocumentoParamSchema, 'params'), validate(updateDocumentoEstadoSchema), productoresController.updateDocumentoEstado);
+router.delete('/:id/documentos/:documentoId', adminMiddleware, validate(idDocumentoParamSchema, 'params'), productoresController.removeDocumento);
 
 router.post('/:id/documentos/cleanup', adminMiddleware, validate(idParamSchema, 'params'), validate(cleanupOrphanDocumentosSchema, 'body'), productoresController.removeOrphanDocumentos);
 

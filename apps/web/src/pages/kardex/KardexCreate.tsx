@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Save } from "lucide-react";
 import { Button, Card, FormField, Input, Select, Textarea, DatePicker, SectionHeader } from "../../components/ui";
@@ -41,14 +41,14 @@ export default function KardexCreate() {
     if (!form.producto.trim()) e.producto = "El producto es obligatorio";
     if (!form.categoria) e.categoria = "La categoría es obligatoria";
     if (!form.unidad) e.unidad = "La unidad es obligatoria";
-    if (form.cantidadActual < 0) e.cantidadActual = "La cantidad no puede ser negativa";
-    if (form.cantidadMinima < 0) e.cantidadMinima = "La cantidad mínima no puede ser negativa";
-    if (form.cantidadMaxima < 0) e.cantidadMaxima = "La cantidad máxima no puede ser negativa";
-    if (form.cantidadMaxima > 0 && form.cantidadMinima > form.cantidadMaxima)
+    if ((form.cantidadActual ?? 0) < 0) e.cantidadActual = "La cantidad no puede ser negativa";
+    if ((form.cantidadMinima ?? 0) < 0) e.cantidadMinima = "La cantidad mínima no puede ser negativa";
+    if ((form.cantidadMaxima ?? 0) < 0) e.cantidadMaxima = "La cantidad máxima no puede ser negativa";
+    if ((form.cantidadMaxima ?? 0) > 0 && (form.cantidadMinima ?? 0) > (form.cantidadMaxima ?? 0))
       e.cantidadMinima = "La cantidad mínima no puede ser mayor que la máxima";
     if (!form.ubicacion.trim()) e.ubicacion = "La ubicación es obligatoria";
     if (!form.estado) e.estado = "El estado es obligatorio";
-    if (form.costoUnitario < 0) e.costoUnitario = "El costo no puede ser negativo";
+    if ((form.costoUnitario ?? 0) < 0) e.costoUnitario = "El costo no puede ser negativo";
     setErrors(e);
     return Object.keys(e).length === 0;
   };

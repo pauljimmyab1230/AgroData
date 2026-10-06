@@ -13,6 +13,7 @@ const router = Router();
 
 router.use(authMiddleware);
 
+router.get('/stats', recepcionController.getStats);
 router.get('/', validate(getAllRecepcionesSchema, 'query'), recepcionController.getAll);
 router.get('/:id', validate(idParamSchema, 'params'), recepcionController.getById);
 router.post('/', validate(createRecepcionSchema), recepcionController.create);

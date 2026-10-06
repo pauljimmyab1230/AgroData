@@ -71,5 +71,5 @@ export default function App() {
 
 const webStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#1F2937", alignItems: "center", justifyContent: "center" },
-  phoneFrame: { width: 420, height: "90vh", backgroundColor: "#F9FAFB", borderRadius: 24, overflow: "hidden", shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 8 },
+  phoneFrame: { width: 420, height: "90%", backgroundColor: "#F9FAFB", borderRadius: 24, overflow: "hidden", shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 8 },
 });

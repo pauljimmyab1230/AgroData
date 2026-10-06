@@ -8,7 +8,7 @@ import {
   Select,
   SectionHeader,
 } from "../../components/ui";
-import { createUsuario } from "../../services/usuarios";
+import { createUsuario, type Rol, type RolSic } from "../../services/usuarios";
 
 export default function UsuarioCreate() {
   const navigate = useNavigate();
@@ -49,8 +49,8 @@ export default function UsuarioCreate() {
         nombre: form.nombre,
         email: form.email,
         password: form.password,
-        rol: form.rol,
-        rolSic: form.rolSic || null,
+        rol: form.rol as Rol,
+        rolSic: (form.rolSic || null) as RolSic | null,
       });
       navigate("/usuarios");
     } catch {

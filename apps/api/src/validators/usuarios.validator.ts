@@ -65,3 +65,14 @@ export const updateUsuarioSchema = Joi.object({
   .messages({
     'object.min': 'Debe proporcionar al menos un campo para actualizar',
   });
+
+// Autoupdate del usuario autenticado: solo datos de perfil, nunca rol/activo/rol_sic
+export const updateMeSchema = Joi.object({
+  nombre: Joi.string().min(2).max(100).optional(),
+  email: Joi.string().email().optional(),
+  password: Joi.string().min(6).max(50).optional(),
+})
+  .min(1)
+  .messages({
+    'object.min': 'Debe proporcionar al menos un campo para actualizar',
+  });

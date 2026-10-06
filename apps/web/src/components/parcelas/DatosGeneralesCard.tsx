@@ -20,9 +20,9 @@ export function DatosGeneralesCard({ mode, values }: DatosGeneralesCardProps) {
   const editable = mode !== "view";
   const formCtx = useOptionalParcelaForm();
   const data = formCtx?.data;
-  const updateData = formCtx?.updateData;
+  const updateData = formCtx?.updateData ?? (() => {});
   const errors = formCtx?.errors;
-  const clearFieldError = formCtx?.clearFieldError;
+  const clearFieldError = formCtx?.clearFieldError ?? (() => {});
   const [productores, setProductores] = useState<ParcelaSelectOption[]>([]);
   const [cultivosOptions, setCultivosOptions] = useState<ParcelaSelectOption[]>([]);
 

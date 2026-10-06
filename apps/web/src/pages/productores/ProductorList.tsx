@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+﻿import { useState, useMemo, useCallback } from "react";
 import { Plus, Pencil, Eye, Trash2, Download, Users, UserCheck, User } from "lucide-react";
 import {
   Badge,
@@ -12,7 +12,7 @@ import {
   Select,
 } from "../../components/ui";
 import { useProductores, useComunidades, useDeleteProductor, useProductorStats } from "../../hooks/queries";
-import { fetchAllProductoresForCsv, getApiErrorMessage, type Productor, toProductorId } from "../../services/productores";
+import { fetchAllProductoresForCsv, getApiErrorMessage, type Productor } from "../../services/productores";
 import type { ProductorId } from "../../services/productores";
 import ProductorModal from "../../components/productores/ProductorModal";
 import ProductorViewModal from "../../components/productores/ProductorViewModal";

@@ -10,7 +10,7 @@ import {
 } from "../../services/cultivos";
 import { fetchCatalogoActivos } from "../../services/catalogos";
 
-const parseDate = (s?: string) => (s ? new Date(s + "T00:00:00") : null);
+const parseDate = (s?: string | null) => (s ? new Date(s + "T00:00:00") : null);
 
 type InformacionCultivoCardProps = {
   mode: FormMode;

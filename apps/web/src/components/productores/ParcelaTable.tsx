@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+﻿import { useState, useEffect, useCallback } from "react";
 import { MapPin, Plus, Pencil, Trash2, Ruler, ShieldCheck, Sprout, Layers, Loader2 } from "lucide-react";
 import { Badge, Button, Card, ConfirmDialog, DataTable } from "../ui";
 import { CardHeader, CardShell, type FormMode } from "../shared/formControls";
@@ -62,7 +62,7 @@ export function ParcelaTable({ mode, productorId }: ParcelaTableProps) {
     0
   );
   const areaCertificadaHa = parcelas
-    .filter((p) => p.certificacion === "ORGANICA")
+    .filter((p) => p.certificacion === "ORGANICO")
     .reduce(
       (sum, p) => sum + convertToHectareas(Number(p.area), p.areaUnidad),
       0
@@ -103,14 +103,19 @@ export function ParcelaTable({ mode, productorId }: ParcelaTableProps) {
     try {
       if (editTarget) {
         if (mode === "create") {
-          setParcelas(parcelas.map((p) => (p.id === editTarget.id ? { ...editTarget, ...form } : p)));
+          setParcelas(parcelas.map((p) => (p.id === editTarget.id ? ({ ...editTarget, ...form } as Parcela) : p)));
         } else {
           const updated = await updateParcela(editTarget.id, form);
           setParcelas(parcelas.map((p) => (p.id === updated.id ? updated : p)));
         }
       } else {
         if (mode === "create") {
-          setParcelas([...parcelas, { id: -(++tempIdCounter), ...form }]);
+          const provisional = {
+            id: -(++tempIdCounter),
+            productorId: productorId ? Number(productorId) : 0,
+            ...form,
+          } as Parcela;
+          setParcelas([...parcelas, provisional]);
         } else if (productorId) {
           const created = await createParcela(productorId, form);
           setParcelas([...parcelas, created]);
@@ -156,9 +161,9 @@ export function ParcelaTable({ mode, productorId }: ParcelaTableProps) {
       key: "certificacion",
       label: "Certificación",
       render: (parcela: Parcela) =>
-        parcela.certificacion === "ORGANICA" ? (
+        parcela.certificacion === "ORGANICO" ? (
           <Badge variant="green">{certificacionLabel[parcela.certificacion] ?? parcela.certificacion}</Badge>
-        ) : parcela.certificacion === "EN_TRANSICION" ? (
+        ) : parcela.certificacion === "TRANSICION" ? (
           <Badge variant="yellow">{certificacionLabel[parcela.certificacion] ?? parcela.certificacion}</Badge>
         ) : (
           <Badge variant="gray">{certificacionLabel[parcela.certificacion] ?? parcela.certificacion}</Badge>

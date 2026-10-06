@@ -106,13 +106,38 @@ export default function ProcesamientoView({ inModal, procesamientoId: propId }: 
       <ProcesamientoKPI items={kpis} />
 
       <div className="grid gap-6">
-        <InformacionGeneralCard mode="view" values={orden} />
+        <InformacionGeneralCard
+          mode="view"
+          fechaInicio={orden.fechaInicio}
+          fechaFin={orden.fechaFin}
+          producto={orden.producto}
+          responsable={orden.responsable}
+          planta={orden.planta}
+          lineaProcesamiento={orden.lineaProcesamiento}
+          estado={orden.estado}
+          errors={{}}
+          onChange={{ fechaInicio: () => undefined, fechaFin: () => undefined, producto: () => undefined, responsable: () => undefined, planta: () => undefined, lineaProcesamiento: () => undefined, estado: () => undefined }}
+        />
         <MateriaPrimaCard mode="view" values={orden} />
         <OperacionesCard mode="view" values={orden} />
-        <ControlProcesoCard mode="view" values={orden} />
-        <ProductoBaseCard mode="view" values={orden} />
+        <ControlProcesoCard
+          mode="view"
+          pesoEntrada={String(orden.pesoEntrada ?? "")}
+          pesoSalida={String(orden.pesoSalida ?? "")}
+          merma={String(orden.merma ?? "")}
+          rendimiento={String(orden.rendimiento ?? "")}
+          onChange={{ pesoEntrada: () => undefined, pesoSalida: () => undefined, merma: () => undefined, rendimiento: () => undefined }}
+        />
+        <ProductoBaseCard
+          mode="view"
+          productoBase={orden.productoBase}
+          calidadProducto={orden.calidadProducto}
+          pesoFinal={String(orden.pesoFinal ?? "")}
+          humedadFinal={String(orden.humedadFinal ?? "")}
+          onChange={{ productoBase: () => undefined, calidadProducto: () => undefined, pesoFinal: () => undefined, humedadFinal: () => undefined }}
+        />
         <ReporteProcesamientoCard mode="view" values={orden} />
-        <ObservacionesCard mode="view" values={orden} />
+        <ObservacionesCard mode="view" observaciones={orden.observaciones} onChange={() => undefined} />
       </div>
     </div>
   );

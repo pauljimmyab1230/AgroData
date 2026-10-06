@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+﻿import { useState, useMemo } from "react";
 import { Plus, X } from "lucide-react";
 import { Button, ConfirmDialog, FilterSelect, Input, LoadingSpinner, SearchInput } from "../../components/ui";
 import { CampaniaHeader } from "../../components/campanias/CampaniaHeader";
@@ -6,7 +6,7 @@ import { CampaniaKPI } from "../../components/campanias/CampaniaKPI";
 import { CampaniaTable } from "../../components/campanias/CampaniaTable";
 import { useCampanias, useCampaniaGlobalStats, useDeleteCampania } from "../../hooks/queries";
 import CampaniaModal from "../../components/campanias/CampaniaModal";
-import { campaniaEstados } from "../../services/campanias";
+import { campaniaEstados, type EstadoCampania } from "../../services/campanias";
 import { aniosAgricolas } from "../../constants/campanias";
 import { toast } from "../../utils/toast";
 
@@ -25,7 +25,7 @@ export default function CampaniaList() {
 
   const filters = useMemo(() => ({
     search: search || undefined,
-    estado: filtroEstado || undefined,
+    estado: (filtroEstado || undefined) as EstadoCampania | undefined,
     anioAgricola: filtroAnio || undefined,
     responsable: filtroResponsable || undefined,
   }), [search, filtroEstado, filtroAnio, filtroResponsable]);
@@ -37,7 +37,7 @@ export default function CampaniaList() {
   const campanias = result?.data ?? [];
   const totalPages = result?.totalPages ?? 1;
   const total = result?.total ?? 0;
-  const stats = globalStats ?? { total: 0, estados: {} };
+  const stats = globalStats ?? { total: 0, estados: {} as Record<EstadoCampania, number> };
 
   const hasFilters = Boolean(search) || Boolean(filtroAnio) || Boolean(filtroEstado) || Boolean(filtroResponsable);
 

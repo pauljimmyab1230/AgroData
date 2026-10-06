@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo } from "react";
 import type { ReactNode } from "react";
-import type { Productor, Familiar, Parcela, Sexo, EstadoCivil, NivelEducativo, Idioma, EstadoProductor, CargoProductor } from "../services/productores";
-import { SexoEnum, EstadoCivilEnum, NivelEducativoEnum, IdiomaEnum, EstadoProductorEnum, CargoProductorEnum } from "../services/productores";
+import type { Productor, Familiar, Parcela } from "../services/productores";
 import { toast } from "../utils/toast";
 
 type ProductorFormData = Partial<Productor>;

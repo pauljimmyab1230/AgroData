@@ -17,7 +17,7 @@ import {
 import { Badge, Button, Modal, Select } from "../ui";
 import { CardHeader, CardShell, type FormMode } from "../shared/formControls";
 import { useDocumentos, useCreateDocumento, useDeleteDocumento, useUpdateDocumentoEstado } from "../../hooks/queries";
-import { uploadArchivo, type Documento, type DocumentoId, type ProductorId, type EstadoDocumento, getApiErrorMessage } from "../../services/productores";
+import { uploadArchivo, type Documento, type ProductorId, type EstadoDocumento, getApiErrorMessage } from "../../services/productores";
 import { toast } from "../../utils/toast";
 
 type DocTipo = {

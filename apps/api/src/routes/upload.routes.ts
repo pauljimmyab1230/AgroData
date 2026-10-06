@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { authMiddleware } from '../middleware/auth.middleware';
 import type { AuthRequest } from '../middleware/auth.middleware';
-import { upload } from '../middleware/upload.middleware';
+import { upload, validarFirmaArchivo } from '../middleware/upload.middleware';
 
 const router = Router();
 
@@ -10,6 +10,7 @@ router.use(authMiddleware);
 router.post(
   '/documentos',
   upload.single('archivo'),
+  validarFirmaArchivo,
   (req: AuthRequest, res: Response) => {
     if (!req.file) {
       res.status(400).json({ success: false, message: 'No se envió ningún archivo' });
@@ -34,6 +35,7 @@ router.post(
 router.post(
   '/fotos',
   upload.single('foto'),
+  validarFirmaArchivo,
   (req: AuthRequest, res: Response) => {
     if (!req.file) {
       res.status(400).json({ success: false, message: 'No se envió ningún archivo' });
@@ -58,6 +60,7 @@ router.post(
 router.post(
   '/firmas',
   upload.single('firma'),
+  validarFirmaArchivo,
   (req: AuthRequest, res: Response) => {
     if (!req.file) {
       res.status(400).json({ success: false, message: 'No se envió ningún archivo' });

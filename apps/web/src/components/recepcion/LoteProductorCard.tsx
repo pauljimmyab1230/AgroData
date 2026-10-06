@@ -9,7 +9,7 @@ type LoteProductorCardProps = {
   onChange?: <K extends keyof Recepcion>(field: K, value: Recepcion[K]) => void;
 };
 
-export function LoteProductorCard({ mode, values }: LoteProductorCardProps) {
+export function LoteProductorCard({ values }: LoteProductorCardProps) {
   const items = [
     {
       label: "Código LP",

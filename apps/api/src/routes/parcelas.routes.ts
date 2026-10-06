@@ -31,14 +31,14 @@ router.delete('/:id', adminMiddleware, validate(idParamSchema, 'params'), parcel
 
 router.get('/:id/documentos', validate(idParamSchema, 'params'), parcelasController.getDocumentos);
 router.post('/:id/documentos', adminMiddleware, validate(idParamSchema, 'params'), validate(createParcelaDocumentoSchema), parcelasController.createDocumento);
-router.put('/:id/documentos/:documentoId', adminMiddleware, validate(idParamSchema, 'params'), validate(idDocumentoParamSchema, 'params'), validate(updateParcelaDocumentoSchema), parcelasController.updateDocumento);
-router.delete('/:id/documentos/:documentoId', adminMiddleware, validate(idParamSchema, 'params'), validate(idDocumentoParamSchema, 'params'), parcelasController.removeDocumento);
+router.put('/:id/documentos/:documentoId', adminMiddleware, validate(idDocumentoParamSchema, 'params'), validate(updateParcelaDocumentoSchema), parcelasController.updateDocumento);
+router.delete('/:id/documentos/:documentoId', adminMiddleware, validate(idDocumentoParamSchema, 'params'), parcelasController.removeDocumento);
 
 // ─── Fotos ──────────────────────────────────────────────────
 
 router.get('/:id/fotos', validate(idParamSchema, 'params'), parcelasController.getFotos);
 router.post('/:id/fotos', adminMiddleware, validate(idParamSchema, 'params'), validate(createParcelaFotoSchema), parcelasController.createFoto);
-router.put('/:id/fotos/:fotoId', adminMiddleware, validate(idParamSchema, 'params'), validate(idFotoParamSchema, 'params'), validate(updateParcelaFotoSchema), parcelasController.updateFoto);
-router.delete('/:id/fotos/:fotoId', adminMiddleware, validate(idParamSchema, 'params'), validate(idFotoParamSchema, 'params'), parcelasController.removeFoto);
+router.put('/:id/fotos/:fotoId', adminMiddleware, validate(idFotoParamSchema, 'params'), validate(updateParcelaFotoSchema), parcelasController.updateFoto);
+router.delete('/:id/fotos/:fotoId', adminMiddleware, validate(idFotoParamSchema, 'params'), parcelasController.removeFoto);
 
 export default router;

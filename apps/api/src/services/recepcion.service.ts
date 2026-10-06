@@ -278,3 +278,28 @@ export const remove = async (id: string) => {
 
   return { message: 'Recepción eliminada exitosamente' };
 };
+
+// Estadísticas globales (no por página) para los KPIs del listado.
+export const getStats = async () => {
+  const where = { activo: true };
+
+  const [totalRecepciones, pesoNetoResult, pendientes, lotesDistintos] = await Promise.all([
+    prisma.recepcion.count({ where }),
+    prisma.recepcion.aggregate({ where, _sum: { peso_neto: true } }),
+    prisma.recepcion.count({ where: { ...where, estado: 'PENDIENTE_PESAJE' } }),
+    prisma.recepcion.findMany({
+      where,
+      select: { lote_productor: true },
+      distinct: ['lote_productor'],
+    }),
+  ]);
+
+  return {
+    total_recepciones: totalRecepciones,
+    peso_neto_total: pesoNetoResult._sum.peso_neto
+      ? Number(pesoNetoResult._sum.peso_neto)
+      : 0,
+    pendientes_pesaje: pendientes,
+    lotes_distintos: lotesDistintos.filter((l) => l.lote_productor != null).length,
+  };
+};

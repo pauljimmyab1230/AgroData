@@ -1,11 +1,11 @@
-import { useState, useMemo } from "react";
+﻿import { useState, useMemo } from "react";
 import { Plus, X } from "lucide-react";
 import { Button, ConfirmDialog, LoadingSpinner, SearchInput, Select } from "../../components/ui";
 import CultivoHeader from "../../components/cultivos/CultivoHeader";
 import CultivoKPI from "../../components/cultivos/CultivoKPI";
 import CultivoTable from "../../components/cultivos/CultivoTable";
 import { useCultivos, useDeleteCultivo, useCultivoGlobalStats } from "../../hooks/queries";
-import { type Cultivo, estadosCultivoValues } from "../../services/cultivos";
+import { estadosCultivoValues } from "../../services/cultivos";
 import CultivoModal from "../../components/cultivos/CultivoModal";
 import { toast } from "../../utils/toast";
 
@@ -36,7 +36,7 @@ export default function CultivoList() {
   const [search, setSearch] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
   const [page, setPage] = useState(1);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [viewId, setViewId] = useState<string | null>(null);
@@ -52,7 +52,6 @@ export default function CultivoList() {
 
   const cultivos = result?.data ?? [];
   const totalPages = result?.totalPages ?? 1;
-  const total = result?.total ?? 0;
   const stats = globalStats ?? { total: 0, estados: {}, areaSembrada: 0, campaniasActivas: 0 };
 
   const hasFilters = Boolean(search) || Boolean(filtroEstado);
@@ -125,7 +124,7 @@ export default function CultivoList() {
         data={cultivos}
         onView={(id) => setViewId(id)}
         onEdit={(id) => setEditId(id)}
-        onDelete={(id) => setDeleteId(id)}
+        onDelete={(id) => setDeleteId(Number(id))}
         currentPage={page}
         totalPages={totalPages}
         onPageChange={setPage}
@@ -137,7 +136,7 @@ export default function CultivoList() {
         onConfirm={async () => {
           if (!deleteId) return;
           try {
-            await deleteMutation.mutateAsync(deleteId);
+            await deleteMutation.mutateAsync(String(deleteId));
             setDeleteId(null);
             toast.success("Cultivo eliminado correctamente");
           } catch {

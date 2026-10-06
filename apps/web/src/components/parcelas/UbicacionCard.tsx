@@ -16,7 +16,7 @@ export function UbicacionCard({ mode, values }: UbicacionCardProps) {
   const editable = mode !== "view";
   const formCtx = useOptionalParcelaForm();
   const data = formCtx?.data;
-  const updateData = formCtx?.updateData;
+  const updateData = formCtx?.updateData ?? (() => {});
 
   const ubigeo = useUbigeo({
     initialDepartamento: values?.departamento ?? data?.departamento,

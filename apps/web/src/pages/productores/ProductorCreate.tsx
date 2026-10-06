@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, ChevronLeft, Save } from "lucide-react";
@@ -34,8 +34,7 @@ function ProductorCreateForm({ inModal, onSave }: ProductorCreateProps) {
   const [savedFamiliarIds, setSavedFamiliarIds] = useState<Map<number, FamiliarId>>(new Map());
 
   const syncFamiliares = async (productorId: ProductorId) => {
-    const existingIds = new Set(savedFamiliarIds.values());
-    const currentTempIds = new Set(familiares.map(f => f.id).filter(id => id < 0));
+    const currentTempIds = new Set<number>(familiares.map(f => f.id).filter(id => id < 0));
 
     for (const tempId of currentTempIds) {
       if (!savedFamiliarIds.has(tempId)) {
@@ -49,7 +48,7 @@ function ProductorCreateForm({ inModal, onSave }: ProductorCreateProps) {
 
     for (const [tempId, realId] of savedFamiliarIds) {
       if (!currentTempIds.has(tempId)) {
-        await deleteFamiliar(productorId, realId);
+        await deleteFamiliar(productorId, realId as FamiliarId);
         setSavedFamiliarIds(prev => {
           const next = new Map(prev);
           next.delete(tempId);

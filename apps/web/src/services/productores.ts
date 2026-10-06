@@ -317,7 +317,7 @@ function familiarToFrontend(dto: FamiliarDTO): Familiar {
   };
 }
 
-function familiarToBackend(data: Partial<Familiar>): Record<string, unknown> {
+function familiarToBackend(data: FamiliarInput): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   if (data.nombres !== undefined) out.nombres = data.nombres;
   if (data.parentesco !== undefined) out.parentesco = data.parentesco;
@@ -337,7 +337,22 @@ export async function fetchFamiliares(productorId: ProductorId): Promise<Familia
   return (res.data.data ?? []).map(familiarToFrontend);
 }
 
-export async function createFamiliar(productorId: ProductorId, data: Partial<Familiar>): Promise<Familiar> {
+// Tipos de entrada para formularios: aceptan strings libres en campos de enum
+// (los selects de UI manejan "" como "sin selección") y se coercen al enviar.
+export interface FamiliarInput {
+  nombres?: string;
+  parentesco?: string;
+  dni?: string | null;
+  sexo?: string;
+  fechaNacimiento?: string;
+  ocupacion?: string | null;
+  nivelEducativo?: string | null;
+  telefono?: string | null;
+  dependiente?: boolean;
+  viveConProductor?: boolean;
+}
+
+export async function createFamiliar(productorId: ProductorId, data: FamiliarInput): Promise<Familiar> {
   const res = await api.post(`/productores/${productorId}/familiares`, familiarToBackend(data));
   return familiarToFrontend(res.data.data);
 }
@@ -345,7 +360,7 @@ export async function createFamiliar(productorId: ProductorId, data: Partial<Fam
 export async function updateFamiliar(
   productorId: ProductorId,
   familiarId: FamiliarId,
-  data: Partial<Familiar>,
+  data: FamiliarInput,
 ): Promise<Familiar> {
   const res = await api.put(`/productores/${productorId}/familiares/${familiarId}`, familiarToBackend(data));
   return familiarToFrontend(res.data.data);
@@ -404,7 +419,18 @@ function parcelaToFrontend(dto: ParcelaDTO): Parcela {
   };
 }
 
-function parcelaToBackend(data: Partial<Parcela>): Record<string, unknown> {
+export interface ParcelaInput {
+  codigo?: string;
+  nombre?: string;
+  cultivo?: string;
+  area?: number;
+  areaUnidad?: string;
+  ubicacion?: string | null;
+  certificacion?: string;
+  estado?: string;
+}
+
+function parcelaToBackend(data: ParcelaInput): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   if (data.codigo !== undefined) out.codigo = data.codigo;
   if (data.nombre !== undefined) out.nombre = data.nombre;
@@ -422,7 +448,7 @@ export async function fetchParcelas(productorId: ProductorId): Promise<Parcela[]
   return (res.data.data ?? []).map(parcelaToFrontend);
 }
 
-export async function createParcela(productorId: ProductorId, data: Partial<Parcela>): Promise<Parcela> {
+export async function createParcela(productorId: ProductorId, data: ParcelaInput): Promise<Parcela> {
   const payload = { ...parcelaToBackend(data), productores_id: productorId };
   const res = await api.post("/parcelas", payload);
   return parcelaToFrontend(res.data.data);
@@ -430,7 +456,7 @@ export async function createParcela(productorId: ProductorId, data: Partial<Parc
 
 export async function updateParcela(
   parcelaId: number,
-  data: Partial<Parcela>,
+  data: ParcelaInput,
 ): Promise<Parcela> {
   const res = await api.put(`/parcelas/${parcelaId}`, parcelaToBackend(data));
   return parcelaToFrontend(res.data.data);
@@ -490,7 +516,7 @@ export async function fetchDocumentos(productorId: ProductorId): Promise<Documen
 
 export async function createDocumento(
   productorId: ProductorId,
-  data: { tipo: string; categoria: CategoriaDocumento; nombre_archivo: string; ruta_archivo: string; tamano_bytes: number; mime_type: string }
+  data: { tipo: string; categoria: string; nombre_archivo: string; ruta_archivo: string; tamano_bytes: number; mime_type: string }
 ): Promise<Documento> {
   const res = await api.post(`/productores/${productorId}/documentos`, data);
   return documentoToFrontend(res.data.data);

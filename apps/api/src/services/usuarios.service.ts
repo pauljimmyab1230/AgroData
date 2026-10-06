@@ -5,6 +5,7 @@ import { createError } from '../middleware/error.middleware';
 import type {
   CreateUsuarioInput,
   UpdateUsuarioInput,
+  UpdateMeInput,
   UsuarioResponse,
   UsuarioListResponse,
   UsuarioBasicResponse,
@@ -93,7 +94,7 @@ export const create = async (input: CreateUsuarioInput): Promise<UsuarioResponse
     throw createError('El email ya está en uso', 409);
   }
 
-  const hashedPassword = await bcrypt.hash(input.password, 10);
+  const hashedPassword = await hashPassword(input.password);
 
   const usuario = await prisma.usuarios.create({
     data: {
@@ -109,10 +110,22 @@ export const create = async (input: CreateUsuarioInput): Promise<UsuarioResponse
   return usuario as UsuarioResponse;
 };
 
+const hashPassword = (password: string): Promise<string> =>
+  bcrypt.hash(password, 10);
+
 export const update = async (
   id: string,
   input: UpdateUsuarioInput,
+  actor: { id: string; rol: string },
 ): Promise<UsuarioResponse> => {
+  const esAdmin = actor.rol === 'ADMIN';
+  const camposAdmin = ['rol', 'rol_sic', 'activo'] as const;
+  const intentaAdmin = camposAdmin.some((c) => input[c] !== undefined);
+
+  if (intentaAdmin && !esAdmin) {
+    throw createError('Solo un administrador puede modificar rol o estado de la cuenta', 403);
+  }
+
   const existing = await prisma.usuarios.findUnique({ where: { id } });
   if (!existing) {
     throw createError('Usuario no encontrado', 404);
@@ -132,7 +145,7 @@ export const update = async (
   if (input.nombre !== undefined) updateData.nombre = input.nombre;
   if (input.email !== undefined) updateData.email = input.email;
   if (input.password !== undefined) {
-    updateData.password = await bcrypt.hash(input.password, 10);
+    updateData.password = await hashPassword(input.password);
   }
   if (input.rol !== undefined) updateData.rol = input.rol;
   if (input.rol_sic !== undefined) updateData.rol_sic = input.rol_sic;
@@ -140,6 +153,41 @@ export const update = async (
 
   const updated = await prisma.usuarios.update({
     where: { id },
+    data: updateData,
+    select: usuarioSelect,
+  });
+
+  return updated as UsuarioResponse;
+};
+
+// Autoupdate del usuario autenticado: solo datos de perfil.
+export const updateMe = async (
+  userId: string,
+  input: UpdateMeInput,
+): Promise<UsuarioResponse> => {
+  const existing = await prisma.usuarios.findUnique({ where: { id: userId } });
+  if (!existing) {
+    throw createError('Usuario no encontrado', 404);
+  }
+
+  if (input.email && input.email !== existing.email) {
+    const emailTaken = await prisma.usuarios.findUnique({
+      where: { email: input.email },
+    });
+    if (emailTaken) {
+      throw createError('El email ya está en uso', 409);
+    }
+  }
+
+  const updateData: Prisma.usuariosUpdateInput = {};
+  if (input.nombre !== undefined) updateData.nombre = input.nombre;
+  if (input.email !== undefined) updateData.email = input.email;
+  if (input.password !== undefined) {
+    updateData.password = await hashPassword(input.password);
+  }
+
+  const updated = await prisma.usuarios.update({
+    where: { id: userId },
     data: updateData,
     select: usuarioSelect,
   });

@@ -20,7 +20,7 @@ export function InformacionAgroecologicaCard({ mode, values }: InformacionAgroec
   const editable = mode !== "view";
   const formCtx = useOptionalParcelaForm();
   const data = formCtx?.data;
-  const updateData = formCtx?.updateData;
+  const updateData = formCtx?.updateData ?? (() => {});
 
   const tipoSuelo = useCatalogoOptions("tipos-suelo");
   const fuentesAgua = useCatalogoOptions("fuentes-agua");

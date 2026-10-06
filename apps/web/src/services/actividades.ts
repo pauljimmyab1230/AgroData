@@ -1,4 +1,4 @@
-import api from "./api";
+﻿import api from "./api";
 
 // ─── Types ─────────────────────────────────────────────────
 
@@ -33,7 +33,7 @@ export interface ActividadMaquinaria {
   horasUso?: number | null;
   costoHora?: number | null;
   costoTotal?: number | null;
-  combustible?: number | null;
+  combustible?: string | number | null;
   observaciones?: string;
 }
 
@@ -46,6 +46,7 @@ export interface Actividad {
   parcelaId: number;
   parcelaNombre: string;
   parcelaCodigo: string;
+  productorNombre: string;
   fecha: string;
   tipoActividad: string;
   descripcion: string;
@@ -80,7 +81,12 @@ interface ActividadDTO {
     id: number;
     cultivo: string;
     codigo: string;
-    parcela: { id: number; nombre: string; codigo: string } | null;
+    parcela: {
+      id: number;
+      nombre: string;
+      codigo: string;
+      productor: { id: number; nombres: string } | null;
+    } | null;
   } | null;
   fecha: string;
   tipo_actividad: string;
@@ -115,7 +121,7 @@ interface ActividadDTO {
   maquinaria: Array<{
     id?: string; equipo: string; operador: string | null;
     horas_uso: number | null; costo_hora: number | null; costo_total: number | null;
-    combustible: number | null; observaciones: string | null;
+    combustible: string | number | null; observaciones: string | null;
   }>;
   created_at: string;
   updated_at: string;
@@ -132,6 +138,7 @@ function toFrontend(dto: ActividadDTO): Actividad {
     parcelaId: parcela?.id ?? 0,
     parcelaNombre: parcela?.nombre ?? "",
     parcelaCodigo: parcela?.codigo ?? "",
+    productorNombre: parcela?.productor?.nombres ?? "",
     fecha: dto.fecha?.split("T")[0] ?? "",
     tipoActividad: dto.tipo_actividad,
     descripcion: dto.descripcion ?? "",
@@ -249,7 +256,7 @@ export async function fetchActividades(params?: ActividadesQuery): Promise<{ dat
   };
 }
 
-export async function fetchActividad(id: string): Promise<Actividad> {
+export async function fetchActividad(id: string | number): Promise<Actividad> {
   const res = await api.get(`/actividades/${id}`);
   return toFrontend(res.data.data);
 }
@@ -259,12 +266,12 @@ export async function createActividad(data: Partial<Actividad>): Promise<Activid
   return toFrontend(res.data.data);
 }
 
-export async function updateActividad(id: string, data: Partial<Actividad>): Promise<Actividad> {
+export async function updateActividad(id: string | number, data: Partial<Actividad>): Promise<Actividad> {
   const res = await api.put(`/actividades/${id}`, toBackend(data));
   return toFrontend(res.data.data);
 }
 
-export async function deleteActividad(id: string): Promise<void> {
+export async function deleteActividad(id: string | number): Promise<void> {
   await api.delete(`/actividades/${id}`);
 }
 

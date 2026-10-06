@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AlertTriangle, Boxes, Eye, Pencil, Plus, ShieldCheck, Tag, X } from "lucide-react";
-import { Button, Card, ConfirmDialog, DataTable, Pagination, SearchInput, SectionHeader, Select, Badge } from "../../components/ui";
+import { Button, Card, ConfirmDialog, DataTable, SearchInput, SectionHeader, Select, Badge } from "../../components/ui";
 import {
   fetchKardex,
   deleteKardexItem,
@@ -56,12 +56,12 @@ export default function KardexList() {
   const [filtroEstado, setFiltroEstado] = useState("");
   const [filtroCategoria, setFiltroCategoria] = useState("");
   const [page, setPage] = useState(1);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const [items, setItems] = useState<KardexItem[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   const load = () => {
     setLoading(true);

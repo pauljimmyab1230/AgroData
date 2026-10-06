@@ -44,14 +44,15 @@ export function FamiliarTable({ mode, productorId }: FamiliarTableProps) {
     try {
       if (editTarget) {
         if (mode === "create") {
-          setFamiliares(familiares.map((f) => (f.id === editTarget.id ? { ...editTarget, ...form } : f)));
+          setFamiliares(familiares.map((f) => (f.id === editTarget.id ? ({ ...editTarget, ...form } as Familiar) : f)));
         } else if (productorId) {
           const updated = await updateFamiliar(productorId, editTarget.id, form);
           setFamiliares(familiares.map((f) => (f.id === updated.id ? updated : f)));
         }
       } else {
         if (mode === "create") {
-          setFamiliares([...familiares, { id: -(++tempIdCounter.current), ...form }]);
+          const provisional = { id: -(++tempIdCounter.current), ...form } as Familiar;
+          setFamiliares([...familiares, provisional]);
         } else if (productorId) {
           const created = await createFamiliar(productorId, form);
           setFamiliares([...familiares, created]);

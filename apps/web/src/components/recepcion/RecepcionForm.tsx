@@ -1,9 +1,10 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Plus, Trash2, Save, Package } from "lucide-react";
 import { Button, Input, Textarea } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import type { Acopio } from "../../services/acopios";
+import type { Recepcion } from "../../services/recepciones";
 import { fetchAcopioByCodigo } from "../../services/acopios";
 import api from "../../services/api";
 import { toast } from "../../utils/toast";
@@ -28,7 +29,7 @@ interface RecepcionFormData {
 
 interface RecepcionFormProps {
   mode: FormMode;
-  values?: RecepcionFormData;
+  values?: RecepcionFormData | Recepcion;
   inModal?: boolean;
   onSave?: () => void;
 }

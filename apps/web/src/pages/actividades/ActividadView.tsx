@@ -33,10 +33,12 @@ export default function ActividadView({ inModal, actividadId: propId }: Activida
   const [actividad, setActividad] = useState<Actividad | null>(null);
   const [actividades, setActividades] = useState<Actividad[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
     setLoading(true);
+    setError(null);
     Promise.all([
       fetchActividad(id),
       fetchActividades({ limit: 50 }),
@@ -45,14 +47,25 @@ export default function ActividadView({ inModal, actividadId: propId }: Activida
         setActividad(act);
         setActividades(list.data);
       })
-      .catch(() => {})
+      .catch(() => {
+        setError("No se pudo cargar la actividad. Verifica tu conexión e inténtalo de nuevo.");
+      })
       .finally(() => setLoading(false));
   }, [id]);
 
-  if (loading || !actividad) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
         <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (error || !actividad) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 py-20">
+        <p className="text-sm text-gray-600">{error ?? "Actividad no encontrada"}</p>
+        <Button variant="secondary" onClick={() => window.location.reload()}>Reintentar</Button>
       </div>
     );
   }

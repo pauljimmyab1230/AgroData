@@ -94,7 +94,7 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
                       className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50"
                     >
                       <Settings className="h-4 w-4 text-gray-400" />
-                      Configuraci\u00f3n
+                      Configuración
                     </button>
                   </div>
                   

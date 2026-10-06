@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Plus, Truck } from "lucide-react";
 import { Button, FormField, Input, Modal, Select } from "../ui";
 import { CardHeader, CardShell, type FormMode } from "../shared/formControls";
@@ -172,7 +172,7 @@ export function MaquinariaCard({ mode, value, onChange }: MaquinariaCardProps) {
             <Select
               options={toOptions(combustibleOpciones)}
               placeholder="Seleccione"
-              value={draft.combustible ?? ""}
+              value={draft.combustible != null ? String(draft.combustible) : ""}
               onChange={(v) => setDraft((d) => ({ ...d, combustible: v }))}
             />
           </FormField>

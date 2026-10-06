@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import api from "../../services/api";
-import { fetchRecepciones, type Recepcion, type RecepcionesQuery } from "../../services/recepciones";
+import { fetchRecepciones, type RecepcionesQuery } from "../../services/recepciones";
 import {
   fetchInspecciones,
   fetchInspeccion,

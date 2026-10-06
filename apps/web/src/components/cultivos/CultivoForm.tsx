@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DatosGeneralesCard } from "./DatosGeneralesCard";
 import { InformacionCultivoCard } from "./InformacionCultivoCard";
@@ -69,7 +69,7 @@ export default function CultivoForm({ mode, values, inModal, onSave }: CultivoFo
           onSave?.();
         }
       } else if (values?.id) {
-        await updateMutation.mutateAsync({ id: values.id, data: formData });
+        await updateMutation.mutateAsync({ id: String(values.id), data: formData });
         toast.success("Cultivo actualizado exitosamente");
         if (!inModal) {
           navigate(`/cultivos/${values.id}`);
@@ -92,7 +92,7 @@ export default function CultivoForm({ mode, values, inModal, onSave }: CultivoFo
       <InformacionCultivoCard mode={mode} values={formData} onChange={updateField} errors={errors} />
       <InformacionTecnicaCard mode={mode} values={formData} onChange={updateField} />
       <EstimacionProduccionCard mode={mode} values={formData} onChange={updateField} />
-      <ObservacionesCard mode={mode} value={formData.observaciones} onChange={(v) => updateField({ observaciones: v })} />
+      <ObservacionesCard mode={mode} value={formData.observaciones ?? undefined} onChange={(v) => updateField({ observaciones: v })} />
       <ActionButtons cancelTo={cancelTo} onCancel={inModal ? onSave : undefined} onSave={handleSave} disabled={saving} inModal={inModal} />
     </div>
   );

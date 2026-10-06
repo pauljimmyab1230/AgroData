@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Hash, PackageCheck, Plus, Scale, Timer, X } from "lucide-react";
 import { Button, ConfirmDialog, FilterSelect, LoadingSpinner, SearchInput, SectionHeader } from "../../components/ui";
 import RecepcionKPI from "../../components/recepcion/RecepcionKPI";
 import RecepcionTable from "../../components/recepcion/RecepcionTable";
 import {
   type Recepcion,
+  type RecepcionStats,
   fetchRecepciones,
+  fetchRecepcionStats,
   deleteRecepcion,
   formatearPeso,
   recepcionEstados,
@@ -31,16 +33,17 @@ export default function RecepcionList() {
   const [search, setSearch] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
   const [page, setPage] = useState(1);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [viewId, setViewId] = useState<string | null>(null);
+  const [editId, setEditId] = useState<number | null>(null);
+  const [viewId, setViewId] = useState<number | null>(null);
 
   const [recepciones, setRecepciones] = useState<Recepcion[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<RecepcionStats | null>(null);
 
   const loadData = () => {
     setLoading(true);
@@ -65,6 +68,12 @@ export default function RecepcionList() {
     loadData();
   }, [search, filtroEstado, page]);
 
+  useEffect(() => {
+    fetchRecepcionStats()
+      .then(setStats)
+      .catch(() => undefined);
+  }, [recepciones.length]);
+
   const hasFilters = Boolean(search) || Boolean(filtroEstado);
 
   const clearFilters = () => {
@@ -84,7 +93,7 @@ export default function RecepcionList() {
     if (!deleteId) return;
     setDeleting(true);
     try {
-      await deleteRecepcion(deleteId);
+      await deleteRecepcion(String(deleteId));
       setDeleteId(null);
       loadData();
       toast.success("Recepción eliminada correctamente");
@@ -104,19 +113,19 @@ export default function RecepcionList() {
     },
     {
       label: "Kilogramos Recibidos",
-      value: loading ? "—" : formatearPeso(recepciones.reduce((acc, r) => acc + (r.pesoTotal ?? 0), 0)),
+      value: loading || !stats ? "—" : formatearPeso(stats.peso_neto_total),
       icon: Scale,
       iconClass: "bg-sun-100 text-sun-700",
     },
     {
       label: "LP Recepcionados",
-      value: loading ? "—" : String(new Set(recepciones.map((r) => r.loteProductor)).size),
+      value: loading || !stats ? "—" : String(stats.lotes_distintos),
       icon: Hash,
       iconClass: "bg-purple-50 text-purple-600",
     },
     {
       label: "Pendientes de Procesamiento",
-      value: loading ? "—" : String(recepciones.filter((r) => r.estado === "PENDIENTE_PESAJE").length),
+      value: loading || !stats ? "—" : String(stats.pendientes_pesaje),
       icon: Timer,
       iconClass: "bg-red-50 text-red-600",
     },
@@ -212,7 +221,7 @@ export default function RecepcionList() {
       <RecepcionModal
         open={viewId !== null}
         onClose={() => setViewId(null)}
-        onEdit={(id) => { setViewId(null); setEditId(id); }}
+        onEdit={(id) => { setViewId(null); setEditId(Number(id)); }}
         mode="view"
         recepcionId={viewId || undefined}
       />

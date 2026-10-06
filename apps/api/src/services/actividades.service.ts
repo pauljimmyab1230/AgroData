@@ -67,7 +67,14 @@ const selectIncludes = {
       id: true,
       cultivo: true,
       codigo: true,
-      parcela: { select: { id: true, nombre: true, codigo: true } },
+      parcela: {
+        select: {
+          id: true,
+          nombre: true,
+          codigo: true,
+                productor: { select: { id: true, nombres: true } },
+        },
+      },
     },
   },
   insumos: { select: { insumo: true } },
@@ -122,7 +129,14 @@ export const getAll = async (filters: {
             id: true,
             cultivo: true,
             codigo: true,
-            parcela: { select: { id: true, nombre: true, codigo: true } },
+            parcela: {
+              select: {
+                id: true,
+                nombre: true,
+                codigo: true,
+          productor: { select: { id: true, nombres: true } },
+              },
+            },
           },
         },
         _count: { select: { insumos: true, mano_obra: true, maquinaria: true } },

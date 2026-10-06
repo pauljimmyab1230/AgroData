@@ -7,7 +7,7 @@ import {
   type Cultivo,
 } from "../../services/cultivos";
 
-const parseDate = (s?: string) => (s ? new Date(s + "T00:00:00") : null);
+const parseDate = (s?: string | null) => (s ? new Date(s + "T00:00:00") : null);
 
 type EstimacionProduccionCardProps = {
   mode: FormMode;

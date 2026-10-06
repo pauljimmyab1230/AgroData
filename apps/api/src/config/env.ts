@@ -16,8 +16,11 @@ interface EnvConfig {
 const envSchema = Joi.object({
   PORT: Joi.number().default(3000),
   NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
-  JWT_SECRET: Joi.string().required(),
-  JWT_EXPIRES_IN: Joi.string().default('24h'),
+  JWT_SECRET: Joi.string().min(32).required().messages({
+    'string.min': 'JWT_SECRET debe tener al menos 32 caracteres. Genera uno con: openssl rand -base64 48',
+    'any.required': 'JWT_SECRET es obligatorio',
+  }),
+  JWT_EXPIRES_IN: Joi.string().default('15m'),
   DATABASE_URL: Joi.string().required(),
   FRONTEND_URL: Joi.string().default('http://localhost:5173'),
   FRONTEND_URLS: Joi.string().default('').allow(''),

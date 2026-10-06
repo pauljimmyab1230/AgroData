@@ -10,7 +10,6 @@ import {
   updateFamiliar,
   deleteFamiliar,
   fetchParcelas,
-  createParcela,
   fetchDocumentos,
   createDocumento,
   deleteDocumento,

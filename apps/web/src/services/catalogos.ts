@@ -55,12 +55,12 @@ export async function fetchCatalogoActivos(tipo: string): Promise<CatalogoItem[]
   return res.data.data ?? [];
 }
 
-export async function createCatalogoItem(tipo: string, data: { nombre: string; descripcion?: string }): Promise<CatalogoItem> {
+export async function createCatalogoItem(tipo: string, data: { nombre: string; descripcion?: string; orden?: number }): Promise<CatalogoItem> {
   const res = await api.post(`/catalogos/${tipo}`, data);
   return res.data.data;
 }
 
-export async function updateCatalogoItem(id: number, data: { nombre?: string; descripcion?: string; activo?: boolean; orden?: number }): Promise<CatalogoItem> {
+export async function updateCatalogoItem(id: number, data: { nombre?: string; descripcion?: string | null; activo?: boolean; orden?: number }): Promise<CatalogoItem> {
   const res = await api.put(`/catalogos/item/${id}`, data);
   return res.data.data;
 }
