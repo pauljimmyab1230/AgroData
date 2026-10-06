@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { View, Text, ScrollView, RefreshControl, TouchableOpacity, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -6,7 +6,7 @@ import { Users, MapPin, Wheat, CalendarDays, Sprout, ClipboardList, Package, Tru
 import { useDashboard } from "../hooks/useDashboard";
 import { LoadingSpinner } from "../components/ui";
 import { KpiGrid } from "../components/ui/KpiGrid";
-import CustomHeader from "../components/ui/CustomHeader";
+import HeaderUsuario from "../components/ui/HeaderUsuario";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLogout } from "../hooks/useLogout";
 import { getStatusConfig } from "../utils/statusConfig";
@@ -62,7 +62,7 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={["top"]}>
-      <CustomHeader userName="Juan Péruz" userRole="Administrador" isDarkMode={isDarkMode} onToggleTheme={toggleTheme} onLogout={handleLogout} />
+      <HeaderUsuario isDarkMode={isDarkMode} onToggleTheme={toggleTheme} onLogout={handleLogout} />
 
       <ScrollView
         style={[styles.scrollView, { backgroundColor: colors.background }]}

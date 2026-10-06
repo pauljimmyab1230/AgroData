@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+﻿import React, { useState, useCallback, useEffect } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { CalendarDays, Plus } from "lucide-react-native";
@@ -7,7 +7,7 @@ import { ListScreenLayout } from "../components/layouts/ListScreenLayout";
 import { useLogout } from "../hooks/useLogout";
 import { useDebounce } from "../hooks/useDebounce";
 import { getStatusConfig } from "../utils/statusConfig";
-import CustomHeader from "../components/ui/CustomHeader";
+import HeaderUsuario from "../components/ui/HeaderUsuario";
 import { useTheme } from "../contexts/ThemeContext";
 import type { Campania } from "../services/campo";
 
@@ -77,7 +77,7 @@ export default function CampaniasScreen() {
     <ListScreenLayout
       title="Campañas"
       subtitle="Ciclos agrícolas y planificación"
-      header={<CustomHeader userName="Juan Péruz" userRole="Administrador" isDarkMode={isDarkMode} onToggleTheme={toggleTheme} onLogout={handleLogout} />}
+      header={<HeaderUsuario isDarkMode={isDarkMode} onToggleTheme={toggleTheme} onLogout={handleLogout} />}
       onAdd={() => navigation.navigate("CampaniaForm")}
       addButtonLabel="Nueva"
       addIcon={Plus}

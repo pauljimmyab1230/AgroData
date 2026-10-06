@@ -34,7 +34,7 @@ export default function App() {
   useEffect(() => {
     (async () => {
       const auth = await getStoredAuth();
-      setIsLoggedIn(!!auth?.token);
+      setIsLoggedIn(!!auth?.user);
       await SplashScreen.hideAsync();
     })();
   }, []);

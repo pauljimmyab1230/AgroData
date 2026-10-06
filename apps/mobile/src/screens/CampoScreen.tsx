@@ -1,8 +1,8 @@
-import React from "react";
+﻿import React from "react";
 import { MapPin, CalendarDays, Wheat, ClipboardCheck, Wrench, Package } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import { MenuScreenLayout } from "../components/layouts/MenuScreenLayout";
-import CustomHeader from "../components/ui/CustomHeader";
+import HeaderUsuario from "../components/ui/HeaderUsuario";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLogout } from "../hooks/useLogout";
 
@@ -30,9 +30,7 @@ export default function CampoScreen() {
   return (
     <MenuScreenLayout
       header={
-        <CustomHeader
-          userName="Juan Péruz"
-          userRole="Administrador"
+        <HeaderUsuario
           isDarkMode={isDarkMode}
           onToggleTheme={toggleTheme}
           onLogout={handleLogout}

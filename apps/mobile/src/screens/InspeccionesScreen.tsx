@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+﻿import React, { useState, useCallback, useEffect } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { ClipboardCheck, ChevronRight, Plus } from "lucide-react-native";
@@ -9,7 +9,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { getStatusConfig, getBadgeVariant } from "../utils/statusConfig";
 import { ListScreenLayout } from "../components/layouts/ListScreenLayout";
 import { Badge, LoadingSpinner } from "../components/ui";
-import CustomHeader from "../components/ui/CustomHeader";
+import HeaderUsuario from "../components/ui/HeaderUsuario";
 import type { Inspeccion } from "../services/inspecciones";
 
 export default function InspeccionesScreen() {
@@ -68,7 +68,7 @@ export default function InspeccionesScreen() {
     <ListScreenLayout
       title="Inspecciones"
       subtitle="Control de calidad orgánica"
-      header={<CustomHeader userName="Juan Péruz" userRole="Administrador" isDarkMode={isDarkMode} onToggleTheme={toggleTheme} onLogout={handleLogout} />}
+      header={<HeaderUsuario isDarkMode={isDarkMode} onToggleTheme={toggleTheme} onLogout={handleLogout} />}
       onAdd={() => navigation.navigate("InspeccionForm")}
       addButtonLabel="Nueva"
       addIcon={Plus}

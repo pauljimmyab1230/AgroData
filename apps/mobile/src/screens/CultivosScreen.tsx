@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+﻿import React, { useState, useCallback, useEffect } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Wheat, ChevronRight, Sprout, TreeDeciduous, AlertTriangle, Plus } from "lucide-react-native";
@@ -9,7 +9,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { getStatusConfig, getBadgeVariant } from "../utils/statusConfig";
 import { ListScreenLayout } from "../components/layouts/ListScreenLayout";
 import { Badge, LoadingSpinner } from "../components/ui";
-import CustomHeader from "../components/ui/CustomHeader";
+import HeaderUsuario from "../components/ui/HeaderUsuario";
 import type { Cultivo } from "../services/campo";
 
 export default function CultivosScreen() {
@@ -69,7 +69,7 @@ export default function CultivosScreen() {
     <ListScreenLayout
       title="Cultivos"
       subtitle="Gestión de cultivos agrícolas"
-      header={<CustomHeader userName="Juan Péruz" userRole="Administrador" isDarkMode={isDarkMode} onToggleTheme={toggleTheme} onLogout={handleLogout} />}
+      header={<HeaderUsuario isDarkMode={isDarkMode} onToggleTheme={toggleTheme} onLogout={handleLogout} />}
       onAdd={() => navigation.navigate("CultivoForm")}
       addButtonLabel="Nuevo"
       addIcon={Plus}

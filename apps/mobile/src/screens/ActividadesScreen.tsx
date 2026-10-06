@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+﻿import React, { useState, useCallback, useEffect } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Wrench, Plus, Clock, Play, CheckCircle } from "lucide-react-native";
@@ -10,7 +10,7 @@ import { getStatusConfig, getBadgeVariant } from "../utils/statusConfig";
 import { tiposActividad, type Actividad } from "../services/actividades";
 import { ListScreenLayout } from "../components/layouts/ListScreenLayout";
 import { Badge, LoadingSpinner } from "../components/ui";
-import CustomHeader from "../components/ui/CustomHeader";
+import HeaderUsuario from "../components/ui/HeaderUsuario";
 
 export default function ActividadesScreen() {
   const navigation = useNavigation<any>();
@@ -75,7 +75,7 @@ export default function ActividadesScreen() {
     <ListScreenLayout
       title="Bitácora"
       subtitle="Registro de actividades del campo"
-      header={<CustomHeader userName="Juan Péruz" userRole="Administrador" isDarkMode={isDarkMode} onToggleTheme={toggleTheme} onLogout={handleLogout} />}
+      header={<HeaderUsuario isDarkMode={isDarkMode} onToggleTheme={toggleTheme} onLogout={handleLogout} />}
       onAdd={() => navigation.navigate("ActividadForm")}
       addButtonLabel="Nueva"
       addIcon={Plus}
