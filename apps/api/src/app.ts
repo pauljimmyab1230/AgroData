@@ -4,8 +4,9 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import path from 'path';
 import { env } from './config/env';
-import { errorHandler } from './middleware/error.middleware';
+import { errorHandler, createError } from './middleware/error.middleware';
 import { authMiddleware } from './middleware/auth.middleware';
+import { rateLimit } from './middleware/upload.middleware';
 import authRoutes from './routes/auth.routes';
 import usuariosRoutes from './routes/usuarios.routes';
 import productoresRoutes from './routes/productores.routes';
@@ -24,6 +25,9 @@ import ubigeoRoutes from './routes/ubigeo.routes';
 
 const app = express();
 
+// Detrás de un proxy/load balancer: necesario para que req.ip sea la IP real.
+app.set('trust proxy', 1);
+
 const allowedOrigins = new Set<string>([env.FRONTEND_URL, ...env.FRONTEND_URLS]);
 
 const isAllowedOrigin = (origin: string | undefined): boolean => {
@@ -39,7 +43,7 @@ app.use(cors({
     if (isAllowedOrigin(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Origen no permitido por CORS'));
+      callback(createError('Origen no permitido por CORS', 403));
     }
   },
   credentials: true,
@@ -47,8 +51,11 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 app.use(morgan(env.NODE_ENV === 'development' ? 'dev' : 'combined'));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// Rate limit global: 300 peticiones por minuto por IP.
+app.use('/api', rateLimit(60 * 1000, 300));
 
 app.get('/api/health', (_req, res) => {
   res.json({

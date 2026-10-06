@@ -1,4 +1,4 @@
-﻿-- CreateTable
+-- CreateTable
 CREATE TABLE `Productor` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `codigo` VARCHAR(20) NOT NULL,

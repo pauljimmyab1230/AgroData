@@ -18,7 +18,10 @@ const extractToken = (authHeader: string | undefined): string => {
 };
 
 const verifyToken = (token: string): JwtPayload => {
-  const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
+  const decoded = jwt.verify(token, env.JWT_SECRET, {
+    algorithms: ['HS256'],
+    issuer: 'agrodata-api',
+  }) as JwtPayload;
 
   if (!decoded.id || !decoded.email || !decoded.rol) {
     throw createError('Token inválido: payload incompleto', 401);

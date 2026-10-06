@@ -1016,4 +1016,22 @@ model usuarios {
   rol_sic    RolSic?
 
   productores_creados Productor[]
+  refresh_tokens      refresh_tokens[]
+}
+
+// Refresh tokens rotativos: cada uso invalida el anterior (ver auth.service.ts).
+model refresh_tokens {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  jti       String   @unique @db.VarChar(36)
+  user_id   String   @db.VarChar(36)
+  token_hash String  @db.VarChar(64)
+  expires_at DateTime
+  revoked   Boolean  @default(false)
+  created_at DateTime @default(now()) @db.DateTime(3)
+  replaced_by String? @db.VarChar(36)
+
+  usuario usuarios @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([expires_at])
 }

@@ -129,6 +129,24 @@ export async function deleteUsuario(id: string): Promise<void> {
   await api.delete(`/usuarios/${id}`);
 }
 
+// Cambio de contraseña del usuario autenticado: exige la contraseña actual.
+export async function changePassword(
+  passwordActual: string,
+  passwordNueva: string,
+): Promise<void> {
+  await api.patch("/auth/change-password", { passwordActual, passwordNueva });
+}
+
+// Autoupdate del usuario autenticado (solo perfil, sin rol/activo).
+export async function updateMe(data: {
+  nombre?: string;
+  email?: string;
+  password?: string;
+}): Promise<Usuario> {
+  const res = await api.patch("/usuarios/me", data);
+  return toFrontend(res.data.data);
+}
+
 // ─── Basic (para dropdowns) ─────────────────────────────────
 
 export interface UsuarioBasico {

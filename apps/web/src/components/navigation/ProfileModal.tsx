@@ -2,7 +2,7 @@ import { useState } from "react";
 import { User, Lock, Eye, EyeOff, Loader2, Check } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import Modal from "../ui/Modal";
-import { updateUsuario } from "../../services/usuarios";
+import { changePassword } from "../../services/usuarios";
 
 interface ProfileModalProps {
   open: boolean;
@@ -33,8 +33,8 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
       return;
     }
 
-    if (newPassword.length < 6) {
-      setError("La nueva contraseña debe tener al menos 6 caracteres");
+    if (newPassword.length < 8) {
+      setError("La nueva contraseña debe tener al menos 8 caracteres, con mayúscula, minúscula y número");
       return;
     }
 
@@ -45,7 +45,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
 
     setLoading(true);
     try {
-      await updateUsuario(user!.id, { password: newPassword });
+      await changePassword(currentPassword, newPassword);
       setSuccess("Contraseña actualizada correctamente");
       setCurrentPassword("");
       setNewPassword("");

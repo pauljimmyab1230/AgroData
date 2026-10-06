@@ -38,4 +38,14 @@ export interface UserProfile {
 export interface AuthResponse {
   user: UserProfile;
   token: JwtToken;
+  refreshToken: string;
+}
+
+export interface ChangePasswordInput {
+  passwordActual: string;
+  passwordNueva: string;
+}
+
+export interface RefreshInput {
+  refreshToken: string;
 }

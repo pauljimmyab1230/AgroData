@@ -1,6 +1,5 @@
-import { createContext, useContext, useEffect, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useEffect, type ReactNode } from "react";
 import { useAuthStore, type User } from "../stores/authStore";
-import api from "../services/api";
 
 // ─── Types ──────────────────────────────────────────────────
 interface AuthContextType {
@@ -8,7 +7,6 @@ interface AuthContextType {
   token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (nombre: string, email: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -25,15 +23,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [loadProfile, token]);
 
-  const register = useCallback(
-    async (nombre: string, email: string, password: string) => {
-      await api.post("/auth/register", { nombre, email, password });
-    },
-    []
-  );
-
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
