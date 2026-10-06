@@ -1,8 +1,14 @@
 node_modules/
 dist/
 build/
+build*.txt
 .env
+.env.*
+!.env.example
 *.log
 *.local
 .DS_Store
 .turbo/
+.expo/
+*.tsbuildinfo
+coverage/

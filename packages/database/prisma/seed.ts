@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🗺️  Importando ubigeos de Perú...');
 
-  const sqlPath = path.resolve(__dirname, '..', '..', '..', 'ubigeo.sql');
+  const sqlPath = path.resolve(__dirname, 'data', 'ubigeo.sql');
   const sqlContent = fs.readFileSync(sqlPath, 'utf-8');
 
   const insertRegex = /INSERT INTO `ubigeo` \([^)]+\) VALUES\s*/;
