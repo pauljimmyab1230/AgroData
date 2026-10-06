@@ -13,6 +13,8 @@
     "build": "turbo build",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "clean": "turbo clean",
     "db:migrate": "npm run db:migrate -w @agrodata/database",
     "db:migrate:prod": "npm run db:migrate:prod -w @agrodata/database",
@@ -23,7 +25,9 @@
     "db:push": "turbo db:push"
   },
   "devDependencies": {
-    "turbo": "^2.5.0"
+    "@vitest/coverage-v8": "^5.0.3",
+    "turbo": "^2.5.0",
+    "vitest": "^5.0.3"
   },
   "allowScripts": {
     "@prisma/client@6.19.3": true,
