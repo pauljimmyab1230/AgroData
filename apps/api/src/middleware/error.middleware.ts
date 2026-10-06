@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
+import { Prisma } from '@prisma/client';
 
-// ─── AppError (Typed) ───────────────────────────────────────
+// AppError (Typed)
 export interface AppError extends Error {
   statusCode: number;
   isOperational: boolean;
@@ -8,12 +9,12 @@ export interface AppError extends Error {
   errors?: Array<{ field: string; message: string }>;
 }
 
-// ─── Type Guard ─────────────────────────────────────────────
+// Type Guard
 function isAppError(error: unknown): error is AppError {
-  return error instanceof Error && 'statusCode' in error;
+  return error instanceof Error && 'statusCode' in error && 'isOperational' in error;
 }
 
-// ─── Factory ────────────────────────────────────────────────
+// Factory
 export const createError = (message: string, statusCode: number, type?: string): AppError => {
   const error = new Error(message) as AppError;
   error.statusCode = statusCode;
@@ -35,17 +36,51 @@ const statusCodeToType = (code: number): string => {
   }
 };
 
-// ─── Error Handler Middleware ────────────────────────────────
+// Mapea errores conocidos de Prisma a códigos HTTP semánticos.
+function mapearErrorPrisma(err: unknown): AppError | null {
+  if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    switch (err.code) {
+      case 'P2002': {
+        const campos = Array.isArray(err.meta?.target)
+          ? (err.meta.target as string[]).join(', ')
+          : 'el campo indicado';
+        return createError(`Ya existe un registro con ${campos} duplicado`, 409);
+      }
+      case 'P2025':
+        return createError('Registro no encontrado', 404);
+      case 'P2003':
+        return createError('La operación viola una restricción de relación', 400);
+      case 'P2014':
+        return createError('La relación indicada no es válida', 400);
+      case 'P2021':
+        return createError('La tabla indicada no existe', 500);
+      case 'P2022':
+        return createError('La columna indicada no existe', 500);
+      default:
+        return createError('Error de base de datos', 500);
+    }
+  }
+  if (err instanceof Prisma.PrismaClientValidationError) {
+    return createError('Datos inválidos para la operación', 400);
+  }
+  return null;
+}
+
+// Error Handler Middleware
 export const errorHandler = (
   err: unknown,
   req: Request,
   res: Response,
   _next: NextFunction,
 ): void => {
-  const statusCode = isAppError(err) ? err.statusCode : 500;
-  const message = isAppError(err) ? err.message : 'Error interno del servidor';
-  const type = isAppError(err)
-    ? err.type
+  // Errores de Prisma primero: no deben filtrarse como 500 genéricos.
+  const errorPrisma = mapearErrorPrisma(err);
+  const appErr = errorPrisma ?? (isAppError(err) ? err : null);
+
+  const statusCode = appErr ? appErr.statusCode : 500;
+  const message = appErr ? appErr.message : 'Error interno del servidor';
+  const type = appErr
+    ? appErr.type
     : `https://api.agrodata.com/errors/internal-error`;
 
   if (process.env.NODE_ENV === 'development') {
@@ -63,7 +98,7 @@ export const errorHandler = (
     status: statusCode,
     detail: message,
     instance: req.originalUrl,
-    ...(isAppError(err) && err.errors ? { errors: err.errors } : {}),
+    ...(appErr?.errors ? { errors: appErr.errors } : {}),
   };
 
   res.status(statusCode).json(problemResponse);

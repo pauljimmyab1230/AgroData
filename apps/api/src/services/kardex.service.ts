@@ -239,7 +239,8 @@ export const remove = async (id: string) => {
 // ─── Movimientos ──────────────────────────────────────────
 
 export const addMovimiento = async (kardexId: string, data: Record<string, unknown>) => {
-  const kardex = await prisma.kardex.findFirst({ where: { id: Number(kardexId), activo: true } });
+  const kardexIdNum = Number(kardexId);
+  const kardex = await prisma.kardex.findFirst({ where: { id: kardexIdNum, activo: true } });
 
   if (!kardex) {
     throw createError('Item de kardex no encontrado', 404);
@@ -247,29 +248,48 @@ export const addMovimiento = async (kardexId: string, data: Record<string, unkno
 
   const tipo = data.tipo as TipoMovimiento;
   const cantidad = Math.abs(Number(data.cantidad));
-  const saldoActual = Number(kardex.cantidad_actual);
 
   if (cantidad === 0) {
     throw createError('La cantidad debe ser distinta de cero', 400);
   }
 
-  if (tipo === 'SALIDA' || tipo === 'TRANSFERENCIA') {
-    if (cantidad > saldoActual) {
-      throw createError('La cantidad excede el saldo disponible', 400);
-    }
-  }
+  const esSalida = tipo === 'SALIDA' || tipo === 'TRANSFERENCIA';
 
-  const nuevoSaldo = calcularNuevoSaldo(saldoActual, tipo, cantidad);
-  validarSaldoNegativo(nuevoSaldo, tipo);
-
+  // La actualización del saldo se hace con updateMany condicional dentro de la
+  // transacción: dos SALIDA concurrentes no pueden dejar el saldo en negativo.
   const movimiento = await prisma.$transaction(async (tx: PrismaTransaction) => {
-    const mov = await tx.kardex_movimiento.create({
+    if (esSalida) {
+      const resultado = await tx.kardex.updateMany({
+        where: { id: kardexIdNum, cantidad_actual: { gte: cantidad } },
+        data: { cantidad_actual: { decrement: cantidad } },
+      });
+      if (resultado.count === 0) {
+        throw createError('La cantidad excede el saldo disponible', 400);
+      }
+    } else {
+      await tx.kardex.update({
+        where: { id: kardexIdNum },
+        data: { cantidad_actual: { increment: cantidad } },
+      });
+    }
+
+    const actualizado = await tx.kardex.findUnique({
+      where: { id: kardexIdNum },
+      select: { cantidad_actual: true },
+    });
+
+    const saldoAnterior = esSalida
+      ? Number(actualizado?.cantidad_actual ?? 0) + cantidad
+      : Number(actualizado?.cantidad_actual ?? 0) - cantidad;
+    const saldoPosterior = Number(actualizado?.cantidad_actual ?? 0);
+
+    return tx.kardex_movimiento.create({
       data: {
-        kardex_id: Number(kardexId),
+        kardex_id: kardexIdNum,
         tipo,
         cantidad,
-        saldo_anterior: saldoActual,
-        saldo_posterior: nuevoSaldo,
+        saldo_anterior: saldoAnterior,
+        saldo_posterior: saldoPosterior,
         destino: (data.destino as string) || null,
         referencia: (data.referencia as string) || null,
         responsable: (data.responsable as string) || null,
@@ -277,13 +297,6 @@ export const addMovimiento = async (kardexId: string, data: Record<string, unkno
         fecha: data.fecha ? new Date(data.fecha as string) : new Date(),
       },
     });
-
-    await tx.kardex.update({
-      where: { id: Number(kardexId) },
-      data: { cantidad_actual: nuevoSaldo },
-    });
-
-    return mov;
   });
 
   return movimiento;

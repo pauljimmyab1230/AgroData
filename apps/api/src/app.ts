@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import path from 'path';
 import { env } from './config/env';
+import prisma from './config/database';
 import { errorHandler, createError } from './middleware/error.middleware';
 import { authMiddleware } from './middleware/auth.middleware';
 import { rateLimit } from './middleware/upload.middleware';
@@ -57,12 +58,23 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 // Rate limit global: 300 peticiones por minuto por IP.
 app.use('/api', rateLimit(60 * 1000, 300));
 
-app.get('/api/health', (_req, res) => {
-  res.json({
-    success: true,
-    message: 'AgroData API funcionando correctamente',
-    timestamp: new Date().toISOString(),
-  });
+app.get('/api/health', async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({
+      success: true,
+      message: 'AgroData API funcionando correctamente',
+      database: 'ok',
+      timestamp: new Date().toISOString(),
+    });
+  } catch {
+    res.status(503).json({
+      success: false,
+      message: 'La base de datos no está disponible',
+      database: 'error',
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 
 app.use('/api/auth', authRoutes);

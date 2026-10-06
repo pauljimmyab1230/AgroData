@@ -466,6 +466,8 @@ model parcela_documentos {
   parcela_id     Int
 
   parcela parcela @relation(fields: [parcela_id], references: [id])
+
+  @@index([parcela_id])
 }
 
 model parcela_fotos {
@@ -481,6 +483,8 @@ model parcela_fotos {
   parcela_id    Int
 
   parcela parcela @relation(fields: [parcela_id], references: [id])
+
+  @@index([parcela_id])
 }
 
 model parcela_historial {
@@ -567,6 +571,9 @@ model cultivo {
   actividades      actividades[]
   inspecciones     Inspecciones[]
   acopios_detalles acopio_detalle[]
+
+  @@index([parcela_id])
+  @@index([campania_id])
 }
 
 model actividades {
@@ -602,6 +609,8 @@ model actividades {
   insumos    Insumo_has_actividades[]
   mano_obra  Mano_de_obra_has_actividades[]
   maquinaria Maquinaria_has_actividades[]
+
+  @@index([cultivo_id])
 }
 
 model Insumo {
@@ -659,6 +668,9 @@ model Insumo_has_actividades {
   actividades actividades @relation(fields: [actividades_id], references: [id])
 
   @@id([insumo_id, actividades_id])
+
+  @@index([insumo_id])
+  @@index([actividades_id])
 }
 
 model Mano_de_obra_has_actividades {
@@ -669,6 +681,9 @@ model Mano_de_obra_has_actividades {
   actividades  actividades  @relation(fields: [actividades_id], references: [id])
 
   @@id([mano_de_obra_id, actividades_id])
+
+  @@index([mano_de_obra_id])
+  @@index([actividades_id])
 }
 
 model Maquinaria_has_actividades {
@@ -679,6 +694,9 @@ model Maquinaria_has_actividades {
   actividades actividades @relation(fields: [actividades_id], references: [id])
 
   @@id([maquinaria_id, actividades_id])
+
+  @@index([maquinaria_id])
+  @@index([actividades_id])
 }
 
 model acopio {
@@ -829,6 +847,8 @@ model Inspecciones {
   checklist        inspeccion_checklist[]
   no_conformidades No_conformidades[]
   evidencias       Evidencia[]
+
+  @@index([cultivo_id])
 }
 
 model inspeccion_checklist {
@@ -843,6 +863,8 @@ model inspeccion_checklist {
   inspeccion_id Int
 
   inspeccion Inspecciones @relation(fields: [inspeccion_id], references: [id])
+
+  @@index([inspeccion_id])
 }
 
 model No_conformidades {
@@ -862,6 +884,8 @@ model No_conformidades {
 
   inspeccion Inspecciones           @relation(fields: [inspeccion_id], references: [id])
   acciones   Acciones_correctivas[]
+
+  @@index([inspeccion_id])
 }
 
 model Acciones_correctivas {
@@ -877,6 +901,8 @@ model Acciones_correctivas {
   no_conformidad_id Int
 
   no_conformidad No_conformidades @relation(fields: [no_conformidad_id], references: [id])
+
+  @@index([no_conformidad_id])
 }
 
 model Evidencia {
@@ -892,6 +918,8 @@ model Evidencia {
   inspeccion_id Int
 
   inspeccion Inspecciones @relation(fields: [inspeccion_id], references: [id])
+
+  @@index([inspeccion_id])
 }
 
 model procesamiento {
