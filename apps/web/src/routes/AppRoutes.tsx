@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+﻿import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import ProtectedRoute from "../components/ProtectedRoute";
@@ -31,8 +31,10 @@ const AcopioList = lazy(() => import("../pages/acopio/AcopioList"));
 const AcopioView = lazy(() => import("../pages/acopio/AcopioView"));
 const RecepcionList = lazy(() => import("../pages/recepcion/RecepcionList"));
 const RecepcionView = lazy(() => import("../pages/recepcion/RecepcionView"));
-const ProcesamientoList = lazy(() => import("../pages/procesamiento/ProcesamientoList"));
-const ProcesamientoView = lazy(() => import("../pages/procesamiento/ProcesamientoView"));
+const OrdenList = lazy(() => import("../pages/procesamiento/OrdenList"));
+const OrdenCreate = lazy(() => import("../pages/procesamiento/OrdenCreate"));
+const OrdenView = lazy(() => import("../pages/procesamiento/OrdenView"));
+const OrdenEdit = lazy(() => import("../pages/procesamiento/OrdenEdit"));
 const KardexList = lazy(() => import("../pages/kardex/KardexList"));
 const KardexView = lazy(() => import("../pages/kardex/KardexView"));
 const KardexCreate = lazy(() => import("../pages/kardex/KardexCreate"));
@@ -91,8 +93,8 @@ export default function AppRoutes() {
                     <Route path="/acopio/:id" element={<AcopioView />} />
                     <Route path="/recepcion" element={<RecepcionList />} />
                     <Route path="/recepcion/:id" element={<RecepcionView />} />
-                    <Route path="/procesamiento" element={<ProcesamientoList />} />
-                    <Route path="/procesamiento/:id" element={<ProcesamientoView />} />
+                    <Route path="/procesamiento" element={<OrdenList />} />
+                    <Route path="/procesamiento/nueva" element={<OrdenCreate />} />`n                    <Route path="/procesamiento/:id" element={<OrdenView />} />`n                    <Route path="/procesamiento/:id/editar" element={<OrdenEdit />} />
                     <Route path="/kardex" element={<KardexList />} />
                     <Route path="/kardex/nuevo" element={<KardexCreate />} />
                     <Route path="/kardex/:id" element={<KardexView />} />
