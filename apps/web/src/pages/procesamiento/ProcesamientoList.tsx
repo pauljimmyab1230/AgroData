@@ -1,13 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { Factory, Hash, Scale, TrendingDown, X } from "lucide-react";
 import { Button, ConfirmDialog, FilterSelect, LoadingSpinner, SearchInput, SectionHeader } from "../../components/ui";
 import ProcesamientoKPI from "../../components/procesamiento/ProcesamientoKPI";
 import ProcesamientoTable from "../../components/procesamiento/ProcesamientoTable";
+import { useProcesamientos, useDeleteProcesamiento } from "../../hooks/queries";
 import {
-  type OrdenProcesamiento,
-  type ProcesamientosQuery,
-  fetchProcesamientos,
-  deleteProcesamiento,
   procesamientoEstados,
   formatearPeso,
 } from "../../services/procesamientos";
@@ -27,35 +24,19 @@ export default function ProcesamientoList() {
   const [editId, setEditId] = useState<string | null>(null);
   const [viewId, setViewId] = useState<string | null>(null);
 
-  const [data, setData] = useState<OrdenProcesamiento[]>([]);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const filters = {
+    search: search || undefined,
+    estado: filtroEstado || undefined,
+    page,
+    limit: pageSize,
+  };
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params: ProcesamientosQuery = {
-        page,
-        limit: pageSize,
-      };
-      if (search) params.search = search;
-      if (filtroEstado) params.estado = filtroEstado;
+  const { data: result, isLoading: loading } = useProcesamientos(filters);
+  const deleteMutation = useDeleteProcesamiento();
 
-      const result = await fetchProcesamientos(params);
-      setData(result.data);
-      setTotal(result.total);
-      setTotalPages(result.totalPages);
-    } catch {
-      toast.error("Error al cargar procesamientos");
-    } finally {
-      setLoading(false);
-    }
-  }, [page, search, filtroEstado]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  const data = result?.data ?? [];
+  const total = result?.total ?? 0;
+  const totalPages = result?.totalPages ?? 1;
 
   const completadas = data.filter((o) => o.estado === "COMPLETADA");
   const totalProcesados = completadas.reduce((acc, o) => acc + o.lotes.length, 0);
@@ -106,15 +87,13 @@ export default function ProcesamientoList() {
     setShowCreateModal(false);
     setEditId(null);
     setViewId(null);
-    loadData();
   };
 
   const handleDelete = async () => {
     if (!deleteId) return;
     try {
-      await deleteProcesamiento(deleteId);
+      await deleteMutation.mutateAsync(deleteId);
       setDeleteId(null);
-      loadData();
       toast.success("Procesamiento eliminado correctamente");
     } catch {
       toast.error("Error al eliminar el procesamiento");
@@ -189,7 +168,7 @@ export default function ProcesamientoList() {
         onConfirm={handleDelete}
         title="Eliminar Orden de Procesamiento"
         message="¿Estás seguro de eliminar esta orden de procesamiento? Esta acción no se puede deshacer."
-        confirmText="Eliminar"
+        confirmText={deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
         variant="danger"
       />
 

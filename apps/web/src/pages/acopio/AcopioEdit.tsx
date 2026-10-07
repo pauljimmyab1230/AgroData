@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button, LoadingSpinner } from "../../components/ui";
 import AcopioForm from "../../components/acopio/AcopioForm";
-import { fetchAcopio, type Acopio } from "../../services/acopios";
+import { useAcopio } from "../../hooks/queries";
 
 interface AcopioEditProps {
   inModal?: boolean;
@@ -14,16 +13,7 @@ interface AcopioEditProps {
 export default function AcopioEdit({ inModal, acopioId: propId, onSave }: AcopioEditProps) {
   const { id: paramId } = useParams();
   const id = propId ?? paramId;
-  const [acopio, setAcopio] = useState<Acopio | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!id) { setLoading(false); return; }
-    fetchAcopio(id)
-      .then(setAcopio)
-      .catch(() => setAcopio(null))
-      .finally(() => setLoading(false));
-  }, [id]);
+  const { data: acopio, isLoading: loading } = useAcopio(id);
 
   if (loading) {
     return (

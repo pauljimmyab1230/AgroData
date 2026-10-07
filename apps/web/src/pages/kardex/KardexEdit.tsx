@@ -2,9 +2,8 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Save } from "lucide-react";
 import { Button, Card, FormField, Input, Select, Textarea, DatePicker, SectionHeader } from "../../components/ui";
+import { useKardexItem, useUpdateKardex } from "../../hooks/queries";
 import {
-  fetchKardexItem,
-  updateKardexItem,
   kardexEstados,
   kardexCategorias,
   type KardexItem,
@@ -47,22 +46,15 @@ function toFormData(item: KardexItem): KardexItemFormData {
 export default function KardexEdit() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [item, setItem] = useState<KardexItem | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: item, isLoading: loading } = useKardexItem(id);
+  const updateMutation = useUpdateKardex();
   const [form, setForm] = useState<KardexItemFormData | null>(null);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (!id) return;
-    fetchKardexItem(id)
-      .then((data) => {
-        setItem(data);
-        setForm(toFormData(data));
-      })
-      .catch(() => setItem(null))
-      .finally(() => setLoading(false));
-  }, [id]);
+    if (item) setForm(toFormData(item));
+  }, [item]);
 
   const set = (field: keyof KardexItemFormData, value: string | number) => {
     setForm((prev) => (prev ? { ...prev, [field]: value } : prev));
@@ -92,14 +84,14 @@ export default function KardexEdit() {
     if (!validate() || !form || !id) return;
     setSaving(true);
     try {
-      await updateKardexItem(id, form);
+      await updateMutation.mutateAsync({ id, data: form });
       navigate(`/kardex/${id}`);
     } catch {
       setSaving(false);
     }
   };
 
-  if (loading) {
+  if (loading || (item && !form)) {
     return (
       <div className="flex items-center justify-center py-20">
         <p className="text-sm text-gray-400">Cargando item...</p>

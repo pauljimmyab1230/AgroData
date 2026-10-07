@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import api from "./api";
+﻿import api from "./api";
 
 // ─── Types ────────────────────────────────────────────────
 export type Rol = "ADMIN" | "USER";
@@ -163,25 +162,3 @@ export async function fetchUsuariosBasic(rol_sic?: string): Promise<UsuarioBasic
   return res.data.data ?? [];
 }
 
-export function useUsuariosBasic(rol_sic?: string) {
-  const [usuarios, setUsuarios] = useState<UsuarioBasico[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    fetchUsuariosBasic(rol_sic)
-      .then((data) => {
-        if (!cancelled) setUsuarios(data);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [rol_sic]);
-
-  return { usuarios, loading };
-}

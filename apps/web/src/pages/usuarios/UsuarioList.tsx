@@ -12,7 +12,8 @@ import {
   SectionHeader,
   Select,
 } from "../../components/ui";
-import { fetchUsuarios, deleteUsuario, type Usuario } from "../../services/usuarios";
+import { useUsuarios, useDeleteUsuario } from "../../hooks/queries";
+import { type Usuario } from "../../services/usuarios";
 
 const rolBadge = (rol: string) => {
   switch (rol) {
@@ -46,39 +47,26 @@ export default function UsuarioList() {
   const [rolSicFilter, setRolSicFilter] = useState("");
   const [page, setPage] = useState(1);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(timer);
   }, [search]);
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const result = await fetchUsuarios({
-        search: debouncedSearch || undefined,
-        rol: rolFilter || undefined,
-        rol_sic: rolSicFilter || undefined,
-        page,
-        limit: 10,
-      });
-      setUsuarios(result.data);
-      setTotalPages(result.totalPages);
-      setTotal(result.total);
-    } catch {
-      // handled silently
-    } finally {
-      setLoading(false);
-    }
+  const filters = {
+    search: debouncedSearch || undefined,
+    rol: rolFilter || undefined,
+    rol_sic: rolSicFilter || undefined,
+    page,
+    limit: 10,
   };
 
-  useEffect(() => {
-    loadData();
-  }, [debouncedSearch, rolFilter, rolSicFilter, page]);
+  const { data: result, isLoading: loading } = useUsuarios(filters);
+  const deleteMutation = useDeleteUsuario();
+
+  const usuarios = result?.data ?? [];
+  const totalPages = result?.totalPages ?? 1;
+  const total = result?.total ?? 0;
 
   const kpis = [
     {
@@ -289,8 +277,7 @@ export default function UsuarioList() {
         onConfirm={async () => {
           if (!deleteId) return;
           try {
-            await deleteUsuario(deleteId);
-            setUsuarios(prev => prev.filter(u => u.id !== deleteId));
+            await deleteMutation.mutateAsync(deleteId);
             setDeleteId(null);
           } catch {
             // handled silently
@@ -298,7 +285,7 @@ export default function UsuarioList() {
         }}
         title="Eliminar Usuario"
         message="¿Estás seguro de eliminar este usuario? Esta acción no se puede deshacer."
-        confirmText="Eliminar"
+        confirmText={deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
         variant="danger"
       />
     </div>

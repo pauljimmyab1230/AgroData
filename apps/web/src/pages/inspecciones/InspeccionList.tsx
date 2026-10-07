@@ -1,13 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+﻿import { useState } from "react";
 import { BadgeCheck, CalendarClock, ClipboardCheck, Plus, TriangleAlert, X } from "lucide-react";
 import { Button, ConfirmDialog, FilterSelect, LoadingSpinner, SearchInput, SectionHeader } from "../../components/ui";
 import InspeccionKPI from "../../components/inspecciones/InspeccionKPI";
 import InspeccionTable from "../../components/inspecciones/InspeccionTable";
-import {
-  fetchInspecciones,
-  deleteInspeccion,
-  type Inspeccion,
-} from "../../services/inspecciones";
+import { useInspecciones, useDeleteInspeccion } from "../../hooks/queries";
 import InspeccionModal from "../../components/inspecciones/InspeccionModal";
 import { toast } from "../../utils/toast";
 
@@ -26,33 +22,19 @@ export default function InspeccionList() {
   const [editId, setEditId] = useState<string | null>(null);
   const [viewId, setViewId] = useState<string | null>(null);
 
-  const [inspecciones, setInspecciones] = useState<Inspeccion[]>([]);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const filters = {
+    search: search || undefined,
+    estado: filtroEstado || undefined,
+    page,
+    limit: 10,
+  };
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const result = await fetchInspecciones({
-        search: search || undefined,
-        estado: filtroEstado || undefined,
-        page,
-        limit: 10,
-      });
-      setInspecciones(result.data);
-      setTotal(result.total);
-      setTotalPages(result.totalPages);
-    } catch {
-      toast.error("Error al cargar inspecciones");
-    } finally {
-      setLoading(false);
-    }
-  }, [search, filtroEstado, page]);
+  const { data: result, isLoading: loading } = useInspecciones(filters);
+  const deleteMutation = useDeleteInspeccion();
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  const inspecciones = result?.data ?? [];
+  const total = result?.total ?? 0;
+  const totalPages = result?.totalPages ?? 1;
 
   const kpis = [
     {
@@ -97,15 +79,13 @@ export default function InspeccionList() {
     setShowCreateModal(false);
     setEditId(null);
     setViewId(null);
-    loadData();
   };
 
   const handleDelete = async () => {
     if (!deleteId) return;
     try {
-      await deleteInspeccion(deleteId);
+      await deleteMutation.mutateAsync(deleteId);
       setDeleteId(null);
-      loadData();
       toast.success("Inspección eliminada correctamente");
     } catch {
       toast.error("Error al eliminar la inspección");

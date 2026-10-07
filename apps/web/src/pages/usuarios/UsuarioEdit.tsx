@@ -9,12 +9,14 @@ import {
   SectionHeader,
   LoadingSpinner,
 } from "../../components/ui";
-import { fetchUsuario, updateUsuario } from "../../services/usuarios";
+import { useUsuario, useUpdateUsuario } from "../../hooks/queries";
 
 export default function UsuarioEdit() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const [loading, setLoading] = useState(true);
+  const { data: usuario, isLoading: loading } = useUsuario(id);
+  const updateMutation = useUpdateUsuario();
+  const [formIniciado, setFormIniciado] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({
@@ -28,26 +30,19 @@ export default function UsuarioEdit() {
   });
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const usuario = await fetchUsuario(id!);
-        setForm({
-          nombre: usuario.nombre,
-          email: usuario.email,
-          password: "",
-          confirmPassword: "",
-          rol: usuario.rol,
-          rolSic: usuario.rolSic || "",
-          activo: usuario.activo,
-        });
-      } catch {
-        // handled silently
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [id]);
+    if (usuario) {
+      setForm({
+        nombre: usuario.nombre,
+        email: usuario.email,
+        password: "",
+        confirmPassword: "",
+        rol: usuario.rol,
+        rolSic: usuario.rolSic || "",
+        activo: usuario.activo,
+      });
+      setFormIniciado(true);
+    }
+  }, [usuario]);
 
   const handleChange = (field: string, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -81,7 +76,7 @@ export default function UsuarioEdit() {
       if (form.password) {
         payload.password = form.password;
       }
-      await updateUsuario(id!, payload);
+      await updateMutation.mutateAsync({ id: id!, data: payload });
       navigate(`/usuarios/${id}`);
     } catch {
       alert("Error al actualizar el usuario");
@@ -90,7 +85,7 @@ export default function UsuarioEdit() {
     }
   };
 
-  if (loading) {
+  if (loading || (usuario && !formIniciado)) {
     return (
       <div className="flex items-center justify-center py-20">
         <LoadingSpinner />

@@ -1,14 +1,4 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
-import api from "../../services/api";
-import { fetchRecepciones, type RecepcionesQuery } from "../../services/recepciones";
-import {
-  fetchInspecciones,
-  fetchInspeccion,
-  createInspeccion,
-  updateInspeccion,
-  type Inspeccion,
-  type InspeccionesQuery,
-} from "../../services/inspecciones";
 import {
   fetchActividades as fetchActividadesService,
   fetchActividad as fetchActividadService,
@@ -18,23 +8,68 @@ import {
   type Actividad,
   type ActividadesQuery,
 } from "../../services/actividades";
+import {
+  fetchInspecciones,
+  fetchInspeccion,
+  createInspeccion,
+  updateInspeccion,
+  deleteInspeccion,
+  type Inspeccion,
+  type InspeccionesQuery,
+} from "../../services/inspecciones";
+import {
+  fetchAcopios,
+  fetchAcopio,
+  createAcopio,
+  updateAcopio,
+  deleteAcopio,
+  fetchAcopioStats,
+  type Acopio,
+  type AcopiosQuery,
+} from "../../services/acopios";
+import {
+  fetchRecepciones,
+  fetchRecepcion,
+  createRecepcion,
+  updateRecepcion,
+  deleteRecepcion,
+  fetchRecepcionStats,
+  type Recepcion,
+  type RecepcionesQuery,
+  type RecepcionStats,
+} from "../../services/recepciones";
+import {
+  fetchProcesamientos,
+  fetchProcesamiento,
+  createProcesamiento,
+  updateProcesamiento,
+  deleteProcesamiento,
+  type OrdenProcesamiento,
+  type ProcesamientosQuery,
+} from "../../services/procesamientos";
 
-// Re-export Actividad type from canonical source
 export type { Actividad } from "../../services/actividades";
 
+// Convención de query keys:
+//   ["recurso", "lista", filtros]  → listados paginados
+//   ["recurso", "detalle", id]     → detalle individual
+//   ["recurso", "stats"]           → estadísticas
+// Invalidar ["recurso"] cubre lista + detalle + stats de una sola vez.
+
+// ===================== Actividades =====================
 export function useActividades(filters?: ActividadesQuery) {
   return useQuery({
-    queryKey: ["actividades", filters],
+    queryKey: ["actividades", "lista", filters],
     queryFn: () => fetchActividadesService(filters),
     placeholderData: keepPreviousData,
   });
 }
 
-export function useActividad(id: string | null) {
+export function useActividad(id: string | number | null | undefined) {
   return useQuery<Actividad>({
-    queryKey: ["actividad", id],
+    queryKey: ["actividades", "detalle", id],
     queryFn: () => fetchActividadService(id!),
-    enabled: id !== null,
+    enabled: id != null && id !== "",
   });
 }
 
@@ -49,7 +84,7 @@ export function useCreateActividad() {
 export function useUpdateActividad() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Actividad> }) =>
+    mutationFn: ({ id, data }: { id: string | number; data: Partial<Actividad> }) =>
       updateActividadService(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["actividades"] }),
   });
@@ -58,25 +93,25 @@ export function useUpdateActividad() {
 export function useDeleteActividad() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => deleteActividadService(id),
+    mutationFn: (id: string | number) => deleteActividadService(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["actividades"] }),
   });
 }
 
-// ─── Inspecciones ─────────────────────────────────────────
+// ===================== Inspecciones =====================
 export function useInspecciones(filters?: InspeccionesQuery) {
   return useQuery({
-    queryKey: ["inspecciones", filters],
+    queryKey: ["inspecciones", "lista", filters],
     queryFn: () => fetchInspecciones(filters),
     placeholderData: keepPreviousData,
   });
 }
 
-export function useInspeccion(id: string | undefined) {
-  return useQuery({
-    queryKey: ["inspecciones", id],
-    queryFn: () => fetchInspeccion(id!),
-    enabled: Boolean(id),
+export function useInspeccion(id: string | number | null | undefined) {
+  return useQuery<Inspeccion>({
+    queryKey: ["inspecciones", "detalle", id],
+    queryFn: () => fetchInspeccion(String(id)),
+    enabled: id != null && id !== "",
   });
 }
 
@@ -91,7 +126,8 @@ export function useCreateInspeccion() {
 export function useUpdateInspeccion() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Inspeccion> }) => updateInspeccion(id, data),
+    mutationFn: ({ id, data }: { id: string | number; data: Partial<Inspeccion> }) =>
+      updateInspeccion(String(id), data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["inspecciones"] }),
   });
 }
@@ -99,212 +135,154 @@ export function useUpdateInspeccion() {
 export function useDeleteInspeccion() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      await api.delete(`/inspecciones/${id}`);
-    },
+    mutationFn: (id: string | number) => deleteInspeccion(String(id)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["inspecciones"] }),
   });
 }
 
-// ─── Acopios ──────────────────────────────────────────────
-export function useAcopios(filters?: Record<string, string | number | undefined>) {
+// ===================== Acopios =====================
+export function useAcopios(filters?: AcopiosQuery) {
   return useQuery({
-    queryKey: ["acopios", filters],
-    queryFn: async () => {
-      const params: Record<string, string> = {};
-      if (filters) {
-        Object.entries(filters).forEach(([k, v]) => {
-          if (v !== undefined && v !== "") params[k] = String(v);
-        });
-      }
-      const res = await api.get("/acopios", { params });
-      return {
-        data: res.data.data ?? [],
-        total: res.data.total ?? 0,
-        page: res.data.page ?? 1,
-        limit: res.data.limit ?? 20,
-        totalPages: res.data.totalPages ?? 1,
-      };
-    },
+    queryKey: ["acopios", "lista", filters],
+    queryFn: () => fetchAcopios(filters),
     placeholderData: keepPreviousData,
+  });
+}
+
+export function useAcopio(id: string | number | null | undefined) {
+  return useQuery<Acopio>({
+    queryKey: ["acopios", "detalle", id],
+    queryFn: () => fetchAcopio(String(id)),
+    enabled: id != null && id !== "",
+  });
+}
+
+export function useAcopioStats() {
+  return useQuery({
+    queryKey: ["acopios", "stats"],
+    queryFn: fetchAcopioStats,
+    staleTime: 60_000,
+  });
+}
+
+export function useCreateAcopio() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<Acopio>) => createAcopio(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["acopios"] }),
+  });
+}
+
+export function useUpdateAcopio() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string | number; data: Partial<Acopio> }) =>
+      updateAcopio(String(id), data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["acopios"] }),
   });
 }
 
 export function useDeleteAcopio() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      await api.delete(`/acopios/${id}`);
-    },
+    mutationFn: (id: string | number) => deleteAcopio(String(id)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["acopios"] }),
   });
 }
 
-// ─── Recepciones ──────────────────────────────────────────
-export function useRecepciones(filters?: Record<string, string | number | undefined>) {
+// ===================== Recepciones =====================
+export function useRecepciones(filters?: RecepcionesQuery) {
   return useQuery({
-    queryKey: ["recepciones", filters],
-    queryFn: async () => {
-      const params: RecepcionesQuery = {};
-      if (filters) {
-        if (filters.search) params.search = String(filters.search);
-        if (filters.estado) params.estado = String(filters.estado);
-        if (filters.page) params.page = Number(filters.page);
-        if (filters.limit) params.limit = Number(filters.limit);
-      }
-      return fetchRecepciones(params);
-    },
+    queryKey: ["recepciones", "lista", filters],
+    queryFn: () => fetchRecepciones(filters),
     placeholderData: keepPreviousData,
+  });
+}
+
+export function useRecepcion(id: string | number | null | undefined) {
+  return useQuery<Recepcion>({
+    queryKey: ["recepciones", "detalle", id],
+    queryFn: () => fetchRecepcion(id!),
+    enabled: id != null && id !== "",
+  });
+}
+
+export function useRecepcionStats() {
+  return useQuery<RecepcionStats>({
+    queryKey: ["recepciones", "stats"],
+    queryFn: fetchRecepcionStats,
+    staleTime: 60_000,
+  });
+}
+
+export function useCreateRecepcion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<Recepcion>) => createRecepcion(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["recepciones"] }),
+  });
+}
+
+export function useUpdateRecepcion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string | number; data: Partial<Recepcion> }) =>
+      updateRecepcion(String(id), data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["recepciones"] }),
   });
 }
 
 export function useDeleteRecepcion() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      await api.delete(`/recepciones/${id}`);
-    },
+    mutationFn: (id: string | number) => deleteRecepcion(String(id)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["recepciones"] }),
   });
 }
 
-// ─── Procesamientos ───────────────────────────────────────
-export function useProcesamientos(filters?: Record<string, string | number | undefined>) {
+// ===================== Procesamientos =====================
+export function useProcesamientos(filters?: ProcesamientosQuery) {
   return useQuery({
-    queryKey: ["procesamientos", filters],
-    queryFn: async () => {
-      const params: Record<string, string> = {};
-      if (filters) {
-        Object.entries(filters).forEach(([k, v]) => {
-          if (v !== undefined && v !== "") params[k] = String(v);
-        });
-      }
-      const res = await api.get("/procesamientos", { params });
-      return {
-        data: res.data.data ?? [],
-        total: res.data.total ?? 0,
-        page: res.data.page ?? 1,
-        limit: res.data.limit ?? 20,
-        totalPages: res.data.totalPages ?? 1,
-      };
-    },
+    queryKey: ["procesamientos", "lista", filters],
+    queryFn: () => fetchProcesamientos(filters),
     placeholderData: keepPreviousData,
+  });
+}
+
+export function useProcesamiento(id: string | number | null | undefined) {
+  return useQuery<OrdenProcesamiento>({
+    queryKey: ["procesamientos", "detalle", id],
+    queryFn: () => fetchProcesamiento(String(id)),
+    enabled: id != null && id !== "",
+  });
+}
+
+export function useCreateProcesamiento() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<OrdenProcesamiento>) => createProcesamiento(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["procesamientos"] }),
+  });
+}
+
+export function useUpdateProcesamiento() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string | number; data: Partial<OrdenProcesamiento> }) =>
+      updateProcesamiento(String(id), data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["procesamientos"] }),
   });
 }
 
 export function useDeleteProcesamiento() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      await api.delete(`/procesamientos/${id}`);
-    },
+    mutationFn: (id: string | number) => deleteProcesamiento(String(id)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["procesamientos"] }),
   });
 }
 
-// ─── Lotes ────────────────────────────────────────────────
-export function useLotes(filters?: Record<string, string | number | undefined>) {
-  return useQuery({
-    queryKey: ["lotes", filters],
-    queryFn: async () => {
-      const params: Record<string, string> = {};
-      if (filters) {
-        Object.entries(filters).forEach(([k, v]) => {
-          if (v !== undefined && v !== "") params[k] = String(v);
-        });
-      }
-      const res = await api.get("/lotes", { params });
-      return {
-        data: res.data.data ?? [],
-        total: res.data.total ?? 0,
-        page: res.data.page ?? 1,
-        limit: res.data.limit ?? 20,
-        totalPages: res.data.totalPages ?? 1,
-      };
-    },
-    placeholderData: keepPreviousData,
-  });
-}
-
-export function useDeleteLote() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      await api.delete(`/lotes/${id}`);
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["lotes"] }),
-  });
-}
-
-// ─── Inventario ───────────────────────────────────────────
-export function useInventario(filters?: Record<string, string | number | undefined>) {
-  return useQuery({
-    queryKey: ["inventario", filters],
-    queryFn: async () => {
-      const params: Record<string, string> = {};
-      if (filters) {
-        Object.entries(filters).forEach(([k, v]) => {
-          if (v !== undefined && v !== "") params[k] = String(v);
-        });
-      }
-      const res = await api.get("/inventario", { params });
-      return {
-        data: res.data.data ?? [],
-        total: res.data.total ?? 0,
-        page: res.data.page ?? 1,
-        limit: res.data.limit ?? 20,
-        totalPages: res.data.totalPages ?? 1,
-      };
-    },
-    placeholderData: keepPreviousData,
-  });
-}
-
-export function useDeleteInventario() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      await api.delete(`/inventario/${id}`);
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["inventario"] }),
-  });
-}
-
-// ─── Usuarios ─────────────────────────────────────────────
-export function useUsuarios(filters?: Record<string, string | number | undefined>) {
-  return useQuery({
-    queryKey: ["usuarios", filters],
-    queryFn: async () => {
-      const params: Record<string, string> = {};
-      if (filters) {
-        Object.entries(filters).forEach(([k, v]) => {
-          if (v !== undefined && v !== "") params[k] = String(v);
-        });
-      }
-      const res = await api.get("/usuarios", { params });
-      return {
-        data: res.data.data ?? [],
-        total: res.data.total ?? 0,
-        page: res.data.page ?? 1,
-        limit: res.data.limit ?? 20,
-        totalPages: res.data.totalPages ?? 1,
-      };
-    },
-    placeholderData: keepPreviousData,
-  });
-}
-
-export function useDeleteUsuario() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      await api.delete(`/usuarios/${id}`);
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["usuarios"] }),
-  });
-}
-
-// ─── Dashboard ────────────────────────────────────────────
+// ===================== Dashboard =====================
 export interface DashboardStats {
   productores: number;
   parcelas: number;
@@ -319,76 +297,79 @@ export function useDashboard() {
     queryKey: ["dashboard"],
     queryFn: async () => {
       const [prodRes, parRes, cultRes, campRes, actRes] = await Promise.allSettled([
-        api.get("/productores?limit=1"),
-        api.get("/parcelas?limit=1"),
-        api.get("/cultivos?limit=1"),
-        api.get("/campanias?limit=50"),
-        api.get("/actividades?limit=5&sort=created_at:desc"),
+        fetch("/api/productores?limit=1").then((r) => r.json()),
+        fetch("/api/parcelas?limit=1").then((r) => r.json()),
+        fetch("/api/cultivos?limit=1").then((r) => r.json()),
+        fetch("/api/campanias?limit=50").then((r) => r.json()),
+        fetch("/api/actividades?limit=5").then((r) => r.json()),
       ]);
 
-      const productores = prodRes.status === "fulfilled" ? prodRes.value.data.total ?? 0 : 0;
-      const parcelas = parRes.status === "fulfilled" ? parRes.value.data.total ?? 0 : 0;
-      const cultivos = cultRes.status === "fulfilled" ? cultRes.value.data.total ?? 0 : 0;
+      const productores = prodRes.status === "fulfilled" ? prodRes.value.total ?? 0 : 0;
+      const parcelas = parRes.status === "fulfilled" ? parRes.value.total ?? 0 : 0;
+      const cultivos = cultRes.status === "fulfilled" ? cultRes.value.total ?? 0 : 0;
 
       let campanias = 0;
       let campaniaActiva: DashboardStats["campaniaActiva"] = null;
       if (campRes.status === "fulfilled") {
-        const camps = campRes.value.data.data ?? [];
-        campanias = campRes.value.data.total ?? camps.length;
-        campaniaActiva = camps.find((c: Record<string, unknown>) => c.estado === "ACTIVA") ?? null;
-        if (campaniaActiva) {
+        const camps = campRes.value.data ?? [];
+        campanias = campRes.value.total ?? camps.length;
+        const activa = camps.find((c: Record<string, unknown>) => c.estado === "ACTIVA");
+        if (activa) {
           campaniaActiva = {
-            id: String(campaniaActiva.id),
-            nombre: String(campaniaActiva.nombre),
-            codigo: String(campaniaActiva.codigo),
-            anio_agricola: String(campaniaActiva.anio_agricola),
+            id: String(activa.id),
+            nombre: String(activa.nombre),
+            codigo: String(activa.codigo),
+            anio_agricola: String(activa.anio_agricola),
           };
         }
       }
 
-      const actividadesRecientes = actRes.status === "fulfilled"
-        ? (actRes.value.data.data ?? []).map((dto: Record<string, unknown>) => {
-            const d = dto as Record<string, string | number | boolean | null>;
-            const cultivo = d.cultivo as { cultivo?: string; codigo?: string; parcela?: { id?: number; nombre?: string; codigo?: string } } | null;
-            return {
-              id: Number(d.id),
-              codigo: String(d.codigo),
-              cultivoId: Number(d.cultivo_id),
-              cultivoNombre: cultivo?.cultivo ?? "",
-              cultivoCodigo: cultivo?.codigo ?? "",
-              parcelaId: cultivo?.parcela?.id ?? 0,
-              parcelaNombre: cultivo?.parcela?.nombre ?? "",
-              parcelaCodigo: cultivo?.parcela?.codigo ?? "",
-              fecha: String(d.fecha ?? "").split("T")[0],
-              tipoActividad: String(d.tipo_actividad),
-              descripcion: String(d.descripcion ?? ""),
-              responsableTecnico: String(d.responsable_tecnico),
-              horaInicio: String(d.hora_inicio ?? ""),
-              horaFin: String(d.hora_fin ?? ""),
-              duracionEstimada: String(d.duracion_estimada ?? ""),
-              prioridad: String(d.prioridad),
-              estado: String(d.estado),
-              jornales: Number(d.jornales ?? 0),
-              latitud: String(d.latitud ?? ""),
-              longitud: String(d.longitud ?? ""),
-              altitud: String(d.altitud ?? ""),
-              precisionGps: String(d.precision_gps ?? ""),
-              observacionesTecnicas: String(d.observaciones_tecnicas ?? ""),
-              recomendaciones: String(d.recomendaciones ?? ""),
-              objetivo: String(d.objetivo ?? ""),
-              resultado: String(d.resultado ?? ""),
-              proximaActividad: String(d.proxima_actividad ?? ""),
-              insumos: [],
-              manoObra: [],
-              maquinaria: [],
-              createdAt: String(d.created_at),
-              updatedAt: String(d.updated_at),
-            };
-          })
-        : [];
+      const actividadesRecientes: Actividad[] =
+        actRes.status === "fulfilled"
+          ? (actRes.value.data ?? []).map((dto: Record<string, unknown>) => {
+              const cultivo = dto.cultivo as
+                | { cultivo?: string; codigo?: string; parcela?: { id?: number; nombre?: string; codigo?: string } }
+                | null;
+              return {
+                id: Number(dto.id),
+                codigo: String(dto.codigo),
+                cultivoId: Number(dto.cultivo_id),
+                cultivoNombre: cultivo?.cultivo ?? "",
+                cultivoCodigo: cultivo?.codigo ?? "",
+                parcelaId: cultivo?.parcela?.id ?? 0,
+                parcelaNombre: cultivo?.parcela?.nombre ?? "",
+                parcelaCodigo: cultivo?.parcela?.codigo ?? "",
+                productorNombre: "",
+                fecha: String(dto.fecha ?? "").split("T")[0],
+                tipoActividad: String(dto.tipo_actividad),
+                descripcion: String(dto.descripcion ?? ""),
+                responsableTecnico: String(dto.responsable_tecnico),
+                horaInicio: String(dto.hora_inicio ?? ""),
+                horaFin: String(dto.hora_fin ?? ""),
+                duracionEstimada: String(dto.duracion_estimada ?? ""),
+                prioridad: String(dto.prioridad),
+                estado: String(dto.estado),
+                jornales: Number(dto.jornales) || 0,
+                latitud: String(dto.latitud ?? ""),
+                longitud: String(dto.longitud ?? ""),
+                altitud: String(dto.altitud ?? ""),
+                precisionGps: String(dto.precision_gps ?? ""),
+                observacionesTecnicas: String(dto.observaciones_tecnicas ?? ""),
+                recomendaciones: String(dto.recomendaciones ?? ""),
+                objetivo: String(dto.objetivo ?? ""),
+                resultado: String(dto.resultado ?? ""),
+                proximaActividad: String(dto.proxima_actividad ?? ""),
+                insumos: [],
+                manoObra: [],
+                maquinaria: [],
+                createdAt: String(dto.created_at ?? ""),
+                updatedAt: String(dto.updated_at ?? ""),
+              };
+            })
+          : [];
 
       return { productores, parcelas, cultivos, campanias, campaniaActiva, actividadesRecientes };
     },
-    staleTime: 1000 * 60 * 3,
+    staleTime: 30_000,
   });
 }

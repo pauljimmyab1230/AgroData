@@ -1,14 +1,12 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useState } from "react";
 import { Link } from "react-router-dom";
 import { AlertTriangle, Boxes, Eye, Pencil, Plus, ShieldCheck, Tag, X } from "lucide-react";
 import { Button, Card, ConfirmDialog, DataTable, SearchInput, SectionHeader, Select, Badge } from "../../components/ui";
+import { useKardex, useDeleteKardex } from "../../hooks/queries";
 import {
-  fetchKardex,
-  deleteKardexItem,
   kardexEstados,
   kardexCategorias,
   type KardexItem,
-  type KardexQuery,
 } from "../../services/kardex";
 
 const pageSize = 10;
@@ -58,33 +56,20 @@ export default function KardexList() {
   const [page, setPage] = useState(1);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  const [items, setItems] = useState<KardexItem[]>([]);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [, setLoading] = useState(true);
-
-  const load = () => {
-    setLoading(true);
-    const params: KardexQuery = { page, limit: pageSize };
-    if (search) params.search = search;
-    if (filtroEstado) params.estado = filtroEstado;
-    if (filtroCategoria) params.categoria = filtroCategoria;
-
-    fetchKardex(params)
-      .then((res) => {
-        setItems(res.data);
-        setTotal(res.total);
-        setTotalPages(res.totalPages);
-      })
-      .catch(() => {
-        setItems([]);
-      })
-      .finally(() => setLoading(false));
+  const filters = {
+    search: search || undefined,
+    estado: filtroEstado || undefined,
+    categoria: filtroCategoria || undefined,
+    page,
+    limit: pageSize,
   };
 
-  useEffect(() => {
-    load();
-  }, [search, filtroEstado, filtroCategoria, page]);
+  const { data: result } = useKardex(filters);
+  const deleteMutation = useDeleteKardex();
+
+  const items = result?.data ?? [];
+  const total = result?.total ?? 0;
+  const totalPages = result?.totalPages ?? 1;
 
   const kpis = [
     {
@@ -127,9 +112,8 @@ export default function KardexList() {
   const handleDelete = async () => {
     if (!deleteId) return;
     try {
-      await deleteKardexItem(deleteId);
+      await deleteMutation.mutateAsync(deleteId);
       setDeleteId(null);
-      load();
     } catch {
       // ignore
     }
@@ -290,7 +274,7 @@ export default function KardexList() {
         onConfirm={handleDelete}
         title="Eliminar Item"
         message="¿Estás seguro de eliminar este item del kardex? Esta acción no se puede deshacer."
-        confirmText="Eliminar"
+        confirmText={deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
         variant="danger"
       />
     </div>

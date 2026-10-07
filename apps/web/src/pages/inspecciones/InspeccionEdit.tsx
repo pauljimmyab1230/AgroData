@@ -1,9 +1,8 @@
-import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button, SectionHeader, LoadingSpinner } from "../../components/ui";
 import InspeccionForm from "../../components/inspecciones/InspeccionForm";
-import { fetchInspeccion, type Inspeccion } from "../../services/inspecciones";
+import { useInspeccion } from "../../hooks/queries";
 
 interface InspeccionEditProps {
   inModal?: boolean;
@@ -14,17 +13,7 @@ interface InspeccionEditProps {
 export default function InspeccionEdit({ inModal, inspeccionId: propId, onSave }: InspeccionEditProps) {
   const { id: paramId } = useParams();
   const id = propId || paramId;
-  const [inspeccion, setInspeccion] = useState<Inspeccion | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    fetchInspeccion(id)
-      .then(setInspeccion)
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [id]);
+  const { data: inspeccion, isLoading: loading } = useInspeccion(id);
 
   if (loading) {
     return (

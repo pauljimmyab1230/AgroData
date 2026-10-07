@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { ClipboardList, CalendarDays, Wrench } from "lucide-react";
 import { Badge, Button, Card, LoadingSpinner } from "../../components/ui";
@@ -13,13 +12,11 @@ import { MaquinariaCard } from "../../components/actividades/MaquinariaCard";
 import { ObservacionesCard } from "../../components/actividades/ObservacionesCard";
 import { ResultadosCard } from "../../components/actividades/ResultadosCard";
 import { ActividadTimeline } from "../../components/actividades/ActividadTimeline";
+import { useActividad, useActividades } from "../../hooks/queries";
 import {
-  fetchActividades,
-  fetchActividad,
   actividadToFormData,
   formatearFecha,
   tipoActividadLabels,
-  type Actividad,
 } from "../../services/actividades";
 
 interface ActividadViewProps {
@@ -30,28 +27,10 @@ interface ActividadViewProps {
 export default function ActividadView({ inModal, actividadId: propId }: ActividadViewProps) {
   const { id: paramId } = useParams();
   const id = propId || paramId;
-  const [actividad, setActividad] = useState<Actividad | null>(null);
-  const [actividades, setActividades] = useState<Actividad[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    setError(null);
-    Promise.all([
-      fetchActividad(id),
-      fetchActividades({ limit: 50 }),
-    ])
-      .then(([act, list]) => {
-        setActividad(act);
-        setActividades(list.data);
-      })
-      .catch(() => {
-        setError("No se pudo cargar la actividad. Verifica tu conexión e inténtalo de nuevo.");
-      })
-      .finally(() => setLoading(false));
-  }, [id]);
+  const { data: actividad, isLoading: loading, error: queryError } = useActividad(id);
+  const { data: listResult } = useActividades({ limit: 50 });
+  const actividades = listResult?.data ?? [];
+  const error = queryError ? "No se pudo cargar la actividad. Verifica tu conexión e inténtalo de nuevo." : null;
 
   if (loading) {
     return (

@@ -1,14 +1,11 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { ArrowLeft, Calendar, DollarSign, MapPin, Package, Pencil, Plus, TrendingUp, User, Trash2 } from "lucide-react";
 import { Button, Card, Badge, FormField, Input, Select, Textarea, DatePicker, ConfirmDialog } from "../../components/ui";
+import { useKardexItem, useAddMovimiento, useRemoveMovimiento } from "../../hooks/queries";
 import {
-  fetchKardexItem,
-  addKardexMovimiento,
-  removeKardexMovimiento,
   calcularValorInventario,
   formatearFecha,
-  type KardexItem,
 } from "../../services/kardex";
 
 const estadoBadgeVariant: Record<string, "green" | "yellow" | "red" | "gray"> = {
@@ -34,8 +31,9 @@ const tipoMovimientoOptions = [
 
 export default function KardexView() {
   const { id } = useParams();
-  const [item, setItem] = useState<KardexItem | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: item, isLoading: loading } = useKardexItem(id);
+  const addMovimientoMutation = useAddMovimiento();
+  const removeMovimientoMutation = useRemoveMovimiento();
   const [showMovimientoForm, setShowMovimientoForm] = useState(false);
   const [movimientoForm, setMovimientoForm] = useState({
     tipo: "ENTRADA",
@@ -49,21 +47,11 @@ export default function KardexView() {
   const [saving, setSaving] = useState(false);
   const [deleteMovimientoId, setDeleteMovimientoId] = useState<number | null>(null);
 
-  useEffect(() => {
-    if (!id) return;
-    fetchKardexItem(id)
-      .then(setItem)
-      .catch(() => setItem(null))
-      .finally(() => setLoading(false));
-  }, [id]);
-
   const handleAddMovimiento = async () => {
     if (!id || !movimientoForm.cantidad) return;
     setSaving(true);
     try {
-      await addKardexMovimiento(id, movimientoForm);
-      const updated = await fetchKardexItem(id);
-      setItem(updated);
+      await addMovimientoMutation.mutateAsync({ kardexId: id, data: movimientoForm });
       setShowMovimientoForm(false);
       setMovimientoForm({
         tipo: "ENTRADA",
@@ -84,9 +72,7 @@ export default function KardexView() {
   const handleDeleteMovimiento = async () => {
     if (!id || !deleteMovimientoId) return;
     try {
-      await removeKardexMovimiento(id, deleteMovimientoId);
-      const updated = await fetchKardexItem(id);
-      setItem(updated);
+      await removeMovimientoMutation.mutateAsync({ kardexId: id, movimientoId: deleteMovimientoId });
       setDeleteMovimientoId(null);
     } catch {
       // ignore

@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button, LoadingSpinner } from "../../components/ui";
 import ProcesamientoForm from "../../components/procesamiento/ProcesamientoForm";
-import { fetchProcesamiento, type OrdenProcesamiento } from "../../services/procesamientos";
+import { useProcesamiento } from "../../hooks/queries";
 
 interface ProcesamientoEditProps {
   inModal?: boolean;
@@ -14,16 +13,7 @@ interface ProcesamientoEditProps {
 export default function ProcesamientoEdit({ inModal, procesamientoId: propId, onSave }: ProcesamientoEditProps) {
   const { id: paramId } = useParams();
   const id = propId ?? paramId;
-  const [orden, setOrden] = useState<OrdenProcesamiento | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!id) { setLoading(false); return; }
-    fetchProcesamiento(id)
-      .then(setOrden)
-      .catch(() => setOrden(null))
-      .finally(() => setLoading(false));
-  }, [id]);
+  const { data: orden, isLoading: loading } = useProcesamiento(id);
 
   if (loading) {
     return (

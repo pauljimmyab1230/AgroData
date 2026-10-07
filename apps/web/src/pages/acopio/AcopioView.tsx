@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ArrowLeft, Pencil, Boxes, Scale, Users, Truck } from "lucide-react";
 import { Button, Card, LoadingSpinner } from "../../components/ui";
 import { CardShell, CardHeader } from "../../components/shared/formControls";
-import { fetchAcopio, formatFecha, formatKg, ESTADO_ACOPIO_LABELS, type Acopio } from "../../services/acopios";
+import { useAcopio } from "../../hooks/queries";
+import { formatFecha, formatKg, ESTADO_ACOPIO_LABELS } from "../../services/acopios";
 
 interface AcopioViewProps {
   inModal?: boolean;
@@ -13,16 +13,7 @@ interface AcopioViewProps {
 export default function AcopioView({ inModal, acopioId: propId }: AcopioViewProps) {
   const { id: paramId } = useParams();
   const id = propId || paramId;
-  const [acopio, setAcopio] = useState<Acopio | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!id) return;
-    fetchAcopio(id)
-      .then(setAcopio)
-      .catch(() => setAcopio(null))
-      .finally(() => setLoading(false));
-  }, [id]);
+  const { data: acopio, isLoading: loading } = useAcopio(id);
 
   if (loading) {
     return (

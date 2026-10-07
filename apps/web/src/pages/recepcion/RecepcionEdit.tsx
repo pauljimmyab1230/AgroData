@@ -1,9 +1,8 @@
-﻿import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+﻿import { useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button, LoadingSpinner } from "../../components/ui";
 import RecepcionForm from "../../components/recepcion/RecepcionForm";
-import { fetchRecepcion, type Recepcion } from "../../services/recepciones";
+import { useRecepcion } from "../../hooks/queries";
 
 interface RecepcionEditProps {
   inModal?: boolean;
@@ -14,16 +13,7 @@ interface RecepcionEditProps {
 export default function RecepcionEdit({ inModal, recepcionId: propId, onSave }: RecepcionEditProps) {
   const { id: paramId } = useParams();
   const id = propId ?? paramId;
-  const [recepcion, setRecepcion] = useState<Recepcion | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!id) { setLoading(false); return; }
-    fetchRecepcion(id)
-      .then(setRecepcion)
-      .catch(() => setRecepcion(null))
-      .finally(() => setLoading(false));
-  }, [id]);
+  const { data: recepcion, isLoading: loading } = useRecepcion(id);
 
   if (loading) {
     return (

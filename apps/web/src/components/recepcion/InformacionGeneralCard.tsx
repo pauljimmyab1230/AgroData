@@ -1,9 +1,9 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { ClipboardList } from "lucide-react";
 import { DatePicker, Select } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import type { Recepcion } from "../../services/recepciones";
-import { useUsuariosBasic } from "../../services/usuarios";
+import { useUsuariosBasic } from "../../hooks/queries";
 
 type InformacionGeneralCardProps = {
   mode: FormMode;
@@ -22,7 +22,7 @@ const plantasOpciones = [
 export function InformacionGeneralCard({ mode, values, onChange }: InformacionGeneralCardProps) {
   const editable = mode !== "view";
   const [fecha, setFecha] = useState<Date | null>(parseDate(values?.fecha));
-  const { usuarios: responsables } = useUsuariosBasic();
+  const { data: responsables = [] } = useUsuariosBasic();
 
   return (
     <CardShell>

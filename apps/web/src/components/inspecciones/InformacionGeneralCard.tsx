@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { ClipboardList } from "lucide-react";
 import { DatePicker, Input, Select } from "../ui";
 import { CardHeader, CardShell, Field, type FormMode } from "../shared/formControls";
 import type { Inspeccion } from "../../services/inspecciones";
-import { useUsuariosBasic } from "../../services/usuarios";
+import { useUsuariosBasic } from "../../hooks/queries";
 import { fetchCultivos, type Cultivo } from "../../services/cultivos";
 import api from "../../services/api";
 
@@ -24,7 +24,7 @@ interface SelectOption {
 export function InformacionGeneralCard({ mode, values, onChange, errors }: InformacionGeneralCardProps) {
   const editable = mode !== "view";
   const [fecha, setFecha] = useState<Date | null>(() => parseDate(values?.fecha));
-  const { usuarios: inspectores } = useUsuariosBasic("INSPECTOR");
+  const { data: inspectores = [] } = useUsuariosBasic("INSPECTOR");
   const [campanias, setCampanias] = useState<SelectOption[]>([]);
   const [productores, setProductores] = useState<SelectOption[]>([]);
   const [parcelas, setParcelas] = useState<SelectOption[]>([]);

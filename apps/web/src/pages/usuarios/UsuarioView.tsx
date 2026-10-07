@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Pencil, Trash2, Settings, Shield, UserCheck, Calendar } from "lucide-react";
 import {
@@ -9,7 +9,7 @@ import {
   LoadingSpinner,
   SectionHeader,
 } from "../../components/ui";
-import { fetchUsuario, deleteUsuario, type Usuario } from "../../services/usuarios";
+import { useUsuario, useDeleteUsuario } from "../../hooks/queries";
 
 const rolBadge = (rol: string) => {
   switch (rol) {
@@ -38,28 +38,14 @@ const rolSicLabel = (rolSic: string | null) => {
 export default function UsuarioView() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const [usuario, setUsuario] = useState<Usuario | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: usuario, isLoading: loading } = useUsuario(id);
+  const deleteMutation = useDeleteUsuario();
   const [deleteConfirm, setDeleteConfirm] = useState(false);
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await fetchUsuario(id!);
-        setUsuario(data);
-      } catch {
-        // handled silently
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [id]);
 
   const handleDelete = async () => {
     if (!id) return;
     try {
-      await deleteUsuario(id);
+      await deleteMutation.mutateAsync(id);
       navigate("/usuarios");
     } catch {
       // handled silently

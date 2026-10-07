@@ -1,11 +1,13 @@
-import { useState, useEffect, useCallback } from "react";
+﻿import { useState } from "react";
 import { Plus, X } from "lucide-react";
 import { Button, ConfirmDialog, LoadingSpinner, SearchInput, Select } from "../../components/ui";
 import { ActividadHeader } from "../../components/actividades/ActividadHeader";
 import { ActividadKPI } from "../../components/actividades/ActividadKPI";
 import { ActividadTable } from "../../components/actividades/ActividadTable";
-import { fetchActividades, deleteActividad, tiposActividad, type Actividad } from "../../services/actividades";
+import { useActividades, useDeleteActividad } from "../../hooks/queries";
+import { tiposActividad } from "../../services/actividades";
 import ActividadModal from "../../components/actividades/ActividadModal";
+import { toast } from "../../utils/toast";
 
 function FilterSelect({
   label,
@@ -29,40 +31,28 @@ function FilterSelect({
 }
 
 export default function ActividadList() {
-  const [actividades, setActividades] = useState<Actividad[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [viewId, setViewId] = useState<number | null>(null);
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const result = await fetchActividades({
-        search: search || undefined,
-        tipo_actividad: filtroTipo || undefined,
-        estado: filtroEstado || undefined,
-        page,
-        limit: 10,
-      });
-      setActividades(result.data);
-      setTotalPages(result.totalPages);
-    } catch {
-      // handled silently
-    } finally {
-      setLoading(false);
-    }
-  }, [search, filtroTipo, filtroEstado, page]);
+  const filters = {
+    search: search || undefined,
+    tipo_actividad: filtroTipo || undefined,
+    estado: filtroEstado || undefined,
+    page,
+    limit: 10,
+  };
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  const { data: result, isLoading: loading } = useActividades(filters);
+  const deleteMutation = useDeleteActividad();
+
+  const actividades = result?.data ?? [];
+  const totalPages = result?.totalPages ?? 1;
 
   const hasFilters = Boolean(search) || Boolean(filtroTipo) || Boolean(filtroEstado);
 
@@ -77,18 +67,17 @@ export default function ActividadList() {
     setShowCreateModal(false);
     setEditId(null);
     setViewId(null);
-    loadData();
   };
 
   const actividadAEliminar = actividades.find((a) => a.id === deleteId);
 
   const handleConfirmDelete = async () => {
-    if (!deleteId) return;
+    if (deleteId == null) return;
     try {
-      await deleteActividad(deleteId);
-      setActividades((prev) => prev.filter((a) => a.id !== deleteId));
+      await deleteMutation.mutateAsync(deleteId);
+      toast.success("Actividad eliminada correctamente");
     } catch {
-      // handled silently
+      toast.error("Error al eliminar la actividad");
     } finally {
       setDeleteId(null);
     }

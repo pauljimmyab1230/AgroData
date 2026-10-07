@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+﻿import { useState } from "react";
 import { Plus, X } from "lucide-react";
 import { Button, ConfirmDialog, FilterSelect, LoadingSpinner, SearchInput, SectionHeader } from "../../components/ui";
 import AcopioKPI from "../../components/acopio/AcopioKPI";
 import AcopioTable from "../../components/acopio/AcopioTable";
-import { fetchAcopios, fetchAcopioStats, deleteAcopio, type Acopio, formatKg, ESTADO_ACOPIO_OPTIONS } from "../../services/acopios";
+import { useAcopios, useAcopioStats, useDeleteAcopio } from "../../hooks/queries";
+import { formatKg, ESTADO_ACOPIO_OPTIONS } from "../../services/acopios";
 import AcopioModal from "../../components/acopio/AcopioModal";
 import { toast } from "../../utils/toast";
 
@@ -18,66 +19,39 @@ export default function AcopioList() {
   const [editId, setEditId] = useState<number | null>(null);
   const [viewId, setViewId] = useState<number | null>(null);
 
-  const [acopios, setAcopios] = useState<Acopio[]>([]);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const filters = {
+    page,
+    limit: pageSize,
+    search: search || undefined,
+    estado: filtroEstado || undefined,
+  };
 
-  const [stats, setStats] = useState({
-    total_acopios: 0,
-    sacos_recibidos: 0,
-    kilogramos_acopiados: 0,
-    kilogramos_neto: 0,
-  });
+  const { data: result, isLoading: loading } = useAcopios(filters);
+  const { data: stats } = useAcopioStats();
+  const deleteMutation = useDeleteAcopio();
 
-  const loadData = useCallback(() => {
-    const params: Record<string, unknown> = { page, limit: pageSize };
-    if (search) params.search = search;
-    if (filtroEstado) params.estado = filtroEstado;
-
-    setLoading(true);
-    fetchAcopios(params)
-      .then((res) => {
-        setAcopios(res.data);
-        setTotalPages(res.totalPages);
-      })
-      .catch(() => {
-        toast.error("Error al cargar acopios");
-        setAcopios([]);
-      })
-      .finally(() => setLoading(false));
-  }, [search, filtroEstado, page]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  useEffect(() => {
-    fetchAcopioStats()
-      .then(setStats)
-      .catch(() => {
-        toast.error("Error al cargar estadísticas");
-      });
-  }, []);
+  const acopios = result?.data ?? [];
+  const totalPages = result?.totalPages ?? 1;
 
   const kpis = [
     {
       label: "Total Acopios",
-      value: String(stats.total_acopios),
+      value: String(stats?.total_acopios ?? 0),
       iconClass: "bg-forest-600/10 text-forest-600",
     },
     {
       label: "Sacos Recibidos",
-      value: String(stats.sacos_recibidos),
+      value: String(stats?.sacos_recibidos ?? 0),
       iconClass: "bg-forest-600/10 text-forest-600",
     },
     {
       label: "Kilogramos Acopiados",
-      value: formatKg(stats.kilogramos_acopiados),
+      value: formatKg(stats?.kilogramos_acopiados ?? 0),
       iconClass: "bg-red-50 text-red-600",
     },
     {
       label: "Kilogramos Netos",
-      value: formatKg(stats.kilogramos_neto),
+      value: formatKg(stats?.kilogramos_neto ?? 0),
       iconClass: "bg-violet-100 text-violet-600",
     },
   ];
@@ -94,15 +68,13 @@ export default function AcopioList() {
     setShowCreateModal(false);
     setEditId(null);
     setViewId(null);
-    loadData();
   };
 
   const handleDelete = async () => {
-    if (!deleteId) return;
+    if (deleteId == null) return;
     try {
-      await deleteAcopio(String(deleteId));
+      await deleteMutation.mutateAsync(deleteId);
       setDeleteId(null);
-      loadData();
       toast.success("Acopio eliminado correctamente");
     } catch {
       toast.error("Error al eliminar el acopio");
@@ -165,9 +137,9 @@ export default function AcopioList() {
 
       <AcopioTable
         data={acopios}
-        onView={(id) => setViewId(id)}
-        onEdit={(id) => setEditId(id)}
-        onDelete={(id) => setDeleteId(id)}
+        onView={(id: number) => setViewId(id)}
+        onEdit={(id: number) => setEditId(id)}
+        onDelete={(id: number) => setDeleteId(id)}
         currentPage={page}
         totalPages={totalPages}
         onPageChange={setPage}
@@ -183,7 +155,7 @@ export default function AcopioList() {
             ? `¿Estás seguro de eliminar el acopio ${acopioAEliminar.codigo}? Esta acción no se puede deshacer.`
             : "¿Estás seguro de eliminar este acopio? Esta acción no se puede deshacer."
         }
-        confirmText="Eliminar"
+        confirmText={deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
         variant="danger"
       />
 

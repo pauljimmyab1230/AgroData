@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { ArrowLeft, Pencil, Scale, TrendingDown, Package } from "lucide-react";
 import { Button } from "../../components/ui";
@@ -11,11 +10,8 @@ import { ControlProcesoCard } from "../../components/procesamiento/ControlProces
 import { ProductoBaseCard } from "../../components/procesamiento/ProductoBaseCard";
 import { ReporteProcesamientoCard } from "../../components/procesamiento/ReporteProcesamientoCard";
 import { ObservacionesCard } from "../../components/procesamiento/ObservacionesCard";
-import {
-  type OrdenProcesamiento,
-  fetchProcesamiento,
-  formatearPeso,
-} from "../../services/procesamientos";
+import { useProcesamiento } from "../../hooks/queries";
+import { formatearPeso } from "../../services/procesamientos";
 
 function formatPct(valor: number): string {
   if (!valor) return "—";
@@ -30,17 +26,7 @@ interface ProcesamientoViewProps {
 export default function ProcesamientoView({ inModal, procesamientoId: propId }: ProcesamientoViewProps) {
   const { id: paramId } = useParams();
   const id = propId || paramId;
-  const [orden, setOrden] = useState<OrdenProcesamiento | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    fetchProcesamiento(id)
-      .then(setOrden)
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [id]);
+  const { data: orden, isLoading: loading } = useProcesamiento(id);
 
   if (loading || !orden) {
     return (

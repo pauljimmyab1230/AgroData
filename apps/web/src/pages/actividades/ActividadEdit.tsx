@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { LoadingSpinner } from "../../components/ui";
 import { ActividadHeader } from "../../components/actividades/ActividadHeader";
 import { ActividadForm } from "../../components/actividades/ActividadForm";
-import { fetchActividad, tipoActividadLabels, type Actividad } from "../../services/actividades";
+import { useActividad } from "../../hooks/queries";
+import { tipoActividadLabels } from "../../services/actividades";
 
 interface ActividadEditProps {
   inModal?: boolean;
@@ -14,17 +14,7 @@ interface ActividadEditProps {
 export default function ActividadEdit({ inModal, actividadId: propId, onSave }: ActividadEditProps) {
   const { id: paramId } = useParams();
   const id = propId || paramId;
-  const [actividad, setActividad] = useState<Actividad | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    fetchActividad(id)
-      .then(setActividad)
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [id]);
+  const { data: actividad, isLoading: loading } = useActividad(id);
 
   if (loading || !actividad) {
     return (

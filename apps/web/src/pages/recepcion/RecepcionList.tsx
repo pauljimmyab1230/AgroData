@@ -1,14 +1,15 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useState } from "react";
 import { Hash, PackageCheck, Plus, Scale, Timer, X } from "lucide-react";
 import { Button, ConfirmDialog, FilterSelect, LoadingSpinner, SearchInput, SectionHeader } from "../../components/ui";
 import RecepcionKPI from "../../components/recepcion/RecepcionKPI";
 import RecepcionTable from "../../components/recepcion/RecepcionTable";
 import {
+  useRecepciones,
+  useRecepcionStats,
+  useDeleteRecepcion,
+} from "../../hooks/queries";
+import {
   type Recepcion,
-  type RecepcionStats,
-  fetchRecepciones,
-  fetchRecepcionStats,
-  deleteRecepcion,
   formatearPeso,
   recepcionEstados,
 } from "../../services/recepciones";
@@ -34,45 +35,24 @@ export default function RecepcionList() {
   const [filtroEstado, setFiltroEstado] = useState("");
   const [page, setPage] = useState(1);
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [deleting, setDeleting] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [viewId, setViewId] = useState<number | null>(null);
 
-  const [recepciones, setRecepciones] = useState<Recepcion[]>([]);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<RecepcionStats | null>(null);
-
-  const loadData = () => {
-    setLoading(true);
-    fetchRecepciones({
-      search: search || undefined,
-      estado: filtroEstado || undefined,
-      page,
-      limit: pageSize,
-    })
-      .then((result) => {
-        setRecepciones(result.data);
-        setTotal(result.total);
-        setTotalPages(result.totalPages);
-      })
-      .catch(() => {
-        toast.error("Error al cargar recepciones");
-      })
-      .finally(() => setLoading(false));
+  const filters = {
+    search: search || undefined,
+    estado: filtroEstado || undefined,
+    page,
+    limit: pageSize,
   };
 
-  useEffect(() => {
-    loadData();
-  }, [search, filtroEstado, page]);
+  const { data: result, isLoading: loading } = useRecepciones(filters);
+  const { data: stats } = useRecepcionStats();
+  const deleteMutation = useDeleteRecepcion();
 
-  useEffect(() => {
-    fetchRecepcionStats()
-      .then(setStats)
-      .catch(() => undefined);
-  }, [recepciones.length]);
+  const recepciones = result?.data ?? [];
+  const total = result?.total ?? 0;
+  const totalPages = result?.totalPages ?? 1;
 
   const hasFilters = Boolean(search) || Boolean(filtroEstado);
 
@@ -86,46 +66,41 @@ export default function RecepcionList() {
     setShowCreateModal(false);
     setEditId(null);
     setViewId(null);
-    loadData();
   };
 
   const handleDelete = async () => {
-    if (!deleteId) return;
-    setDeleting(true);
+    if (deleteId == null) return;
     try {
-      await deleteRecepcion(String(deleteId));
+      await deleteMutation.mutateAsync(deleteId);
       setDeleteId(null);
-      loadData();
       toast.success("Recepción eliminada correctamente");
     } catch {
       toast.error("Error al eliminar la recepción");
-    } finally {
-      setDeleting(false);
     }
   };
 
   const kpis = [
     {
       label: "Recepciones",
-      value: loading ? "—" : String(total),
+      value: loading ? "-" : String(total),
       icon: PackageCheck,
       iconClass: "bg-forest-600/10 text-forest-600",
     },
     {
       label: "Kilogramos Recibidos",
-      value: loading || !stats ? "—" : formatearPeso(stats.peso_neto_total),
+      value: loading || !stats ? "-" : formatearPeso(stats.peso_neto_total),
       icon: Scale,
       iconClass: "bg-sun-100 text-sun-700",
     },
     {
       label: "LP Recepcionados",
-      value: loading || !stats ? "—" : String(stats.lotes_distintos),
+      value: loading || !stats ? "-" : String(stats.lotes_distintos),
       icon: Hash,
       iconClass: "bg-purple-50 text-purple-600",
     },
     {
       label: "Pendientes de Procesamiento",
-      value: loading || !stats ? "—" : String(stats.pendientes_pesaje),
+      value: loading || !stats ? "-" : String(stats.pendientes_pesaje),
       icon: Timer,
       iconClass: "bg-red-50 text-red-600",
     },
@@ -187,9 +162,9 @@ export default function RecepcionList() {
           currentPage={page}
           totalPages={totalPages}
           onPageChange={setPage}
-          onView={(recepcion) => setViewId(recepcion.id)}
-          onEdit={(recepcion) => setEditId(recepcion.id)}
-          onDelete={(recepcion) => setDeleteId(recepcion.id)}
+          onView={(recepcion: Recepcion) => setViewId(recepcion.id)}
+          onEdit={(recepcion: Recepcion) => setEditId(recepcion.id)}
+          onDelete={(recepcion: Recepcion) => setDeleteId(recepcion.id)}
         />
       )}
 
@@ -199,7 +174,7 @@ export default function RecepcionList() {
         onConfirm={handleDelete}
         title="Eliminar Recepción"
         message="¿Estás seguro de eliminar esta recepción? Esta acción no se puede deshacer."
-        confirmText={deleting ? "Eliminando..." : "Eliminar"}
+        confirmText={deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
         variant="danger"
       />
 

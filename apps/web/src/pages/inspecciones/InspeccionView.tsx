@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { ArrowLeft, CalendarClock, Camera, CheckCircle2, ClipboardCheck, Gauge, Pencil, TriangleAlert } from "lucide-react";
 import { Button } from "../../components/ui";
@@ -13,7 +12,8 @@ import { MapaCard } from "../../components/inspecciones/MapaCard";
 import { ObservacionesCard } from "../../components/inspecciones/ObservacionesCard";
 import { RecomendacionesCard } from "../../components/inspecciones/RecomendacionesCard";
 import { ResultadoCard } from "../../components/inspecciones/ResultadoCard";
-import { fetchInspeccion, formatFecha, type Inspeccion } from "../../services/inspecciones";
+import { useInspeccion } from "../../hooks/queries";
+import { formatFecha } from "../../services/inspecciones";
 
 interface InspeccionViewProps {
   inModal?: boolean;
@@ -24,17 +24,7 @@ interface InspeccionViewProps {
 export default function InspeccionView({ inModal, inspeccionId: propId, onEdit }: InspeccionViewProps) {
   const { id: paramId } = useParams();
   const id = propId || paramId;
-  const [inspeccion, setInspeccion] = useState<Inspeccion | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    fetchInspeccion(id)
-      .then(setInspeccion)
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [id]);
+  const { data: inspeccion, isLoading: loading } = useInspeccion(id);
 
   if (loading) {
     return <div className="py-12 text-center text-gray-500">Cargando inspección...</div>;

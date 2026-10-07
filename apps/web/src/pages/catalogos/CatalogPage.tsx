@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Plus, Pencil, Trash2, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import {
@@ -14,25 +14,25 @@ import {
   Input,
 } from "../../components/ui";
 import {
+  useCatalogoItems,
+  useCatalogoActivos,
+  useCreateCatalogoItem,
+  useUpdateCatalogoItem,
+  useToggleCatalogoItem,
+  useDeleteCatalogoItem,
+} from "../../hooks/queries";
+import {
   catalogoConfigs,
-  fetchCatalogoItems,
-  fetchCatalogoActivos,
-  createCatalogoItem,
-  updateCatalogoItem,
-  toggleCatalogoItem,
-  deleteCatalogoItem,
   type CatalogoItem,
 } from "../../services/catalogos";
 
 export default function CatalogPage() {
   const { catalogoId } = useParams<{ catalogoId: string }>();
   const config = catalogoId ? catalogoConfigs[catalogoId] : undefined;
+  const tipo = catalogoId ?? "";
 
-  const [items, setItems] = useState<CatalogoItem[]>([]);
-  const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<CatalogoItem | null>(null);
@@ -41,41 +41,25 @@ export default function CatalogPage() {
   const [formOrden, setFormOrden] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [totalActivos, setTotalActivos] = useState(0);
-  const [totalInactivos, setTotalInactivos] = useState(0);
 
   const limit = 10;
 
-  const loadItems = useCallback(async () => {
-    if (!catalogoId) return;
-    setLoading(true);
-    try {
-      const [result, activos] = await Promise.all([
-        fetchCatalogoItems(catalogoId, { search, page, limit }),
-        fetchCatalogoActivos(catalogoId),
-      ]);
-      setItems(result.data);
-      setTotal(result.total);
-      setTotalActivos(activos.length);
-      setTotalInactivos(result.total - activos.length);
-    } catch {
-      setItems([]);
-      setTotal(0);
-      setTotalActivos(0);
-      setTotalInactivos(0);
-    } finally {
-      setLoading(false);
-    }
-  }, [catalogoId, search, page]);
+  const { data: result, isLoading: loading } = useCatalogoItems(tipo, { search, page, limit });
+  const { data: activos } = useCatalogoActivos(tipo);
+  const createMutation = useCreateCatalogoItem(tipo);
+  const updateMutation = useUpdateCatalogoItem(tipo);
+  const toggleMutation = useToggleCatalogoItem(tipo);
+  const deleteMutation = useDeleteCatalogoItem(tipo);
+
+  const items = result?.data ?? [];
+  const total = result?.total ?? 0;
+  const totalActivos = activos?.length ?? 0;
+  const totalInactivos = total - totalActivos;
 
   useEffect(() => {
     setSearch("");
     setPage(1);
   }, [catalogoId]);
-
-  useEffect(() => {
-    loadItems();
-  }, [loadItems]);
 
   useEffect(() => {
     setDeleteId(null);
@@ -117,22 +101,24 @@ export default function CatalogPage() {
     setError("");
     try {
       if (editingItem) {
-        await updateCatalogoItem(editingItem.id, {
-          nombre: formNombre.trim(),
-          descripcion: formDescripcion.trim() || null,
-          orden: formOrden,
+        await updateMutation.mutateAsync({
+          id: editingItem.id,
+          data: {
+            nombre: formNombre.trim(),
+            descripcion: formDescripcion.trim() || null,
+            orden: formOrden,
+          },
         });
       } else {
-        await createCatalogoItem(catalogoId, {
+        await createMutation.mutateAsync({
           nombre: formNombre.trim(),
           descripcion: formDescripcion.trim() || undefined,
           orden: formOrden,
         });
       }
       setModalOpen(false);
-      loadItems();
-    } catch (err: any) {
-      setError(err?.response?.data?.message || "Error al guardar. Verifica que el nombre no esté duplicado.");
+    } catch (err) {
+      setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Error al guardar. Verifica que el nombre no esté duplicado.");
     } finally {
       setSaving(false);
     }
@@ -140,8 +126,7 @@ export default function CatalogPage() {
 
   const handleToggleActivo = async (id: number) => {
     try {
-      await toggleCatalogoItem(id);
-      loadItems();
+      await toggleMutation.mutateAsync(id);
     } catch {
       // silent - toggle is low risk
     }
@@ -150,12 +135,11 @@ export default function CatalogPage() {
   const handleDelete = async () => {
     if (!deleteId) return;
     try {
-      await deleteCatalogoItem(deleteId);
+      await deleteMutation.mutateAsync(deleteId);
       setDeleteId(null);
-      loadItems();
-    } catch (err: any) {
+    } catch (err) {
       setDeleteId(null);
-      setError(err?.response?.data?.message || "Error al eliminar el registro.");
+      setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Error al eliminar el registro.");
     }
   };
 
@@ -347,7 +331,7 @@ export default function CatalogPage() {
         onConfirm={handleDelete}
         title={`Eliminar de ${config.titulo}`}
         message="¿Estás seguro de eliminar este registro? Esta acción no se puede deshacer."
-        confirmText="Eliminar"
+        confirmText={deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
         variant="danger"
       />
     </div>

@@ -1,11 +1,10 @@
-﻿import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+﻿import { useParams } from "react-router-dom";
 import { ArrowLeft, Pencil, Scale, Package } from "lucide-react";
 import { Button } from "../../components/ui";
 import { CardHeader, CardShell, Field } from "../../components/shared/formControls";
+import { useRecepcion } from "../../hooks/queries";
 import {
   type Recepcion,
-  fetchRecepcion,
   formatearPeso,
 } from "../../services/recepciones";
 
@@ -25,16 +24,7 @@ const estadoLabels: Record<string, string> = {
 export default function RecepcionView({ inModal, recepcionId: propId, onEdit }: RecepcionViewProps) {
   const { id: paramId } = useParams();
   const id = propId || paramId;
-  const [recepcion, setRecepcion] = useState<Recepcion | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!id) return;
-    fetchRecepcion(id)
-      .then(setRecepcion)
-      .catch(() => setRecepcion(null))
-      .finally(() => setLoading(false));
-  }, [id]);
+  const { data: recepcion, isLoading: loading } = useRecepcion(id);
 
   if (loading) {
     return (
