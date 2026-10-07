@@ -1,4 +1,4 @@
-﻿import { QueryClient, QueryClientProvider, MutationCache } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, MutationCache } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { toast } from "../utils/toast";
 

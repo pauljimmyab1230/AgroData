@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Hash, PackageCheck, Plus, Scale, Timer, X } from "lucide-react";
 import { Button, ConfirmDialog, FilterSelect, LoadingSpinner, SearchInput, SectionHeader } from "../../components/ui";
 import RecepcionKPI from "../../components/recepcion/RecepcionKPI";

@@ -1,4 +1,4 @@
-﻿import { useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button, LoadingSpinner } from "../../components/ui";
 import RecepcionForm from "../../components/recepcion/RecepcionForm";
