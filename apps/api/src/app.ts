@@ -23,6 +23,9 @@ import procesamientoRoutes from './routes/procesamiento.routes';
 import kardexRoutes from './routes/kardex.routes';
 import catalogosRoutes from './routes/catalogos.routes';
 import ubigeoRoutes from './routes/ubigeo.routes';
+import operacionesRoutes from './routes/operaciones.routes';
+import recetasRoutes from './routes/recetas.routes';
+import ordenesRoutes from './routes/ordenes.routes';
 
 const app = express();
 
@@ -92,6 +95,9 @@ app.use('/api/procesamientos', procesamientoRoutes);
 app.use('/api/kardex', kardexRoutes);
 app.use('/api/catalogos', catalogosRoutes);
 app.use('/api/ubigeo', ubigeoRoutes);
+app.use('/api/operaciones-proceso', operacionesRoutes);
+app.use('/api/recetas', recetasRoutes);
+app.use('/api/ordenes-procesamiento', ordenesRoutes);
 // /uploads solo accesible autenticado (documentos personales, fotos y firmas)
 app.use('/uploads', authMiddleware, express.static(path.join(__dirname, '..', 'uploads')));
 
