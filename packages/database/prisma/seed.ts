@@ -96,6 +96,131 @@ async function crearCatalogos() {
   console.log(`  Items de catálogo creados: ${total}`);
 }
 
+// ==================== Operaciones de proceso ====================
+const OPERACIONES = [
+  { cod: 'OP-LAV', nom: 'Lavado', desc: 'Lavado del grano para remover polvo e impurezas superficiales', ord: 1 },
+  { cod: 'OP-DESP', nom: 'Despedrado', desc: 'Remoción de piedras, terrones y materiales pesados', ord: 2 },
+  { cod: 'OP-DESAP', nom: 'Desaponificado', desc: 'Remoción de saponinas (corteza amarga del grano)', ord: 3 },
+  { cod: 'OP-ESC', nom: 'Escarificado', desc: 'Abraspado de la superficie del grano', ord: 4 },
+  { cod: 'OP-SEC', nom: 'Secado', desc: 'Reducción de humedad hasta el nivel óptimo de almacenamiento', ord: 5 },
+  { cod: 'OP-SEL', nom: 'Selección', desc: 'Clasificación manual o mecánica del grano por tamaño y calidad', ord: 6 },
+  { cod: 'OP-CLA', nom: 'Clasificación', desc: 'Separación por calidades (primera, segunda, descarte)', ord: 7 },
+  { cod: 'OP-PUL', nom: 'Pulido', desc: 'Pulido superficial del grano para mejorar apariencia', ord: 8 },
+  { cod: 'OP-MOL', nom: 'Molienda', desc: 'Molienda del grano para obtener harina', ord: 9 },
+  { cod: 'OP-TAM', nom: 'Tamizado', desc: 'Tamizado de la harina para obtener la malla deseada', ord: 10 },
+  { cod: 'OP-HUM', nom: 'Humectación', desc: 'Ajuste de humedad previo a laminado o expansión', ord: 11 },
+  { cod: 'OP-LAM', nom: 'Laminado', desc: 'Laminado del grano para obtener hojuelas', ord: 12 },
+  { cod: 'OP-REV', nom: 'Reventado', desc: 'Expansión térmica del grano (pop)', ord: 13 },
+  { cod: 'OP-TOS', nom: 'Tostado', desc: 'Tostado del grano para productos tostados', ord: 14 },
+  { cod: 'OP-EMP', nom: 'Empaque', desc: 'Envasado y etiquetado del producto terminado', ord: 15 },
+];
+
+async function crearOperaciones() {
+  console.log('Creando operaciones de proceso...');
+  let total = 0;
+  for (const op of OPERACIONES) {
+    const existe = await prisma.operacion_proceso.findUnique({ where: { codigo: op.cod } });
+    if (existe) continue;
+    await prisma.operacion_proceso.create({
+      data: { codigo: op.cod, nombre: op.nom, descripcion: op.desc, orden: op.ord, activo: true },
+    });
+    total++;
+  }
+  console.log(`  Operaciones: ${total}`);
+}
+
+// ==================== Recetas ====================
+const RECETAS = [
+  {
+    cod: 'REC-QUI-PRI', nom: 'Quinua primaria', base: 'Quinua', etapa: 'PRIMARIA' as const,
+    formato: 'GRANO' as const,
+    desc: 'Proceso primario de la quinua de campo: lavado, despedrado, desaponificado, escarificado, secado y selección. Produce quinua beneficiada lista para consumo o transformación.',
+    ops: ['OP-LAV', 'OP-DESP', 'OP-DESAP', 'OP-ESC', 'OP-SEC', 'OP-SEL'],
+  },
+  {
+    cod: 'REC-QUI-HAR', nom: 'Quinua - harina', base: 'Quinua', etapa: 'SECUNDARIA' as const,
+    formato: 'HARINA' as const,
+    desc: 'Transformación de quinua beneficiada en harina fina mediante molienda y tamizado.',
+    ops: ['OP-MOL', 'OP-TAM'],
+  },
+  {
+    cod: 'REC-QUI-HOJ', nom: 'Quinua - hojuelas', base: 'Quinua', etapa: 'SECUNDARIA' as const,
+    formato: 'HOJUELA' as const,
+    desc: 'Transformación de quinua beneficiada en hojuelas mediante humectación, laminado y secado.',
+    ops: ['OP-HUM', 'OP-LAM', 'OP-SEC'],
+  },
+  {
+    cod: 'REC-QUI-POP', nom: 'Quinua - pop', base: 'Quinua', etapa: 'SECUNDARIA' as const,
+    formato: 'POP' as const,
+    desc: 'Transformación de quinua beneficiada en pop (expansión térmica) con selección posterior.',
+    ops: ['OP-HUM', 'OP-REV', 'OP-SEL'],
+  },
+  {
+    cod: 'REC-QUI-EMP', nom: 'Quinua - empaque', base: 'Quinua', etapa: 'EMPAQUE' as const,
+    formato: 'GRANO' as const,
+    desc: 'Clasificación final y empaque del producto terminado para venta.',
+    ops: ['OP-CLA', 'OP-EMP'],
+  },
+  {
+    cod: 'REC-CHI-PRI', nom: 'Chía primaria', base: 'Chía', etapa: 'PRIMARIA' as const,
+    formato: 'GRANO' as const,
+    desc: 'Proceso primario de la chía: lavado, secado y selección. Menos etapas que la quinua.',
+    ops: ['OP-LAV', 'OP-SEC', 'OP-SEL'],
+  },
+  {
+    cod: 'REC-FRE-SEL', nom: 'Fréjol - selección', base: 'Fréjol', etapa: 'PRIMARIA' as const,
+    formato: 'GRANO' as const,
+    desc: 'Proceso del fréjol: únicamente selección y clasificación, sin transformación.',
+    ops: ['OP-SEL', 'OP-CLA'],
+  },
+  {
+    cod: 'REC-MAI-PRI', nom: 'Maíz primario', base: 'Maíz', etapa: 'PRIMARIA' as const,
+    formato: 'GRANO' as const,
+    desc: 'Proceso primario del maíz: secado, selección y clasificación.',
+    ops: ['OP-SEC', 'OP-SEL', 'OP-CLA'],
+  },
+];
+
+async function crearRecetas() {
+  console.log('Creando recetas...');
+  let totalRecetas = 0, totalOps = 0;
+  for (const r of RECETAS) {
+    let receta = await prisma.receta.findUnique({ where: { codigo: r.cod } });
+    if (!receta) {
+      receta = await prisma.receta.create({
+        data: {
+          codigo: r.cod,
+          nombre: r.nom,
+          producto_base: r.base,
+          etapa: r.etapa,
+          formato_salida: r.formato,
+          descripcion: r.desc,
+          activo: true,
+        },
+      });
+      totalRecetas++;
+    }
+    for (let i = 0; i < r.ops.length; i++) {
+      const op = await prisma.operacion_proceso.findUnique({ where: { codigo: r.ops[i] } });
+      if (!op) continue;
+      const existe = await prisma.receta_operacion.findFirst({
+        where: { receta_id: receta.id, operacion_id: op.id },
+      });
+      if (existe) continue;
+      await prisma.receta_operacion.create({
+        data: {
+          receta_id: receta.id,
+          operacion_id: op.id,
+          orden: i + 1,
+          requerida: true,
+        },
+      });
+      totalOps++;
+    }
+  }
+  console.log(`  Recetas: ${totalRecetas} · Operaciones de receta: ${totalOps}`);
+}
+
 // ==================== Productores ====================
 const PRODUCTORES = [
   { codigo: 'PRO-0001', dni: '45678901', nombres: 'Juan Carlos', apellido_paterno: 'Mamani', apellido_materno: 'Quispe', sexo: 'MASCULINO' as const, nac: '1975-03-15', estado_civil: 'CASADO' as const, dep: 'Cusco', prov: 'Chumbivilcas', dist: 'Santo Tomás', comunidad: 'Comunidad de Huancarani', nivel: 'PRIMARIA' as const, idioma: 'QUECHUA' as const, org: 'Cooperativa Agropecuaria Qosqo', cargo: 'SOCIO' as const, tel: '984512367', correo: 'juan.mamani@correo.com' },
@@ -693,6 +818,8 @@ async function main() {
   console.log('=== Seed de datos de prueba AgroData ===\n');
   await crearUsuarios();
   await crearCatalogos();
+  await crearOperaciones();
+  await crearRecetas();
   const productores = await crearProductores();
   await crearFamiliaresYDocumentos(productores);
   await crearParcelas(productores);

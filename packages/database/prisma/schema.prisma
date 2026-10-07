@@ -301,6 +301,54 @@ enum TipoMovimiento {
   AJUSTE
 }
 
+// ==================== Procesamiento: rediseño ====================
+
+enum EtapaProceso {
+  PRIMARIA
+  SECUNDARIA
+  EMPAQUE
+}
+
+enum EstadoOrden {
+  BORRADOR
+  EN_PROCESO
+  FINALIZADO
+  PAUSADA
+  CANCELADA
+}
+
+enum TipoSalida {
+  PRODUCTO_BUENO
+  MERMA
+  PIEDRAS
+  SAPONINA
+  ENVASE
+  OTRO
+}
+
+enum FormatoSalida {
+  GRANO
+  HARINA
+  HOJUELA
+  POP
+  GRANEL
+  OTRO
+}
+
+enum DestinoSalida {
+  KARDEX
+  DESCARTE
+  REPROCESO
+  SUBPRODUCTO
+  VENTA_DIRECTA
+}
+
+enum UnidadMedida {
+  KG
+  UNIDAD
+  LT
+}
+
 // ─── Models ───────────────────────────────────────────────
 
 model Productor {
@@ -800,6 +848,7 @@ model recepcion {
   acopio         acopio?          @relation(fields: [acopio_id], references: [id])
   sacos_detalle  recepcion_saco[]
   procesamientos procesamiento[]
+  ordenes_recepcion orden_recepcion[]
 }
 
 model recepcion_saco {
@@ -951,6 +1000,163 @@ model procesamiento {
 
   recepcion recepcion? @relation(fields: [recepcion_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
+  @@index([recepcion_id])
+}
+
+// ==================== Procesamiento: nuevo modelo ====================
+
+// Catálogo de operaciones de proceso: lavado, despedrado, desaponificado, etc.
+model operacion_proceso {
+  id          Int      @id @default(autoincrement())
+  codigo      String   @unique @db.VarChar(20)
+  nombre      String   @db.VarChar(100)
+  descripcion String?  @db.VarChar(500)
+  orden       Int      @default(0)
+  activo      Boolean  @default(true)
+  created_at  DateTime @default(now()) @db.DateTime(3)
+  updated_at  DateTime @updatedAt @db.DateTime(3)
+
+  receta_operaciones receta_operacion[]
+  orden_operaciones  orden_operacion[]
+
+  @@index([activo])
+}
+
+// Receta: conjunto de operaciones aplicables a un producto/etapa
+// Ej: "Quinua primaria", "Quinua - harina", "Chía primaria"
+model receta {
+  id            Int           @id @default(autoincrement())
+  codigo        String        @unique @db.VarChar(20)
+  nombre        String        @db.VarChar(150)
+  producto_base String        @db.VarChar(100)
+  etapa         EtapaProceso
+  formato_salida FormatoSalida?
+  descripcion   String?       @db.Text
+  activo        Boolean       @default(true)
+  created_at    DateTime      @default(now()) @db.DateTime(3)
+  updated_at    DateTime      @updatedAt @db.DateTime(3)
+
+  operaciones receta_operacion[]
+  ordenes     orden_procesamiento[]
+
+  @@index([etapa])
+  @@index([producto_base])
+}
+
+// Operaciones sugeridas por receta (precarga del checkbox)
+model receta_operacion {
+  id                Int     @id @default(autoincrement())
+  receta_id         Int
+  operacion_id      Int
+  orden             Int     @default(0)
+  requerida         Boolean @default(true)
+  parametros_default String? @db.Text
+
+  receta    receta            @relation(fields: [receta_id], references: [id], onDelete: Cascade)
+  operacion operacion_proceso @relation(fields: [operacion_id], references: [id])
+
+  @@unique([receta_id, operacion_id])
+  @@index([receta_id])
+  @@index([operacion_id])
+}
+
+// Cabecera de la orden de procesamiento
+model orden_procesamiento {
+  id                 Int              @id @default(autoincrement())
+  codigo             String           @unique @db.VarChar(20)
+  planta             String           @db.VarChar(100)
+  responsable        String           @db.VarChar(150)
+  fecha_inicio       DateTime         @db.DateTime(3)
+  fecha_fin          DateTime?        @db.DateTime(3)
+  estado             EstadoOrden      @default(BORRADOR)
+  etapa              EtapaProceso
+  formato_salida     FormatoSalida    @default(GRANO)
+  receta_id          Int?
+  orden_origen_id    Int?
+  producto_salida    String           @db.VarChar(150)
+  peso_entrada       Decimal          @default(0) @db.Decimal(12, 2)
+  peso_salida_total  Decimal          @default(0) @db.Decimal(12, 2)
+  merma_total        Decimal          @default(0) @db.Decimal(12, 2)
+  rendimiento        Decimal          @default(0) @db.Decimal(5, 2)
+  humedad_final      Decimal?         @db.Decimal(5, 2)
+  calidad            CalidadProducto?
+  balance_ok         Boolean          @default(false)
+  observaciones      String?          @db.Text
+  activo             Boolean          @default(true)
+  created_at         DateTime         @default(now()) @db.DateTime(3)
+  updated_at         DateTime         @updatedAt @db.DateTime(3)
+  created_by         String?          @db.VarChar(36)
+  updated_by         String?          @db.VarChar(36)
+
+  receta       receta?              @relation(fields: [receta_id], references: [id], onDelete: SetNull)
+  orden_origen orden_procesamiento? @relation("orden_encadenada", fields: [orden_origen_id], references: [id], onDelete: SetNull)
+  ordenes_siguientes orden_procesamiento[] @relation("orden_encadenada")
+  operaciones  orden_operacion[]
+  salidas      orden_salida[]
+  recepciones  orden_recepcion[]
+
+  @@index([receta_id])
+  @@index([orden_origen_id])
+  @@index([estado])
+  @@index([etapa])
+}
+
+// Operaciones ejecutadas dentro de una orden
+model orden_operacion {
+  id            Int       @id @default(autoincrement())
+  orden_id      Int
+  operacion_id  Int
+  orden         Int       @default(0)
+  fecha         DateTime  @default(now()) @db.DateTime(3)
+  operario      String?   @db.VarChar(150)
+  peso_antes    Decimal?  @db.Decimal(12, 2)
+  peso_despues  Decimal?  @db.Decimal(12, 2)
+  humedad       Decimal?  @db.Decimal(5, 2)
+  resultado     String?   @db.VarChar(50)
+  observaciones String?   @db.Text
+  completada    Boolean   @default(false)
+
+  orden_ref  orden_procesamiento @relation(fields: [orden_id], references: [id], onDelete: Cascade)
+  operacion  operacion_proceso   @relation(fields: [operacion_id], references: [id])
+
+  @@index([orden_id])
+  @@index([operacion_id])
+}
+
+// Salidas pesadas de una orden: producto bueno, merma, piedras, saponina, envases
+model orden_salida {
+  id                 Int            @id @default(autoincrement())
+  orden_id           Int
+  tipo_salida        TipoSalida
+  descripcion        String         @db.VarChar(200)
+  cantidad           Decimal        @db.Decimal(12, 2)
+  unidad             UnidadMedida   @default(KG)
+  humedad            Decimal?       @db.Decimal(5, 2)
+  destino            DestinoSalida  @default(SUBPRODUCTO)
+  cuenta_en_balance  Boolean        @default(true)
+  observaciones      String?        @db.Text
+  created_at         DateTime       @default(now()) @db.DateTime(3)
+
+  orden orden_procesamiento @relation(fields: [orden_id], references: [id], onDelete: Cascade)
+
+  @@index([orden_id])
+  @@index([tipo_salida])
+}
+
+// N:M entre orden y recepciones (una orden consume de varias recepciones)
+model orden_recepcion {
+  id                Int      @id @default(autoincrement())
+  orden_id          Int
+  recepcion_id      Int
+  cantidad_asignada Decimal  @db.Decimal(12, 2)
+  observaciones     String?  @db.Text
+  created_at        DateTime @default(now()) @db.DateTime(3)
+
+  orden     orden_procesamiento @relation(fields: [orden_id], references: [id], onDelete: Cascade)
+  recepcion recepcion          @relation(fields: [recepcion_id], references: [id])
+
+  @@unique([orden_id, recepcion_id])
+  @@index([orden_id])
   @@index([recepcion_id])
 }
 
