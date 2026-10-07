@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Factory, Plus, X, Package, TrendingUp, Layers, ArrowRight } from "lucide-react";
+﻿import { useState } from "react";
+import { Factory, Plus, X, Package, TrendingUp, Layers, Pencil, Eye } from "lucide-react";
 import {
   Button,
   ConfirmDialog,
@@ -9,10 +9,10 @@ import {
   SectionHeader,
   Badge,
 } from "../../components/ui";
+import OrdenModal from "../../components/procesamiento/OrdenModal";
 import { useOrdenes, useOrdenStats, useDeleteOrden } from "../../hooks/queries";
 import type { OrdenProcesamiento } from "../../services/ordenes";
 import { toast } from "../../utils/toast";
-import { useNavigate } from "react-router-dom";
 
 const pageSize = 10;
 
@@ -42,12 +42,44 @@ const estadoBadge: Record<string, "forest" | "yellow" | "purple" | "red" | "gray
 };
 
 export default function OrdenList() {
-  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
   const [filtroEtapa, setFiltroEtapa] = useState("");
   const [page, setPage] = useState(1);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  // Estado del modal
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<"create" | "edit" | "view">("create");
+  const [modalOrdenId, setModalOrdenId] = useState<number | undefined>();
+  const [modalOrigenId, setModalOrigenId] = useState<number | undefined>();
+
+  const abrirCrear = () => {
+    setModalMode("create");
+    setModalOrdenId(undefined);
+    setModalOrigenId(undefined);
+    setModalOpen(true);
+  };
+
+  const abrirVer = (id: number) => {
+    setModalMode("view");
+    setModalOrdenId(id);
+    setModalOrigenId(undefined);
+    setModalOpen(true);
+  };
+
+  const abrirEditar = (id: number) => {
+    setModalMode("edit");
+    setModalOrdenId(id);
+    setModalOrigenId(undefined);
+    setModalOpen(true);
+  };
+
+  const cerrarModal = () => {
+    setModalOpen(false);
+    setModalOrdenId(undefined);
+    setModalOrigenId(undefined);
+  };
 
   const filters = {
     search: search || undefined,
@@ -117,7 +149,7 @@ export default function OrdenList() {
         title="Procesamiento"
         description="Órdenes de proceso, balance de masa y producto terminado"
         actions={
-          <Button onClick={() => navigate("/procesamiento/nueva")} iconLeft={<Plus className="h-4 w-4" />}>
+          <Button onClick={abrirCrear} iconLeft={<Plus className="h-4 w-4" />}>
             Nueva orden
           </Button>
         }
@@ -205,7 +237,7 @@ export default function OrdenList() {
                     <td className="px-4 py-3">
                       <button
                         type="button"
-                        onClick={() => navigate(`/procesamiento/${o.id}`)}
+                        onClick={() => abrirVer(o.id)}
                         className="font-medium text-forest-700 hover:underline"
                       >
                         {o.codigo}
@@ -236,20 +268,20 @@ export default function OrdenList() {
                       <div className="flex justify-end gap-1">
                         <button
                           type="button"
-                          onClick={() => navigate(`/procesamiento/${o.id}`)}
+                          onClick={() => abrirVer(o.id)}
                           className="rounded-lg p-1.5 text-gray-400 hover:bg-forest-600/10 hover:text-forest-700"
                           aria-label="Ver"
                         >
-                          <Factory className="h-4 w-4" />
+                          <Eye className="h-4 w-4" />
                         </button>
                         <button
                           type="button"
-                          onClick={() => navigate(`/procesamiento/${o.id}/editar`)}
+                          onClick={() => abrirEditar(o.id)}
                           disabled={o.estado === "FINALIZADO"}
                           className="rounded-lg p-1.5 text-gray-400 hover:bg-forest-600/10 hover:text-forest-700 disabled:opacity-30"
                           aria-label="Editar"
                         >
-                          <ArrowRight className="h-4 w-4" />
+                          <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           type="button"
@@ -272,7 +304,7 @@ export default function OrdenList() {
             <div className="py-16 text-center">
               <Factory className="mx-auto h-10 w-10 text-gray-300" />
               <p className="mt-2 text-sm text-gray-500">No hay órdenes de procesamiento</p>
-              <Button className="mt-4" onClick={() => navigate("/procesamiento/nueva")}>
+              <Button className="mt-4" onClick={abrirCrear}>
                 Crear la primera orden
               </Button>
             </div>
@@ -302,6 +334,19 @@ export default function OrdenList() {
         message="¿Estás seguro de eliminar esta orden de procesamiento? Esta acción no se puede deshacer."
         confirmText={deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
         variant="danger"
+      />
+
+      <OrdenModal
+        open={modalOpen}
+        onClose={cerrarModal}
+        onSave={cerrarModal}
+        onEdit={(id) => {
+          setModalMode("edit");
+          setModalOrdenId(id);
+        }}
+        mode={modalMode}
+        ordenId={modalOrdenId}
+        ordenOrigenId={modalOrigenId}
       />
     </div>
   );

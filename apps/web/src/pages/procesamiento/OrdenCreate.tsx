@@ -40,10 +40,17 @@ const CALIDAD_OPTIONS = [
   { value: "DESCARTE", label: "Descarte" },
 ];
 
-export default function OrdenCreate() {
+interface OrdenCreateProps {
+  inModal?: boolean;
+  onSave?: () => void;
+  onClose?: () => void;
+  ordenOrigenId?: number;
+}
+
+export default function OrdenCreate({ inModal, onSave, onClose, ordenOrigenId: propOrigenId }: OrdenCreateProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const ordenOrigenId = searchParams.get("orden_origen_id");
+  const ordenOrigenId = propOrigenId ?? (searchParams.get("orden_origen_id") ? Number(searchParams.get("orden_origen_id")) : undefined);
 
   const [planta, setPlanta] = useState("Planta San Juan");
   const [responsable, setResponsable] = useState("");
@@ -119,7 +126,11 @@ export default function OrdenCreate() {
     try {
       await createMutation.mutateAsync(payload);
       toast.success("Orden de procesamiento creada exitosamente");
-      navigate("/procesamiento");
+      if (inModal) {
+        onSave?.();
+      } else {
+        navigate("/procesamiento");
+      }
     } catch (err) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       toast.error(msg ?? "Error al crear la orden");
@@ -130,17 +141,19 @@ export default function OrdenCreate() {
 
   return (
     <div>
-      <div className="mb-8 flex items-center gap-4">
-        <Button variant="ghost" onClick={() => navigate("/procesamiento")} iconLeft={<ArrowLeft className="h-4 w-4" />}>
-          Procesamiento
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-[#111827]">Nueva orden de procesamiento</h1>
-          <p className="text-sm text-gray-500">
-            Selecciona los procesos a aplicar y registra las salidas pesadas
-          </p>
+      {!inModal && (
+        <div className="mb-8 flex items-center gap-4">
+          <Button variant="ghost" onClick={() => navigate("/procesamiento")} iconLeft={<ArrowLeft className="h-4 w-4" />}>
+            Procesamiento
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-[#111827]">Nueva orden de procesamiento</h1>
+            <p className="text-sm text-gray-500">
+              Selecciona los procesos a aplicar y registra las salidas pesadas
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <CardShell>
@@ -260,7 +273,7 @@ export default function OrdenCreate() {
             {recepciones.length === 0 ? (
               <p className="text-sm text-gray-500">No hay recepciones disponibles.</p>
             ) : (
-              <div className="space-y-2">
+              <div className="max-h-72 space-y-2 overflow-y-auto">
                 {recepciones.slice(0, 10).map((r) => {
                   const asignada = recepcionesSeleccionadas.find((s) => s.recepcion_id === r.id);
                   return (
@@ -271,23 +284,24 @@ export default function OrdenCreate() {
                           {r.loteProductor ?? "Sin lote"} · {Number(r.pesoNeto ?? 0).toLocaleString("es-PE")} kg
                         </p>
                       </div>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="Kg a asignar"
-                        value={asignada ? String(asignada.cantidad_asignada) : ""}
-                        onChange={(e) => {
-                          const cantidad = Number(e.target.value) || 0;
-                          setRecepcionesSeleccionadas((prev) => {
-                            const otros = prev.filter((s) => s.recepcion_id !== r.id);
-                            return cantidad > 0
-                              ? [...otros, { recepcion_id: r.id, cantidad_asignada: cantidad }]
-                              : otros;
-                          });
-                        }}
-                        className="w-28"
-                      />
+                      <div className="w-32 shrink-0">
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="Kg a asignar"
+                          value={asignada ? String(asignada.cantidad_asignada) : ""}
+                          onChange={(e) => {
+                            const cantidad = Number(e.target.value) || 0;
+                            setRecepcionesSeleccionadas((prev) => {
+                              const otros = prev.filter((s) => s.recepcion_id !== r.id);
+                              return cantidad > 0
+                                ? [...otros, { recepcion_id: r.id, cantidad_asignada: cantidad }]
+                                : otros;
+                            });
+                          }}
+                        />
+                      </div>
                     </div>
                   );
                 })}
@@ -298,7 +312,7 @@ export default function OrdenCreate() {
       </div>
 
       <div className="mt-6 flex justify-end gap-3">
-        <Button variant="ghost" onClick={() => navigate("/procesamiento")}>
+        <Button variant="ghost" onClick={() => (inModal ? onClose?.() : navigate("/procesamiento"))}>
           Cancelar
         </Button>
         <Button onClick={handleSubmit} disabled={createMutation.isPending} iconLeft={<Save className="h-4 w-4" />}>

@@ -30,10 +30,17 @@ const CALIDAD_OPTIONS = [
   { value: "DESCARTE", label: "Descarte" },
 ];
 
-export default function OrdenEdit() {
+interface OrdenEditProps {
+  inModal?: boolean;
+  onSave?: () => void;
+  onClose?: () => void;
+  ordenId?: number;
+}
+
+export default function OrdenEdit({ inModal, onSave, onClose, ordenId: propId }: OrdenEditProps) {
   const navigate = useNavigate();
-  const { id } = useParams();
-  const ordenId = id ? Number(id) : null;
+  const { id: paramId } = useParams();
+  const ordenId = propId ?? (paramId ? Number(paramId) : null);
 
   const { data: orden, isLoading } = useOrden(ordenId);
   const updateMutation = useUpdateOrden();
@@ -91,7 +98,11 @@ export default function OrdenEdit() {
         },
       });
       toast.success("Orden actualizada exitosamente");
-      navigate(`/procesamiento/${ordenId}`);
+      if (inModal) {
+        onSave?.();
+      } else {
+        navigate(`/procesamiento/${ordenId}`);
+      }
     } catch (err) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       toast.error(msg ?? "Error al actualizar la orden");
@@ -109,13 +120,15 @@ export default function OrdenEdit() {
   return (
     <div>
       <div className="mb-8 flex items-center gap-4">
-        <Button
-          variant="ghost"
-          onClick={() => navigate(`/procesamiento/${ordenId}`)}
-          iconLeft={<ArrowLeft className="h-4 w-4" />}
-        >
-          Volver
-        </Button>
+        {!inModal && (
+          <Button
+            variant="ghost"
+            onClick={() => navigate(`/procesamiento/${ordenId}`)}
+            iconLeft={<ArrowLeft className="h-4 w-4" />}
+          >
+            Volver
+          </Button>
+        )}
         <div>
           <h1 className="text-2xl font-bold text-[#111827]">Editar orden {orden.codigo}</h1>
           <p className="text-sm text-gray-500">Modifica los datos de la orden</p>
@@ -174,7 +187,7 @@ export default function OrdenEdit() {
       </CardShell>
 
       <div className="mt-6 flex justify-end gap-3">
-        <Button variant="ghost" onClick={() => navigate(`/procesamiento/${ordenId}`)}>
+        <Button variant="ghost" onClick={() => (inModal ? onClose?.() : navigate(`/procesamiento/${ordenId}`))}>
           Cancelar
         </Button>
         <Button onClick={handleSubmit} disabled={updateMutation.isPending} iconLeft={<Save className="h-4 w-4" />}>

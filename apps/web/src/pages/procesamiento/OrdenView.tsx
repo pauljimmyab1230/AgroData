@@ -38,10 +38,17 @@ const estadoBadge: Record<string, "forest" | "yellow" | "purple" | "red" | "gray
   CANCELADA: "red",
 };
 
-export default function OrdenView() {
+interface OrdenViewProps {
+  inModal?: boolean;
+  ordenId?: number;
+  onEdit?: (ordenId: number) => void;
+  onClose?: () => void;
+}
+
+export default function OrdenView({ inModal, ordenId: propId, onEdit, onClose }: OrdenViewProps) {
   const navigate = useNavigate();
-  const { id } = useParams();
-  const ordenId = id ? Number(id) : null;
+  const { id: paramId } = useParams();
+  const ordenId = propId ?? (paramId ? Number(paramId) : null);
 
   const [confirmarFinalizar, setConfirmarFinalizar] = useState(false);
 
@@ -78,7 +85,7 @@ export default function OrdenView() {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-20">
         <p className="text-sm text-gray-500">No se encontró la orden de procesamiento.</p>
-        <Button onClick={() => navigate("/procesamiento")}>Volver</Button>
+        <Button onClick={() => (inModal ? onClose?.() : navigate("/procesamiento"))}>Volver</Button>
       </div>
     );
   }
@@ -93,10 +100,12 @@ export default function OrdenView() {
 
   return (
     <div className="space-y-6">
-      <div className="mb-2 flex flex-wrap items-center gap-4">
-        <Button variant="ghost" onClick={() => navigate("/procesamiento")} iconLeft={<ArrowLeft className="h-4 w-4" />}>
-          Procesamiento
-        </Button>
+      <div className="flex flex-wrap items-center gap-4">
+        {!inModal && (
+          <Button variant="ghost" onClick={() => navigate("/procesamiento")} iconLeft={<ArrowLeft className="h-4 w-4" />}>
+            Procesamiento
+          </Button>
+        )}
         <div className="flex-1">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-[#111827]">{orden.codigo}</h1>
@@ -114,7 +123,7 @@ export default function OrdenView() {
             <>
               <Button
                 variant="secondary"
-                onClick={() => navigate(`/procesamiento/${orden.id}/editar`)}
+                onClick={() => (inModal ? onEdit?.(orden.id) : navigate(`/procesamiento/${orden.id}/editar`))}
                 iconLeft={<Pencil className="h-4 w-4" />}
               >
                 Editar
@@ -166,9 +175,10 @@ export default function OrdenView() {
 
           <EncadenarPanel
             orden={orden}
-            onEncadenar={() =>
-              navigate(`/procesamiento/nueva?orden_origen_id=${orden.id}`)
-            }
+            onEncadenar={() => {
+              if (inModal) onClose?.();
+              navigate(`/procesamiento/nueva?orden_origen_id=${orden.id}`);
+            }}
           />
         </div>
       </div>
