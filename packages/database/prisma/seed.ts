@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+﻿import { PrismaClient } from '@prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
 import bcrypt from 'bcrypt';
@@ -740,31 +740,69 @@ async function crearProcesamientos() {
 }
 
 // ==================== Kardex ====================
-const KARDEX = [
-  { cod: 'KAR-0001', prod: 'Abono orgánico (saco 50 kg)', cat: 'Insumo', unidad: 'UN', actual: 120, min: 30, max: 200, ubi: 'Almacén principal', estado: 'DISPONIBLE' as const, costo: 45.5 },
-  { cod: 'KAR-0002', prod: 'Compost certificado (saco 25 kg)', cat: 'Insumo', unidad: 'UN', actual: 85, min: 20, max: 150, ubi: 'Almacén principal', estado: 'DISPONIBLE' as const, costo: 28.75 },
-  { cod: 'KAR-0003', prod: 'Semilla de quinua Pasankalla', cat: 'Semilla', unidad: 'KG', actual: 45, min: 15, max: 80, ubi: 'Cámara fría', estado: 'DISPONIBLE' as const, costo: 32.0 },
-  { cod: 'KAR-0004', prod: 'Semilla de papa Yungay', cat: 'Semilla', unidad: 'KG', actual: 200, min: 50, max: 400, ubi: 'Cámara fría', estado: 'DISPONIBLE' as const, costo: 12.5 },
-  { cod: 'KAR-0005', prod: 'Bioles de estiércol', cat: 'Insumo', unidad: 'LT', actual: 300, min: 100, max: 500, ubi: 'Bodega técnica', estado: 'DISPONIBLE' as const, costo: 8.25 },
-  { cod: 'KAR-0006', prod: 'Jabón potásico', cat: 'Insumo', unidad: 'LT', actual: 12, min: 20, max: 60, ubi: 'Bodega técnica', estado: 'DISPONIBLE' as const, costo: 18.0 },
-  { cod: 'KAR-0007', prod: 'Café orgánico en grano', cat: 'Producto terminado', unidad: 'KG', actual: 700, min: 100, max: 1200, ubi: 'Almacén de producto', estado: 'DISPONIBLE' as const, costo: 22.4 },
-  { cod: 'KAR-0008', prod: 'Quinua orgánica beneficiada', cat: 'Producto terminado', unidad: 'KG', actual: 1100, min: 200, max: 2000, ubi: 'Almacén de producto', estado: 'DISPONIBLE' as const, costo: 15.8 },
-  { cod: 'KAR-0009', prod: 'Fungicida ecológico (cobreado)', cat: 'Insumo', unidad: 'LT', actual: 8, min: 15, max: 50, ubi: 'Bodega técnica', estado: 'DISPONIBLE' as const, costo: 65.0 },
-  { cod: 'KAR-0010', prod: 'Fertilizante foliar', cat: 'Insumo', unidad: 'LT', actual: 25, min: 10, max: 60, ubi: 'Bodega técnica', estado: 'DISPONIBLE' as const, costo: 42.0 },
+// Catalogo de cultivos del sistema (granos andinos, cereales y leguminosas)
+const CULTIVOS_SISTEMA = [
+  { nombre: 'Quinua', genero: 'f' },
+  { nombre: 'Kiwicha', genero: 'f' },
+  { nombre: 'Chia', genero: 'f' },
+  { nombre: 'Frejol rojo', genero: 'm' },
+  { nombre: 'Frejol negro', genero: 'm' },
+  { nombre: 'Frejol panamito', genero: 'm' },
+  { nombre: 'Frejol canario', genero: 'm' },
+  { nombre: 'Avena', genero: 'f' },
+  { nombre: 'Trigo', genero: 'm' },
+  { nombre: 'Centeno', genero: 'm' },
+  { nombre: 'Garbanzo', genero: 'm' },
+  { nombre: 'Lenteja', genero: 'f' },
 ];
 
-const MOVIMIENTOS_POR_ITEM = [
-  [{ tipo: 'ENTRADA' as const, cant: 150, fecha: '2025-08-10', resp: 'Juan Pérez' }, { tipo: 'SALIDA' as const, cant: 30, fecha: '2025-09-15', resp: 'María García' }],
-  [{ tipo: 'ENTRADA' as const, cant: 100, fecha: '2025-08-12', resp: 'Juan Pérez' }, { tipo: 'SALIDA' as const, cant: 15, fecha: '2025-10-01', resp: 'Pedro Ccota' }],
-  [{ tipo: 'ENTRADA' as const, cant: 60, fecha: '2025-08-20', resp: 'Rosa Mamani' }, { tipo: 'SALIDA' as const, cant: 15, fecha: '2025-09-01', resp: 'Juan Mamani' }],
-  [{ tipo: 'ENTRADA' as const, cant: 250, fecha: '2025-08-25', resp: 'Rosa Mamani' }, { tipo: 'SALIDA' as const, cant: 50, fecha: '2025-09-05', resp: 'María Flores' }],
-  [{ tipo: 'ENTRADA' as const, cant: 350, fecha: '2025-09-01', resp: 'Juan Pérez' }, { tipo: 'SALIDA' as const, cant: 50, fecha: '2025-10-10', resp: 'Pedro Ccota' }],
-  [{ tipo: 'ENTRADA' as const, cant: 30, fecha: '2025-09-05', resp: 'Juan Pérez' }, { tipo: 'SALIDA' as const, cant: 18, fecha: '2025-10-15', resp: 'Tec. María García' }],
-  [{ tipo: 'ENTRADA' as const, cant: 800, fecha: '2025-10-01', resp: 'Rosa Mamani' }, { tipo: 'SALIDA' as const, cant: 100, fecha: '2025-11-01', resp: 'Carlos Mendoza' }],
-  [{ tipo: 'ENTRADA' as const, cant: 1200, fecha: '2025-10-05', resp: 'Rosa Mamani' }, { tipo: 'SALIDA' as const, cant: 100, fecha: '2025-11-05', resp: 'Carlos Mendoza' }],
-  [{ tipo: 'ENTRADA' as const, cant: 20, fecha: '2025-09-10', resp: 'Juan Pérez' }, { tipo: 'SALIDA' as const, cant: 12, fecha: '2025-10-20', resp: 'Tec. María García' }],
-  [{ tipo: 'ENTRADA' as const, cant: 35, fecha: '2025-09-15', resp: 'Juan Pérez' }, { tipo: 'SALIDA' as const, cant: 10, fecha: '2025-10-25', resp: 'Tec. María García' }],
+function nombreTrillado(cultivo: string, genero: string): string {
+  return `${cultivo} ${genero === 'f' ? 'trillada' : 'trillado'}`;
+}
+
+function nombreProcesado(cultivo: string, genero: string): string {
+  return `${cultivo} ${genero === 'f' ? 'procesada' : 'procesado'}`;
+}
+
+const KARDEX = [
+  { cod: 'KAR-0001', prod: 'Quinua trillada', cat: 'PRODUCTO_CAMPO' as const, origen: 'CAMPO' as const, etapa: 'PRIMARIA' as const, unidad: 'KG', actual: 8500, min: 1000, max: 15000, ubi: 'Almacen de producto', estado: 'DISPONIBLE' as const, costo: 8.5 },
+  { cod: 'KAR-0002', prod: 'Kiwicha trillada', cat: 'PRODUCTO_CAMPO' as const, origen: 'CAMPO' as const, etapa: 'PRIMARIA' as const, unidad: 'KG', actual: 3200, min: 500, max: 8000, ubi: 'Almacen de producto', estado: 'DISPONIBLE' as const, costo: 12.0 },
+  { cod: 'KAR-0003', prod: 'Chia trillada', cat: 'PRODUCTO_CAMPO' as const, origen: 'CAMPO' as const, etapa: 'PRIMARIA' as const, unidad: 'KG', actual: 2100, min: 300, max: 6000, ubi: 'Almacen de producto', estado: 'DISPONIBLE' as const, costo: 15.5 },
+  { cod: 'KAR-0004', prod: 'Frejol rojo trillado', cat: 'PRODUCTO_CAMPO' as const, origen: 'CAMPO' as const, etapa: 'PRIMARIA' as const, unidad: 'KG', actual: 4800, min: 800, max: 10000, ubi: 'Almacen de producto', estado: 'DISPONIBLE' as const, costo: 9.2 },
+  { cod: 'KAR-0005', prod: 'Frejol negro trillado', cat: 'PRODUCTO_CAMPO' as const, origen: 'CAMPO' as const, etapa: 'PRIMARIA' as const, unidad: 'KG', actual: 3600, min: 600, max: 8000, ubi: 'Almacen de producto', estado: 'DISPONIBLE' as const, costo: 9.8 },
+  { cod: 'KAR-0006', prod: 'Frejol panamito trillado', cat: 'PRODUCTO_CAMPO' as const, origen: 'CAMPO' as const, etapa: 'PRIMARIA' as const, unidad: 'KG', actual: 2200, min: 400, max: 5000, ubi: 'Almacen de producto', estado: 'DISPONIBLE' as const, costo: 10.5 },
+  { cod: 'KAR-0007', prod: 'Frejol canario trillado', cat: 'PRODUCTO_CAMPO' as const, origen: 'CAMPO' as const, etapa: 'PRIMARIA' as const, unidad: 'KG', actual: 1800, min: 300, max: 4000, ubi: 'Almacen de producto', estado: 'DISPONIBLE' as const, costo: 11.0 },
+  { cod: 'KAR-0008', prod: 'Avena trillada', cat: 'PRODUCTO_CAMPO' as const, origen: 'CAMPO' as const, etapa: 'PRIMARIA' as const, unidad: 'KG', actual: 5200, min: 800, max: 12000, ubi: 'Almacen de producto', estado: 'DISPONIBLE' as const, costo: 4.8 },
+  { cod: 'KAR-0009', prod: 'Trigo trillado', cat: 'PRODUCTO_CAMPO' as const, origen: 'CAMPO' as const, etapa: 'PRIMARIA' as const, unidad: 'KG', actual: 6800, min: 1000, max: 15000, ubi: 'Almacen de producto', estado: 'DISPONIBLE' as const, costo: 5.2 },
+  { cod: 'KAR-0010', prod: 'Centeno trillado', cat: 'PRODUCTO_CAMPO' as const, origen: 'CAMPO' as const, etapa: 'PRIMARIA' as const, unidad: 'KG', actual: 1500, min: 200, max: 4000, ubi: 'Almacen de producto', estado: 'DISPONIBLE' as const, costo: 6.0 },
+  { cod: 'KAR-0011', prod: 'Garbanzo trillado', cat: 'PRODUCTO_CAMPO' as const, origen: 'CAMPO' as const, etapa: 'PRIMARIA' as const, unidad: 'KG', actual: 2900, min: 500, max: 7000, ubi: 'Almacen de producto', estado: 'DISPONIBLE' as const, costo: 11.5 },
+  { cod: 'KAR-0012', prod: 'Lenteja trillada', cat: 'PRODUCTO_CAMPO' as const, origen: 'CAMPO' as const, etapa: 'PRIMARIA' as const, unidad: 'KG', actual: 2400, min: 400, max: 6000, ubi: 'Almacen de producto', estado: 'DISPONIBLE' as const, costo: 10.8 },
+  { cod: 'KAR-0013', prod: 'Quinua procesada', cat: 'PRODUCTO_PROCESADO' as const, origen: 'PROCESAMIENTO' as const, etapa: 'PRIMARIA' as const, unidad: 'KG', actual: 5200, min: 500, max: 10000, ubi: 'Almacen de producto', estado: 'DISPONIBLE' as const, costo: 14.5 },
+  { cod: 'KAR-0014', prod: 'Kiwicha procesada', cat: 'PRODUCTO_PROCESADO' as const, origen: 'PROCESAMIENTO' as const, etapa: 'PRIMARIA' as const, unidad: 'KG', actual: 1800, min: 300, max: 5000, ubi: 'Almacen de producto', estado: 'DISPONIBLE' as const, costo: 18.0 },
+  { cod: 'KAR-0015', prod: 'Chia procesada', cat: 'PRODUCTO_PROCESADO' as const, origen: 'PROCESAMIENTO' as const, etapa: 'PRIMARIA' as const, unidad: 'KG', actual: 1200, min: 200, max: 4000, ubi: 'Almacen de producto', estado: 'DISPONIBLE' as const, costo: 22.0 },
+  { cod: 'KAR-0016', prod: 'Frejol rojo procesado', cat: 'PRODUCTO_PROCESADO' as const, origen: 'PROCESAMIENTO' as const, etapa: 'PRIMARIA' as const, unidad: 'KG', actual: 3200, min: 400, max: 8000, ubi: 'Almacen de producto', estado: 'DISPONIBLE' as const, costo: 12.5 },
+  { cod: 'KAR-0017', prod: 'Avena procesada', cat: 'PRODUCTO_PROCESADO' as const, origen: 'PROCESAMIENTO' as const, etapa: 'PRIMARIA' as const, unidad: 'KG', actual: 3800, min: 500, max: 9000, ubi: 'Almacen de producto', estado: 'DISPONIBLE' as const, costo: 7.2 },
+  { cod: 'KAR-0018', prod: 'Harina de quinua', cat: 'PRODUCTO_PROCESADO' as const, origen: 'PROCESAMIENTO' as const, etapa: 'SECUNDARIA' as const, unidad: 'KG', actual: 1500, min: 200, max: 4000, ubi: 'Almacen de producto', estado: 'DISPONIBLE' as const, costo: 22.5 },
+  { cod: 'KAR-0019', prod: 'Hojuelas de quinua', cat: 'PRODUCTO_PROCESADO' as const, origen: 'PROCESAMIENTO' as const, etapa: 'SECUNDARIA' as const, unidad: 'KG', actual: 800, min: 100, max: 2500, ubi: 'Almacen de producto', estado: 'DISPONIBLE' as const, costo: 28.0 },
+  { cod: 'KAR-0020', prod: 'Pop de quinua', cat: 'PRODUCTO_PROCESADO' as const, origen: 'PROCESAMIENTO' as const, etapa: 'SECUNDARIA' as const, unidad: 'KG', actual: 600, min: 100, max: 2000, ubi: 'Almacen de producto', estado: 'DISPONIBLE' as const, costo: 35.0 },
+  { cod: 'KAR-0021', prod: 'Harina de avena', cat: 'PRODUCTO_PROCESADO' as const, origen: 'PROCESAMIENTO' as const, etapa: 'SECUNDARIA' as const, unidad: 'KG', actual: 950, min: 150, max: 3000, ubi: 'Almacen de producto', estado: 'DISPONIBLE' as const, costo: 11.5 },
+  { cod: 'KAR-0022', prod: 'Harina de trigo', cat: 'PRODUCTO_PROCESADO' as const, origen: 'PROCESAMIENTO' as const, etapa: 'SECUNDARIA' as const, unidad: 'KG', actual: 2100, min: 300, max: 5000, ubi: 'Almacen de producto', estado: 'DISPONIBLE' as const, costo: 8.5 },
+  { cod: 'KAR-0023', prod: 'Merma de procesamiento', cat: 'SUBPRODUCTO' as const, origen: 'PROCESAMIENTO' as const, etapa: 'PRIMARIA' as const, unidad: 'KG', actual: 420, min: 0, max: 1000, ubi: 'Bodega tecnica', estado: 'DISPONIBLE' as const, costo: 0 },
+  { cod: 'KAR-0024', prod: 'Piedras (despedrado)', cat: 'SUBPRODUCTO' as const, origen: 'PROCESAMIENTO' as const, etapa: 'PRIMARIA' as const, unidad: 'KG', actual: 280, min: 0, max: 800, ubi: 'Bodega tecnica', estado: 'DISPONIBLE' as const, costo: 0 },
+  { cod: 'KAR-0025', prod: 'Saponina (desaponificado)', cat: 'SUBPRODUCTO' as const, origen: 'PROCESAMIENTO' as const, etapa: 'PRIMARIA' as const, unidad: 'KG', actual: 150, min: 0, max: 500, ubi: 'Bodega tecnica', estado: 'DISPONIBLE' as const, costo: 0 },
+  { cod: 'KAR-0026', prod: 'Costal de 50 kg', cat: 'ENVASE' as const, origen: 'OTRO' as const, etapa: null, unidad: 'UNIDAD', actual: 350, min: 50, max: 800, ubi: 'Bodega tecnica', estado: 'DISPONIBLE' as const, costo: 3.5 },
+  { cod: 'KAR-0027', prod: 'Bolsa de 25 kg', cat: 'ENVASE' as const, origen: 'OTRO' as const, etapa: null, unidad: 'UNIDAD', actual: 280, min: 40, max: 600, ubi: 'Bodega tecnica', estado: 'DISPONIBLE' as const, costo: 1.8 },
+  { cod: 'KAR-0028', prod: 'Bolsa de 5 kg', cat: 'ENVASE' as const, origen: 'OTRO' as const, etapa: null, unidad: 'UNIDAD', actual: 420, min: 60, max: 1000, ubi: 'Bodega tecnica', estado: 'DISPONIBLE' as const, costo: 0.9 },
 ];
+
+const MOVIMIENTOS_POR_ITEM: Array<Array<{ tipo: 'ENTRADA' | 'SALIDA' | 'BAJA'; cant: number; fecha: string; resp: string; origen: 'CAMPO' | 'PROCESAMIENTO' | 'AJUSTE' | 'OTRO'; refTipo: string; obs: string }>> = KARDEX.map((k) => {
+  const entrada = Math.round(k.actual * 1.2);
+  const salida = Math.round(k.actual * 0.2);
+  return [
+    { tipo: 'ENTRADA' as const, cant: entrada, fecha: '2025-08-15', resp: 'Juan Perez', origen: k.origen, refTipo: k.origen === 'CAMPO' ? 'RECEPCION' : k.origen === 'PROCESAMIENTO' ? 'ORDEN_PROCESAMIENTO' : 'AJUSTE', obs: k.origen === 'CAMPO' ? 'Ingreso de producto de campo.' : k.origen === 'PROCESAMIENTO' ? 'Salida de orden de procesamiento.' : 'Ingreso a almacen.' },
+    { tipo: 'SALIDA' as const, cant: salida, fecha: '2025-10-20', resp: 'Maria Garcia', origen: k.origen, refTipo: 'VENTA', obs: 'Salida para venta/despacho.' },
+  ];
+});
 
 async function crearKardex() {
   console.log('Creando kardex y movimientos...');
@@ -778,6 +816,8 @@ async function crearKardex() {
         codigo: k.cod,
         producto: k.prod,
         categoria: k.cat,
+        origen: k.origen,
+        etapa: k.etapa,
         unidad: k.unidad,
         cantidad_actual: k.actual,
         cantidad_minima: k.min,
@@ -786,25 +826,29 @@ async function crearKardex() {
         estado: k.estado,
         costo_unitario: k.costo,
         fecha_ingreso: new Date('2025-08-01'),
-        proveedor: 'Proveedores de la cooperativa',
-        observaciones: 'Item de inventario con control de stock mínimo.',
+        observaciones: 'Item de inventario de almacen.',
       },
     });
     totalItems++;
 
     let saldo = 0;
     for (const m of MOVIMIENTOS_POR_ITEM[i] ?? []) {
-      saldo = m.tipo === 'ENTRADA' ? saldo + m.cant : saldo - m.cant;
+      const esEntrada = m.tipo === 'ENTRADA';
+      const esBaja = m.tipo === 'BAJA';
+      saldo = esEntrada ? saldo + m.cant : saldo - m.cant;
       await prisma.kardex_movimiento.create({
         data: {
           kardex_id: item.id,
           tipo: m.tipo,
           cantidad: m.cant,
-          saldo_anterior: m.tipo === 'ENTRADA' ? saldo - m.cant : saldo + m.cant,
+          saldo_anterior: esEntrada ? saldo - m.cant : saldo + m.cant,
           saldo_posterior: saldo,
+          origen: m.origen,
+          referencia_tipo: m.refTipo,
+          referencia_id: null,
           responsable: m.resp,
           fecha: new Date(m.fecha),
-          observaciones: m.tipo === 'ENTRADA' ? 'Ingreso por compra a proveedor.' : 'Salida para uso en campaña.',
+          observaciones: m.obs,
         },
       });
       totalMovs++;

@@ -299,6 +299,21 @@ enum TipoMovimiento {
   SALIDA
   TRANSFERENCIA
   AJUSTE
+  BAJA
+}
+
+enum OrigenKardex {
+  CAMPO
+  PROCESAMIENTO
+  AJUSTE
+  OTRO
+}
+
+enum CategoriaKardex {
+  PRODUCTO_CAMPO
+  PRODUCTO_PROCESADO
+  SUBPRODUCTO
+  ENVASE
 }
 
 // ==================== Procesamiento: rediseño ====================
@@ -1161,31 +1176,35 @@ model orden_recepcion {
 }
 
 model kardex {
-  id                Int          @id @default(autoincrement())
-  codigo            String       @unique @db.VarChar(20)
-  producto          String       @db.VarChar(200)
-  categoria         String       @db.VarChar(100)
-  unidad            String       @default("kg") @db.VarChar(10)
-  cantidad_actual   Decimal      @default(0) @db.Decimal(10, 2)
-  cantidad_minima   Decimal?     @db.Decimal(10, 2)
-  cantidad_maxima   Decimal?     @db.Decimal(10, 2)
-  ubicacion         String?      @db.VarChar(200)
-  estado            EstadoKardex @default(DISPONIBLE)
-  fecha_ingreso     DateTime     @db.DateTime(3)
-  fecha_vencimiento DateTime?    @db.DateTime(3)
-  proveedor         String?      @db.VarChar(200)
-  costo_unitario    Decimal?     @db.Decimal(10, 2)
-  observaciones     String?      @db.Text
-  activo            Boolean      @default(true)
-  created_at        DateTime     @default(now()) @db.DateTime(3)
-  updated_at        DateTime     @updatedAt @db.DateTime(3)
-  created_by        String?      @db.VarChar(36)
-  updated_by        String?      @db.VarChar(36)
+  id                Int              @id @default(autoincrement())
+  codigo            String           @unique @db.VarChar(20)
+  producto          String           @db.VarChar(200)
+  categoria         CategoriaKardex  @default(PRODUCTO_CAMPO)
+  origen            OrigenKardex     @default(CAMPO)
+  etapa             EtapaProceso?
+  unidad            String           @default("kg") @db.VarChar(10)
+  cantidad_actual   Decimal          @default(0) @db.Decimal(10, 2)
+  cantidad_minima   Decimal?         @db.Decimal(10, 2)
+  cantidad_maxima   Decimal?         @db.Decimal(10, 2)
+  ubicacion         String?          @db.VarChar(200)
+  estado            EstadoKardex     @default(DISPONIBLE)
+  fecha_ingreso     DateTime         @db.DateTime(3)
+  fecha_vencimiento DateTime?        @db.DateTime(3)
+  proveedor         String?          @db.VarChar(200)
+  costo_unitario    Decimal?         @db.Decimal(10, 2)
+  observaciones     String?          @db.Text
+  activo            Boolean          @default(true)
+  created_at        DateTime         @default(now()) @db.DateTime(3)
+  updated_at        DateTime         @updatedAt @db.DateTime(3)
+  created_by        String?          @db.VarChar(36)
+  updated_by        String?          @db.VarChar(36)
 
   movimientos kardex_movimiento[]
 
   @@index([activo, estado, categoria])
   @@index([activo, created_at])
+  @@index([origen])
+  @@index([categoria])
 }
 
 model kardex_movimiento {
@@ -1194,8 +1213,11 @@ model kardex_movimiento {
   cantidad        Decimal        @db.Decimal(10, 2)
   saldo_anterior  Decimal        @db.Decimal(10, 2)
   saldo_posterior Decimal        @db.Decimal(10, 2)
+  origen          OrigenKardex   @default(AJUSTE)
   destino         String?        @db.VarChar(200)
   referencia      String?        @db.VarChar(200)
+  referencia_tipo String?        @db.VarChar(50)
+  referencia_id   Int?
   responsable     String?        @db.VarChar(150)
   observaciones   String?        @db.Text
   fecha           DateTime       @default(now()) @db.DateTime(3)
@@ -1205,6 +1227,8 @@ model kardex_movimiento {
   kardex kardex @relation(fields: [kardex_id], references: [id])
 
   @@index([kardex_id, fecha])
+  @@index([referencia_tipo, referencia_id])
+  @@index([origen])
 }
 
 model catalogos {

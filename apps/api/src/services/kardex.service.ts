@@ -156,7 +156,7 @@ export const create = async (data: Record<string, unknown>, userId?: string) => 
       data: {
         codigo,
         producto: data.producto as string,
-        categoria: data.categoria as string,
+        categoria: data.categoria as 'PRODUCTO_CAMPO' | 'PRODUCTO_PROCESADO' | 'SUBPRODUCTO' | 'ENVASE',
         unidad: (data.unidad as string) || 'kg',
         cantidad_actual: cantidadInicial,
         cantidad_minima: data.cantidad_minima != null ? Number(data.cantidad_minima) : null,

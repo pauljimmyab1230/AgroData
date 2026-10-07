@@ -599,7 +599,7 @@ export const finalizar = async (ordenId: number, userId?: string) => {
           data: {
             codigo: `KAR-${String(Date.now()).slice(-6)}`,
             producto: `${orden.producto_salida} (${orden.formato_salida})`,
-            categoria: 'Producto terminado',
+            categoria: 'PRODUCTO_PROCESADO',
             unidad: 'KG',
             cantidad_actual: cantidad,
             cantidad_minima: 0,
