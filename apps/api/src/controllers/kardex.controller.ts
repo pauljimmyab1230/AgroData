@@ -159,3 +159,104 @@ export const recomputeStock = async (
     next(error);
   }
 };
+
+// ==================== Inventario actual ====================
+export const getInventario = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const result = await kardexService.getInventario({
+      search: req.query.search as string | undefined,
+      origen: req.query.origen as string | undefined,
+      categoria: req.query.categoria as string | undefined,
+      etapa: req.query.etapa as string | undefined,
+      estado: req.query.estado as string | undefined,
+      page: parseInt(req.query.page as string) || 1,
+      limit: parseInt(req.query.limit as string) || 50,
+    });
+    res.status(200).json({ success: true, ...result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ==================== Alertas ====================
+export const getAlertas = async (
+  _req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const result = await kardexService.getAlertas();
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ==================== Movimientos globales ====================
+export const getMovimientosGlobales = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const result = await kardexService.getMovimientosGlobales({
+      kardex_id: req.query.kardex_id ? Number(req.query.kardex_id) : undefined,
+      tipo: req.query.tipo as string | undefined,
+      origen: req.query.origen as string | undefined,
+      referencia_tipo: req.query.referencia_tipo as string | undefined,
+      fecha_desde: req.query.fecha_desde as string | undefined,
+      fecha_hasta: req.query.fecha_hasta as string | undefined,
+      page: parseInt(req.query.page as string) || 1,
+      limit: parseInt(req.query.limit as string) || 50,
+    });
+    res.status(200).json({ success: true, ...result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ==================== Estadísticas ====================
+export const getStats = async (
+  _req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const result = await kardexService.getStats();
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ==================== Dar de baja ====================
+export const darDeBaja = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const { motivo, cantidad, responsable } = req.body as {
+      motivo: string;
+      cantidad?: number;
+      responsable?: string;
+    };
+    const result = await kardexService.darDeBaja(
+      Number(req.params.id),
+      motivo,
+      cantidad,
+      responsable,
+    );
+    res.status(200).json({
+      success: true,
+      message: 'Item dado de baja exitosamente',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -22,6 +22,13 @@ const movimientoIdParamSchema = Joi.object({
 });
 
 router.get('/', validate(getAllKardexSchema, 'query'), kardexController.getAll);
+
+// Rutas fijas antes de /:id para evitar conflicto de parámetros
+router.get('/inventario', kardexController.getInventario);
+router.get('/alertas', kardexController.getAlertas);
+router.get('/movimientos', kardexController.getMovimientosGlobales);
+router.get('/stats', kardexController.getStats);
+
 router.get('/:id', validate(idParamSchema, 'params'), kardexController.getById);
 router.post('/', adminMiddleware, validate(createKardexSchema), kardexController.create);
 router.put('/:id', adminMiddleware, validate(idParamSchema, 'params'), validate(updateKardexSchema), kardexController.update);
@@ -32,5 +39,6 @@ router.post('/:id/movimientos', adminMiddleware, validate(idParamSchema, 'params
 router.delete('/:id/movimientos/:movimientoId', adminMiddleware, validate(movimientoIdParamSchema, 'params'), kardexController.removeMovimiento);
 
 router.post('/:id/recompute', adminMiddleware, validate(idParamSchema, 'params'), kardexController.recomputeStock);
+router.post('/:id/baja', validate(idParamSchema, 'params'), kardexController.darDeBaja);
 
 export default router;

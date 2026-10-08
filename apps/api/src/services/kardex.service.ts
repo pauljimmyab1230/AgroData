@@ -366,3 +366,252 @@ export const recomputeStock = async (kardexId: string) => {
 
   return { stock_recalculado: saldo, movimientos_procesados: movimientos.length };
 };
+
+// ==================== Inventario actual ====================
+// Stock agrupado por producto con categoría, origen, etapa, ubicación, estado y mínimo.
+export const getInventario = async (filters: {
+  search?: string;
+  origen?: string;
+  categoria?: string;
+  etapa?: string;
+  estado?: string;
+  page?: number;
+  limit?: number;
+}) => {
+  const where: Record<string, unknown> = { activo: true };
+  if (filters.origen) where.origen = filters.origen;
+  if (filters.categoria) where.categoria = filters.categoria;
+  if (filters.etapa) where.etapa = filters.etapa;
+  if (filters.estado) where.estado = filters.estado;
+  if (filters.search) {
+    where.OR = [
+      { producto: { contains: filters.search } },
+      { codigo: { contains: filters.search } },
+      { ubicacion: { contains: filters.search } },
+    ];
+  }
+
+  const page = filters.page || 1;
+  const limit = Math.min(filters.limit || 50, 200);
+
+  const [data, total] = await Promise.all([
+    prisma.kardex.findMany({
+      where,
+      orderBy: [{ categoria: 'asc' }, { producto: 'asc' }],
+      skip: (page - 1) * limit,
+      take: limit,
+      select: {
+        id: true,
+        codigo: true,
+        producto: true,
+        categoria: true,
+        origen: true,
+        etapa: true,
+        unidad: true,
+        cantidad_actual: true,
+        cantidad_minima: true,
+        cantidad_maxima: true,
+        ubicacion: true,
+        estado: true,
+        costo_unitario: true,
+        fecha_ingreso: true,
+        fecha_vencimiento: true,
+        activo: true,
+      },
+    }),
+    prisma.kardex.count({ where }),
+  ]);
+
+  return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+};
+
+// ==================== Alertas ====================
+// Items bajo stock mínimo y próximos a vencer (30 días).
+export const getAlertas = async () => {
+  const ahora = new Date();
+  const en30Dias = new Date(ahora.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+  const [bajoMinimo, proximosVencer, vencidos] = await Promise.all([
+    prisma.kardex.findMany({
+      where: {
+        activo: true,
+        cantidad_minima: { not: null },
+        cantidad_actual: { lte: prisma.kardex.fields.cantidad_minima },
+      },
+      select: {
+        id: true, codigo: true, producto: true, categoria: true, origen: true,
+        unidad: true, cantidad_actual: true, cantidad_minima: true, ubicacion: true,
+      },
+    }),
+    prisma.kardex.findMany({
+      where: {
+        activo: true,
+        fecha_vencimiento: { gte: ahora, lte: en30Dias },
+      },
+      select: {
+        id: true, codigo: true, producto: true, categoria: true,
+        unidad: true, cantidad_actual: true, fecha_vencimiento: true,
+      },
+    }),
+    prisma.kardex.findMany({
+      where: {
+        activo: true,
+        fecha_vencimiento: { lt: ahora },
+      },
+      select: {
+        id: true, codigo: true, producto: true, categoria: true,
+        unidad: true, cantidad_actual: true, fecha_vencimiento: true,
+      },
+    }),
+  ]);
+
+  return {
+    bajo_minimo: bajoMinimo,
+    proximos_vencer: proximosVencer,
+    vencidos,
+    total_alertas: bajoMinimo.length + proximosVencer.length + vencidos.length,
+  };
+};
+
+// ==================== Movimientos globales ====================
+// Historial de todos los movimientos con filtros y trazabilidad.
+export const getMovimientosGlobales = async (filters: {
+  kardex_id?: number;
+  tipo?: string;
+  origen?: string;
+  referencia_tipo?: string;
+  fecha_desde?: string;
+  fecha_hasta?: string;
+  page?: number;
+  limit?: number;
+}) => {
+  const where: Record<string, unknown> = {};
+  if (filters.kardex_id) where.kardex_id = filters.kardex_id;
+  if (filters.tipo) where.tipo = filters.tipo;
+  if (filters.origen) where.origen = filters.origen;
+  if (filters.referencia_tipo) where.referencia_tipo = filters.referencia_tipo;
+  if (filters.fecha_desde || filters.fecha_hasta) {
+    where.fecha = {};
+    if (filters.fecha_desde) (where.fecha as Record<string, unknown>).gte = new Date(filters.fecha_desde);
+    if (filters.fecha_hasta) (where.fecha as Record<string, unknown>).lte = new Date(filters.fecha_hasta);
+  }
+
+  const page = filters.page || 1;
+  const limit = Math.min(filters.limit || 50, 200);
+
+  const [data, total] = await Promise.all([
+    prisma.kardex_movimiento.findMany({
+      where,
+      orderBy: { fecha: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+      select: {
+        id: true,
+        tipo: true,
+        cantidad: true,
+        saldo_anterior: true,
+        saldo_posterior: true,
+        origen: true,
+        destino: true,
+        referencia: true,
+        referencia_tipo: true,
+        referencia_id: true,
+        responsable: true,
+        observaciones: true,
+        fecha: true,
+        kardex: {
+          select: { id: true, codigo: true, producto: true, categoria: true, unidad: true },
+        },
+      },
+    }),
+    prisma.kardex_movimiento.count({ where }),
+  ]);
+
+  return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+};
+
+// ==================== Estadísticas ====================
+export const getStats = async () => {
+  const ahora = new Date();
+  const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+
+  const [totalItems, porCategoria, porOrigen, valorTotal, entradasMes, salidasMes, bajasMes] = await Promise.all([
+    prisma.kardex.count({ where: { activo: true } }),
+    prisma.kardex.groupBy({
+      by: ['categoria'],
+      where: { activo: true },
+      _count: { id: true },
+      _sum: { cantidad_actual: true },
+    }),
+    prisma.kardex.groupBy({
+      by: ['origen'],
+      where: { activo: true },
+      _count: { id: true },
+      _sum: { cantidad_actual: true },
+    }),
+    prisma.kardex.findMany({
+      where: { activo: true },
+      select: { cantidad_actual: true, costo_unitario: true },
+    }),
+    prisma.kardex_movimiento.aggregate({
+      where: { tipo: 'ENTRADA', fecha: { gte: inicioMes } },
+      _sum: { cantidad: true },
+      _count: { id: true },
+    }),
+    prisma.kardex_movimiento.aggregate({
+      where: { tipo: 'SALIDA', fecha: { gte: inicioMes } },
+      _sum: { cantidad: true },
+      _count: { id: true },
+    }),
+    prisma.kardex_movimiento.aggregate({
+      where: { tipo: 'BAJA', fecha: { gte: inicioMes } },
+      _sum: { cantidad: true },
+      _count: { id: true },
+    }),
+  ]);
+
+  const valor = valorTotal.reduce(
+    (acc, k) => acc + Number(k.cantidad_actual) * Number(k.costo_unitario ?? 0),
+    0,
+  );
+
+  const categorias: Record<string, { cantidad: number; total: number }> = {};
+  for (const c of porCategoria) {
+    categorias[c.categoria] = {
+      cantidad: c._count.id,
+      total: Number(c._sum.cantidad_actual ?? 0),
+    };
+  }
+
+  const origenes: Record<string, { cantidad: number; total: number }> = {};
+  for (const o of porOrigen) {
+    origenes[o.origen] = {
+      cantidad: o._count.id,
+      total: Number(o._sum.cantidad_actual ?? 0),
+    };
+  }
+
+  return {
+    total_items: totalItems,
+    valor_total: Number(valor.toFixed(2)),
+    kg_totales: Number(valorTotal.reduce((acc, k) => acc + Number(k.cantidad_actual), 0).toFixed(2)),
+    por_categoria: categorias,
+    por_origen: origenes,
+    movimientos_mes: {
+      entradas: { cantidad: entradasMes._count.id, total: Number(entradasMes._sum.cantidad ?? 0) },
+      salidas: { cantidad: salidasMes._count.id, total: Number(salidasMes._sum.cantidad ?? 0) },
+      bajas: { cantidad: bajasMes._count.id, total: Number(bajasMes._sum.cantidad ?? 0) },
+    },
+  };
+};
+
+// ==================== Dar de baja ====================
+export const darDeBaja = async (
+  kardexId: number,
+  motivo: string,
+  cantidad?: number,
+  responsable?: string,
+) => {
+  const { darDeBaja: bajaInterna } = await import('./kardex-integracion.service');
+  return bajaInterna(kardexId, motivo, cantidad, responsable);
+};
