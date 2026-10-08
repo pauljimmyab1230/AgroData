@@ -100,6 +100,7 @@ import {
   fetchMovimientosGlobales,
   fetchKardexStats,
   darDeBaja,
+  registrarSalidaProducto,
   type StatsKardex,
 } from "../../services/kardex";
 
@@ -166,6 +167,23 @@ export function useDarDeBaja() {
       cantidad?: number;
       responsable?: string;
     }) => darDeBaja(kardexId, motivo, cantidad, responsable),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["kardex"] }),
+  });
+}
+
+export function useRegistrarSalida() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      kardex_id: number;
+      cantidad: number;
+      destino?: string | null;
+      cliente?: string | null;
+      referencia?: string | null;
+      responsable?: string | null;
+      observaciones?: string | null;
+      fecha?: string;
+    }) => registrarSalidaProducto(input),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["kardex"] }),
   });
 }

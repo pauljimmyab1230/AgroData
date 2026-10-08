@@ -2,6 +2,7 @@
 import { Link } from "react-router-dom";
 import {
   AlertTriangle,
+  ArrowDownRight,
   Boxes,
   Eye,
   MinusCircle,
@@ -21,12 +22,14 @@ import {
 import { AlertasCard } from "../../components/kardex/AlertasCard";
 import { StatsCard } from "../../components/kardex/StatsCard";
 import { BajaModal } from "../../components/kardex/BajaModal";
+import { SalidaModal } from "../../components/kardex/SalidaModal";
 import {
   useInventario,
   useAlertas,
   useKardexStats,
   useDarDeBaja,
   useDeleteKardex,
+  useRegistrarSalida,
 } from "../../hooks/queries";
 import {
   kardexOrigenLabels,
@@ -80,6 +83,7 @@ export default function KardexList() {
   const [page, setPage] = useState(1);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [bajaItem, setBajaItem] = useState<InventarioItem | null>(null);
+  const [salidaItem, setSalidaItem] = useState<InventarioItem | null>(null);
 
   const filters = {
     search: search || undefined,
@@ -95,6 +99,7 @@ export default function KardexList() {
   const { data: stats } = useKardexStats();
   const deleteMutation = useDeleteKardex();
   const bajaMutation = useDarDeBaja();
+  const salidaMutation = useRegistrarSalida();
 
   const items = result?.data ?? [];
   const totalPages = result?.totalPages ?? 1;
@@ -129,6 +134,15 @@ export default function KardexList() {
         responsable,
       });
       setBajaItem(null);
+    } catch {
+      // error handled by MutationCache
+    }
+  };
+
+  const handleSalida = async (input: Parameters<typeof salidaMutation.mutateAsync>[0]) => {
+    try {
+      await salidaMutation.mutateAsync(input);
+      setSalidaItem(null);
     } catch {
       // error handled by MutationCache
     }
@@ -301,6 +315,14 @@ export default function KardexList() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            title="Registrar salida"
+                            onClick={() => setSalidaItem(item)}
+                          >
+                            <ArrowDownRight className="h-3.5 w-3.5 text-red-500" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             title="Dar de baja"
                             onClick={() => setBajaItem(item)}
                           >
@@ -359,6 +381,14 @@ export default function KardexList() {
         onConfirm={handleBaja}
         item={bajaItem}
         loading={bajaMutation.isPending}
+      />
+
+      <SalidaModal
+        open={salidaItem !== null}
+        onClose={() => setSalidaItem(null)}
+        onConfirm={handleSalida}
+        item={salidaItem}
+        loading={salidaMutation.isPending}
       />
 
       <ConfirmDialog

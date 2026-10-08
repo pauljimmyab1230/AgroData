@@ -260,3 +260,31 @@ export const darDeBaja = async (
     next(error);
   }
 };
+
+// ==================== Registrar salida de producto ====================
+export const registrarSalida = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const input = req.body as {
+      kardex_id: number;
+      cantidad: number;
+      destino?: string | null;
+      cliente?: string | null;
+      referencia?: string | null;
+      responsable?: string | null;
+      observaciones?: string | null;
+      fecha?: string;
+    };
+    const result = await kardexService.registrarSalidaProducto(input);
+    res.status(201).json({
+      success: true,
+      message: 'Salida de producto registrada exitosamente',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

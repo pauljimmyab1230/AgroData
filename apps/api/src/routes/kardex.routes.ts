@@ -28,6 +28,7 @@ router.get('/inventario', kardexController.getInventario);
 router.get('/alertas', kardexController.getAlertas);
 router.get('/movimientos', kardexController.getMovimientosGlobales);
 router.get('/stats', kardexController.getStats);
+router.post('/salidas', kardexController.registrarSalida);
 
 router.get('/:id', validate(idParamSchema, 'params'), kardexController.getById);
 router.post('/', adminMiddleware, validate(createKardexSchema), kardexController.create);

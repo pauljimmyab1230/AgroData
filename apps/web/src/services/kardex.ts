@@ -383,6 +383,19 @@ export async function darDeBaja(
   await api.post(`/kardex/${kardexId}/baja`, { motivo, cantidad, responsable });
 }
 
+export async function registrarSalidaProducto(input: {
+  kardex_id: number;
+  cantidad: number;
+  destino?: string | null;
+  cliente?: string | null;
+  referencia?: string | null;
+  responsable?: string | null;
+  observaciones?: string | null;
+  fecha?: string;
+}): Promise<void> {
+  await api.post("/kardex/salidas", input);
+}
+
 // ==================== Constantes de UI ====================
 export const kardexOrigenLabels: Record<string, string> = {
   CAMPO: "De campo",

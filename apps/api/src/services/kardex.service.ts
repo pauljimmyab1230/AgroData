@@ -615,3 +615,32 @@ export const darDeBaja = async (
   const { darDeBaja: bajaInterna } = await import('./kardex-integracion.service');
   return bajaInterna(kardexId, motivo, cantidad, responsable);
 };
+
+// ==================== Registrar salida de producto ====================
+// Venta/despatcho: el producto sale del almacén.
+export const registrarSalidaProducto = async (input: {
+  kardex_id: number;
+  cantidad: number;
+  destino?: string | null;
+  cliente?: string | null;
+  referencia?: string | null;
+  responsable?: string | null;
+  observaciones?: string | null;
+  fecha?: string;
+}) => {
+  const { registrarSalida } = await import('./kardex-integracion.service');
+
+  const resultado = await registrarSalida({
+    kardexId: input.kardex_id,
+    cantidad: input.cantidad,
+    tipo: 'SALIDA',
+    destino: input.destino ?? input.cliente ?? 'Venta',
+    responsable: input.responsable ?? null,
+    referenciaTipo: 'VENTA',
+    referenciaId: null,
+    observaciones: input.observaciones ?? input.referencia ?? null,
+    fecha: input.fecha ? new Date(input.fecha) : undefined,
+  });
+
+  return resultado;
+};

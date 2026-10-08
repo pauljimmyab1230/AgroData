@@ -92,6 +92,7 @@ export {
   useMovimientosGlobales,
   useKardexStats,
   useDarDeBaja,
+  useRegistrarSalida,
 } from "./useKardex";
 
 export {
