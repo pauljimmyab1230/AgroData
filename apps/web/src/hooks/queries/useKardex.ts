@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+﻿import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import {
   fetchKardex,
   fetchKardexItem,
@@ -89,6 +89,83 @@ export function useRecomputeStock() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (kardexId: string) => recomputeStock(kardexId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["kardex"] }),
+  });
+}
+
+// ==================== Hooks nuevos (inventario, alertas, movimientos, stats, baja) ====================
+import {
+  fetchInventario,
+  fetchAlertas,
+  fetchMovimientosGlobales,
+  fetchKardexStats,
+  darDeBaja,
+  type StatsKardex,
+} from "../../services/kardex";
+
+export function useInventario(params?: {
+  search?: string;
+  origen?: string;
+  categoria?: string;
+  etapa?: string;
+  estado?: string;
+  page?: number;
+  limit?: number;
+}) {
+  return useQuery({
+    queryKey: ["kardex", "inventario", params],
+    queryFn: () => fetchInventario(params),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useAlertas() {
+  return useQuery({
+    queryKey: ["kardex", "alertas"],
+    queryFn: fetchAlertas,
+    staleTime: 60_000,
+  });
+}
+
+export function useMovimientosGlobales(params?: {
+  kardex_id?: number;
+  tipo?: string;
+  origen?: string;
+  referencia_tipo?: string;
+  fecha_desde?: string;
+  fecha_hasta?: string;
+  page?: number;
+  limit?: number;
+}) {
+  return useQuery({
+    queryKey: ["kardex", "movimientos", params],
+    queryFn: () => fetchMovimientosGlobales(params),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useKardexStats() {
+  return useQuery<StatsKardex>({
+    queryKey: ["kardex", "stats"],
+    queryFn: fetchKardexStats,
+    staleTime: 30_000,
+  });
+}
+
+export function useDarDeBaja() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      kardexId,
+      motivo,
+      cantidad,
+      responsable,
+    }: {
+      kardexId: number;
+      motivo: string;
+      cantidad?: number;
+      responsable?: string;
+    }) => darDeBaja(kardexId, motivo, cantidad, responsable),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["kardex"] }),
   });
 }

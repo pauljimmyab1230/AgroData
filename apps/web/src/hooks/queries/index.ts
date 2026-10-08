@@ -87,6 +87,11 @@ export {
   useAddMovimiento,
   useRemoveMovimiento,
   useRecomputeStock,
+  useInventario,
+  useAlertas,
+  useMovimientosGlobales,
+  useKardexStats,
+  useDarDeBaja,
 } from "./useKardex";
 
 export {

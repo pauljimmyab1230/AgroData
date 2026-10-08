@@ -1,39 +1,62 @@
 ﻿import { useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, Boxes, Eye, Pencil, Plus, ShieldCheck, Tag, X } from "lucide-react";
-import { Button, Card, ConfirmDialog, DataTable, SearchInput, SectionHeader, Select, Badge } from "../../components/ui";
-import { useKardex, useDeleteKardex } from "../../hooks/queries";
 import {
-  kardexEstados,
-  kardexCategorias,
-  type KardexItem,
+  AlertTriangle,
+  Boxes,
+  Eye,
+  MinusCircle,
+  Pencil,
+  Plus,
+} from "lucide-react";
+import {
+  Button,
+  Card,
+  ConfirmDialog,
+  SearchInput,
+  SectionHeader,
+  Select,
+  Badge,
+  LoadingSpinner,
+} from "../../components/ui";
+import { AlertasCard } from "../../components/kardex/AlertasCard";
+import { StatsCard } from "../../components/kardex/StatsCard";
+import { BajaModal } from "../../components/kardex/BajaModal";
+import {
+  useInventario,
+  useAlertas,
+  useKardexStats,
+  useDarDeBaja,
+  useDeleteKardex,
+} from "../../hooks/queries";
+import {
+  kardexOrigenLabels,
+  kardexCategoriaLabels,
+  kardexEtapaLabels,
+  type InventarioItem,
 } from "../../services/kardex";
 
-const pageSize = 10;
+const pageSize = 20;
 
-const toOptions = (items: readonly string[]) =>
-  items.map((item) => ({ value: item, label: item }));
+const origenOptions = [
+  { value: "CAMPO", label: "De campo" },
+  { value: "PROCESAMIENTO", label: "Procesamiento" },
+  { value: "AJUSTE", label: "Ajuste" },
+  { value: "OTRO", label: "Otro" },
+];
 
-function FilterSelect({
-  label,
-  placeholder,
-  options,
-  value,
-  onChange,
-}: {
-  label: string;
-  placeholder: string;
-  options: { value: string; label: string }[];
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div className="w-44">
-      <label className="mb-1 block text-xs font-medium text-gray-500">{label}</label>
-      <Select options={options} placeholder={placeholder} value={value} onChange={onChange} />
-    </div>
-  );
-}
+const categoriaOptions = [
+  { value: "PRODUCTO_CAMPO", label: "Producto de campo" },
+  { value: "PRODUCTO_PROCESADO", label: "Producto procesado" },
+  { value: "SUBPRODUCTO", label: "Subproducto" },
+  { value: "ENVASE", label: "Envase" },
+];
+
+const estadoOptions = [
+  { value: "DISPONIBLE", label: "Disponible" },
+  { value: "RESERVADO", label: "Reservado" },
+  { value: "CONSUMIDO", label: "Consumido" },
+  { value: "VENCIDO", label: "Vencido" },
+];
 
 const estadoBadgeVariant: Record<string, "green" | "yellow" | "red" | "gray"> = {
   DISPONIBLE: "green",
@@ -42,70 +65,47 @@ const estadoBadgeVariant: Record<string, "green" | "yellow" | "red" | "gray"> = 
   VENCIDO: "gray",
 };
 
-const categoriaLabels: Record<string, string> = {
-  MATERIA_PRIMA: "Materia Prima",
-  PRODUCTO_TERMINADO: "Producto Terminado",
-  EMPAQUE: "Empaque",
-  INSUMO: "Insumo",
+const categoriaColors: Record<string, string> = {
+  PRODUCTO_CAMPO: "bg-blue-50 text-blue-700",
+  PRODUCTO_PROCESADO: "bg-green-50 text-green-700",
+  SUBPRODUCTO: "bg-amber-50 text-amber-700",
+  ENVASE: "bg-purple-50 text-purple-700",
 };
 
 export default function KardexList() {
   const [search, setSearch] = useState("");
-  const [filtroEstado, setFiltroEstado] = useState("");
+  const [filtroOrigen, setFiltroOrigen] = useState("");
   const [filtroCategoria, setFiltroCategoria] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState("");
   const [page, setPage] = useState(1);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [bajaItem, setBajaItem] = useState<InventarioItem | null>(null);
 
   const filters = {
     search: search || undefined,
-    estado: filtroEstado || undefined,
+    origen: filtroOrigen || undefined,
     categoria: filtroCategoria || undefined,
+    estado: filtroEstado || undefined,
     page,
     limit: pageSize,
   };
 
-  const { data: result } = useKardex(filters);
+  const { data: result, isLoading } = useInventario(filters);
+  const { data: alertas } = useAlertas();
+  const { data: stats } = useKardexStats();
   const deleteMutation = useDeleteKardex();
+  const bajaMutation = useDarDeBaja();
 
   const items = result?.data ?? [];
-  const total = result?.total ?? 0;
   const totalPages = result?.totalPages ?? 1;
 
-  const kpis = [
-    {
-      label: "Total Items",
-      value: String(total),
-      icon: Boxes,
-      iconClass: "bg-forest-600/10 text-forest-600",
-    },
-    {
-      label: "Disponibles",
-      value: String(items.filter((i) => i.estado === "DISPONIBLE").length),
-      icon: ShieldCheck,
-      iconClass: "bg-emerald-100 text-emerald-700",
-    },
-    {
-      label: "Reservados",
-      value: String(items.filter((i) => i.estado === "RESERVADO").length),
-      icon: Tag,
-      iconClass: "bg-amber-100 text-amber-700",
-    },
-    {
-      label: "Bajo Stock",
-      value: String(
-        items.filter((i) => i.cantidadMinima != null && i.cantidadActual < i.cantidadMinima).length
-      ),
-      icon: AlertTriangle,
-      iconClass: "bg-red-50 text-red-600",
-    },
-  ];
-
-  const hasFilters = Boolean(search) || Boolean(filtroEstado) || Boolean(filtroCategoria);
+  const hasFilters = Boolean(search) || Boolean(filtroOrigen) || Boolean(filtroCategoria) || Boolean(filtroEstado);
 
   const clearFilters = () => {
     setSearch("");
-    setFiltroEstado("");
+    setFiltroOrigen("");
     setFiltroCategoria("");
+    setFiltroEstado("");
     setPage(1);
   };
 
@@ -119,162 +119,255 @@ export default function KardexList() {
     }
   };
 
+  const handleBaja = async (motivo: string, cantidad?: number, responsable?: string) => {
+    if (!bajaItem) return;
+    try {
+      await bajaMutation.mutateAsync({
+        kardexId: bajaItem.id,
+        motivo,
+        cantidad,
+        responsable,
+      });
+      setBajaItem(null);
+    } catch {
+      // error handled by MutationCache
+    }
+  };
+
   return (
-    <div>
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <SectionHeader
-          title="Kardex"
-          description="Control de existencias con registro de movimientos (entradas y salidas)."
-        />
-        <div className="flex items-center gap-2">
+    <div className="space-y-6">
+      <SectionHeader
+        title="Kardex"
+        description="Inventario vivo de la planta/almacén: productos de campo, procesados, subproductos y envases."
+        actions={
           <Button as="link" to="/kardex/nuevo" iconLeft={<Plus className="h-4 w-4" />}>
             Nuevo Item
           </Button>
+        }
+      />
+
+      {/* Stats y alertas */}
+      <StatsCard stats={stats} />
+      <AlertasCard alertas={alertas} />
+
+      {/* Filtros */}
+      <Card>
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="min-w-[200px] flex-1">
+            <SearchInput
+              placeholder="Buscar por producto, código o ubicación..."
+              value={search}
+              onChange={(val) => {
+                setSearch(val);
+                setPage(1);
+              }}
+            />
+          </div>
+
+          <div className="w-40">
+            <label className="mb-1 block text-xs font-medium text-gray-500">Origen</label>
+            <Select
+              options={origenOptions}
+              placeholder="Todos"
+              value={filtroOrigen}
+              onChange={(val) => {
+                setFiltroOrigen(val);
+                setPage(1);
+              }}
+            />
+          </div>
+
+          <div className="w-44">
+            <label className="mb-1 block text-xs font-medium text-gray-500">Categoría</label>
+            <Select
+              options={categoriaOptions}
+              placeholder="Todas"
+              value={filtroCategoria}
+              onChange={(val) => {
+                setFiltroCategoria(val);
+                setPage(1);
+              }}
+            />
+          </div>
+
+          <div className="w-36">
+            <label className="mb-1 block text-xs font-medium text-gray-500">Estado</label>
+            <Select
+              options={estadoOptions}
+              placeholder="Todos"
+              value={filtroEstado}
+              onChange={(val) => {
+                setFiltroEstado(val);
+                setPage(1);
+              }}
+            />
+          </div>
+
+          {hasFilters && (
+            <Button variant="ghost" onClick={clearFilters}>
+              Limpiar
+            </Button>
+          )}
         </div>
-      </div>
+      </Card>
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {kpis.map((kpi) => (
-          <Card key={kpi.label}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-gray-500">{kpi.label}</p>
-                <p className="mt-1.5 text-2xl font-bold text-[#111827]">{kpi.value}</p>
-              </div>
-              <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${kpi.iconClass}`}>
-                <kpi.icon className="h-5 w-5" />
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      <div className="mb-6 flex flex-wrap items-end gap-3">
-        <div className="max-w-md min-w-[200px] flex-1">
-          <SearchInput
-            placeholder="Buscar por código, producto, proveedor..."
-            value={search}
-            onChange={(val) => {
-              setSearch(val);
-              setPage(1);
-            }}
-          />
-        </div>
-
-        <FilterSelect
-          label="Estado"
-          placeholder="Todos"
-          options={toOptions([...kardexEstados])}
-          value={filtroEstado}
-          onChange={(val) => {
-            setFiltroEstado(val);
-            setPage(1);
-          }}
-        />
-        <FilterSelect
-          label="Categoría"
-          placeholder="Todas"
-          options={toOptions([...kardexCategorias])}
-          value={filtroCategoria}
-          onChange={(val) => {
-            setFiltroCategoria(val);
-            setPage(1);
-          }}
-        />
-
-        {hasFilters && (
-          <Button variant="ghost" onClick={clearFilters} iconLeft={<X className="h-4 w-4" />}>
-            Limpiar filtros
-          </Button>
+      {/* Tabla de inventario */}
+      <Card>
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <LoadingSpinner />
+          </div>
+        ) : items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <Boxes className="h-12 w-12 text-gray-300" />
+            <p className="mt-2 text-sm text-gray-500">
+              No hay items en el inventario con los filtros aplicados.
+            </p>
+            {hasFilters && (
+              <Button variant="ghost" className="mt-2" onClick={clearFilters}>
+                Limpiar filtros
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  <th className="px-3 py-2.5">Producto</th>
+                  <th className="px-3 py-2.5">Categoría</th>
+                  <th className="px-3 py-2.5">Origen</th>
+                  <th className="px-3 py-2.5">Etapa</th>
+                  <th className="px-3 py-2.5 text-right">Stock</th>
+                  <th className="px-3 py-2.5 text-right">Mínimo</th>
+                  <th className="px-3 py-2.5">Ubicación</th>
+                  <th className="px-3 py-2.5">Estado</th>
+                  <th className="px-3 py-2.5 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {items.map((item) => {
+                  const bajoMinimo =
+                    item.cantidad_minima != null && Number(item.cantidad_actual) <= Number(item.cantidad_minima);
+                  return (
+                    <tr key={item.id} className="hover:bg-gray-50/50">
+                      <td className="px-3 py-2.5">
+                        <Link
+                          to={`/kardex/${item.id}`}
+                          className="font-medium text-gray-900 hover:text-forest-700 hover:underline"
+                        >
+                          {item.producto}
+                        </Link>
+                        <p className="text-xs text-gray-500">{item.codigo}</p>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${categoriaColors[item.categoria] ?? "bg-gray-100 text-gray-600"}`}>
+                          {kardexCategoriaLabels[item.categoria] ?? item.categoria}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 text-gray-600">
+                        {kardexOrigenLabels[item.origen] ?? item.origen}
+                      </td>
+                      <td className="px-3 py-2.5 text-gray-600">
+                        {item.etapa ? (kardexEtapaLabels[item.etapa] ?? item.etapa) : "—"}
+                      </td>
+                      <td className="px-3 py-2.5 text-right">
+                        <span className={`font-semibold ${bajoMinimo ? "text-red-600" : "text-gray-900"}`}>
+                          {Number(item.cantidad_actual).toLocaleString("es-PE")}
+                        </span>
+                        <span className="text-xs text-gray-500"> {item.unidad}</span>
+                      </td>
+                      <td className="px-3 py-2.5 text-right text-gray-500">
+                        {item.cantidad_minima != null
+                          ? Number(item.cantidad_minima).toLocaleString("es-PE")
+                          : "—"}
+                      </td>
+                      <td className="px-3 py-2.5 text-gray-600">{item.ubicacion ?? "—"}</td>
+                      <td className="px-3 py-2.5">
+                        <Badge variant={estadoBadgeVariant[item.estado] ?? "gray"}>{item.estado}</Badge>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex justify-end gap-1">
+                          <Link to={`/kardex/${item.id}`}>
+                            <Button variant="ghost" size="sm" title="Ver detalle">
+                              <Eye className="h-3.5 w-3.5" />
+                            </Button>
+                          </Link>
+                          <Link to={`/kardex/${item.id}/editar`}>
+                            <Button variant="ghost" size="sm" title="Editar">
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                          </Link>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Dar de baja"
+                            onClick={() => setBajaItem(item)}
+                          >
+                            <MinusCircle className="h-3.5 w-3.5 text-amber-600" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Eliminar"
+                            onClick={() => setDeleteId(item.id)}
+                          >
+                            <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
-      </div>
 
-      <DataTable
-        columns={[
-          { key: "codigo", label: "Código", sortable: true },
-          {
-            key: "producto",
-            label: "Producto",
-            sortable: true,
-            render: (item: KardexItem) => (
-              <span className="font-medium text-[#111827]">{item.producto}</span>
-            ),
-          },
-          {
-            key: "categoria",
-            label: "Categoría",
-            sortable: true,
-            render: (item: KardexItem) => (
-              <Badge variant="forest">{categoriaLabels[item.categoria] || item.categoria}</Badge>
-            ),
-          },
-          {
-            key: "cantidadActual",
-            label: "Saldo",
-            sortable: true,
-            render: (item: KardexItem) => (
-              <span className={`${item.cantidadMinima != null && item.cantidadActual < item.cantidadMinima ? "font-semibold text-red-600" : ""}`}>
-                {item.cantidadActual} {item.unidad}
-              </span>
-            ),
-          },
-          { key: "ubicacion", label: "Ubicación", sortable: true },
-          {
-            key: "estado",
-            label: "Estado",
-            sortable: true,
-            render: (item: KardexItem) => (
-              <Badge variant={estadoBadgeVariant[item.estado] || "gray"}>{item.estado}</Badge>
-            ),
-          },
-          {
-            key: "acciones",
-            label: "Acciones",
-            className: "text-right",
-            render: (item: KardexItem) => (
-              <div className="flex items-center justify-end gap-1">
-                <Link
-                  to={`/kardex/${item.id}`}
-                  className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-forest-600"
-                  title="Ver"
-                >
-                  <Eye className="h-4 w-4" />
-                </Link>
-                <Link
-                  to={`/kardex/${item.id}/editar`}
-                  className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-forest-600"
-                  title="Editar"
-                >
-                  <Pencil className="h-4 w-4" />
-                </Link>
-                <button
-                  onClick={() => setDeleteId(item.id)}
-                  className="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600"
-                  title="Eliminar"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ),
-          },
-        ]}
-        data={items}
-        emptyTitle="Sin items en kardex"
-        emptyDescription="No se encontraron items en el kardex."
-        emptyActionTo="/kardex/nuevo"
-        emptyActionLabel="Crear primer item"
-        currentPage={page}
-        totalPages={totalPages}
-        onPageChange={setPage}
+        {/* Paginación */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-gray-100 px-3 py-2.5">
+            <p className="text-xs text-gray-500">
+              Página {page} de {totalPages}
+            </p>
+            <div className="flex gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={page <= 1}
+                onClick={() => setPage(page - 1)}
+              >
+                Anterior
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={page >= totalPages}
+                onClick={() => setPage(page + 1)}
+              >
+                Siguiente
+              </Button>
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {/* Modales */}
+      <BajaModal
+        open={bajaItem !== null}
+        onClose={() => setBajaItem(null)}
+        onConfirm={handleBaja}
+        item={bajaItem}
+        loading={bajaMutation.isPending}
       />
 
       <ConfirmDialog
         open={deleteId !== null}
         onClose={() => setDeleteId(null)}
         onConfirm={handleDelete}
-        title="Eliminar Item"
-        message="¿Estás seguro de eliminar este item del kardex? Esta acción no se puede deshacer."
-        confirmText={deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
+        title="Eliminar item"
+        message="¿Estás seguro? Esta acción no se puede deshacer."
+        confirmText="Eliminar"
         variant="danger"
       />
     </div>

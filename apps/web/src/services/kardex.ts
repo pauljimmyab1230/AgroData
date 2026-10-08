@@ -257,3 +257,157 @@ export function calcularValorInventario(cantidad: number, costo: number | null):
   if (costo == null) return 0;
   return cantidad * costo;
 }
+
+// ==================== Nuevos tipos ====================
+export interface InventarioItem {
+  id: number;
+  codigo: string;
+  producto: string;
+  categoria: string;
+  origen: string;
+  etapa: string | null;
+  unidad: string;
+  cantidad_actual: number;
+  cantidad_minima: number | null;
+  cantidad_maxima: number | null;
+  ubicacion: string | null;
+  estado: string;
+  costo_unitario: number | null;
+  fecha_ingreso: string;
+  fecha_vencimiento: string | null;
+  activo: boolean;
+}
+
+export interface AlertasKardex {
+  bajo_minimo: Array<{
+    id: number; codigo: string; producto: string; categoria: string; origen: string;
+    unidad: string; cantidad_actual: number; cantidad_minima: number | null; ubicacion: string | null;
+  }>;
+  proximos_vencer: Array<{
+    id: number; codigo: string; producto: string; categoria: string;
+    unidad: string; cantidad_actual: number; fecha_vencimiento: string | null;
+  }>;
+  vencidos: Array<{
+    id: number; codigo: string; producto: string; categoria: string;
+    unidad: string; cantidad_actual: number; fecha_vencimiento: string | null;
+  }>;
+  total_alertas: number;
+}
+
+export interface MovimientoGlobal {
+  id: number;
+  tipo: string;
+  cantidad: number;
+  saldo_anterior: number;
+  saldo_posterior: number;
+  origen: string;
+  destino: string | null;
+  referencia: string | null;
+  referencia_tipo: string | null;
+  referencia_id: number | null;
+  responsable: string | null;
+  observaciones: string | null;
+  fecha: string;
+  kardex: { id: number; codigo: string; producto: string; categoria: string; unidad: string };
+}
+
+export interface StatsKardex {
+  total_items: number;
+  valor_total: number;
+  kg_totales: number;
+  por_categoria: Record<string, { cantidad: number; total: number }>;
+  por_origen: Record<string, { cantidad: number; total: number }>;
+  movimientos_mes: {
+    entradas: { cantidad: number; total: number };
+    salidas: { cantidad: number; total: number };
+    bajas: { cantidad: number; total: number };
+  };
+}
+
+// ==================== Nuevos servicios ====================
+export async function fetchInventario(params?: {
+  search?: string;
+  origen?: string;
+  categoria?: string;
+  etapa?: string;
+  estado?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{ data: InventarioItem[]; total: number; page: number; limit: number; totalPages: number }> {
+  const res = await api.get("/kardex/inventario", { params });
+  return {
+    data: res.data.data ?? [],
+    total: res.data.total ?? 0,
+    page: res.data.page ?? 1,
+    limit: res.data.limit ?? 50,
+    totalPages: res.data.totalPages ?? 1,
+  };
+}
+
+export async function fetchAlertas(): Promise<AlertasKardex> {
+  const res = await api.get("/kardex/alertas");
+  return res.data.data;
+}
+
+export async function fetchMovimientosGlobales(params?: {
+  kardex_id?: number;
+  tipo?: string;
+  origen?: string;
+  referencia_tipo?: string;
+  fecha_desde?: string;
+  fecha_hasta?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{ data: MovimientoGlobal[]; total: number; page: number; limit: number; totalPages: number }> {
+  const res = await api.get("/kardex/movimientos", { params });
+  return {
+    data: res.data.data ?? [],
+    total: res.data.total ?? 0,
+    page: res.data.page ?? 1,
+    limit: res.data.limit ?? 50,
+    totalPages: res.data.totalPages ?? 1,
+  };
+}
+
+export async function fetchKardexStats(): Promise<StatsKardex> {
+  const res = await api.get("/kardex/stats");
+  return res.data.data;
+}
+
+export async function darDeBaja(
+  kardexId: number,
+  motivo: string,
+  cantidad?: number,
+  responsable?: string,
+): Promise<void> {
+  await api.post(`/kardex/${kardexId}/baja`, { motivo, cantidad, responsable });
+}
+
+// ==================== Constantes de UI ====================
+export const kardexOrigenLabels: Record<string, string> = {
+  CAMPO: "De campo",
+  PROCESAMIENTO: "Procesamiento",
+  AJUSTE: "Ajuste",
+  OTRO: "Otro",
+};
+
+export const kardexCategoriaLabels: Record<string, string> = {
+  PRODUCTO_CAMPO: "Producto de campo",
+  PRODUCTO_PROCESADO: "Producto procesado",
+  SUBPRODUCTO: "Subproducto",
+  ENVASE: "Envase",
+};
+
+export const kardexEtapaLabels: Record<string, string> = {
+  PRIMARIA: "Primaria",
+  SECUNDARIA: "Secundaria",
+  EMPAQUE: "Empaque",
+};
+
+export const kardexMovimientoLabels: Record<string, string> = {
+  ENTRADA: "Entrada",
+  SALIDA: "Salida",
+  TRANSFERENCIA: "Transferencia",
+  AJUSTE: "Ajuste",
+  BAJA: "Baja",
+};
