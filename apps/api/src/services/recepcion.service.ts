@@ -1,5 +1,6 @@
 import prisma, { type PrismaTransaction } from '../config/database';
 import { createError } from '../middleware/error.middleware';
+import { ingresoPorRecepcion } from './kardex-integracion.service';
 import type {
   RecepcionCreateInput,
   RecepcionUpdateInput,
@@ -140,46 +141,75 @@ export const create = async (data: RecepcionCreateInput, userId?: string) => {
   const diferencia = data.diferencia ?? calcularDiferencia(pesoCampo, pesoNeto);
   const merma = data.merma ?? calcularMerma(diferencia, pesoCampo);
 
-  return prisma.recepcion.create({
-    data: {
-      codigo,
-      acopio_id: data.acopio_id,
-      lote_productor: data.lote_productor || null,
-      fecha: new Date(data.fecha),
-      responsable: data.responsable,
-      planta: data.planta,
-      sacos: data.sacos ?? sacosData.length,
-      peso_campo: pesoCampo,
-      peso_bruto: pesoBruto,
-      tara: tara,
-      peso_neto: pesoNeto,
-      diferencia,
-      merma,
-      humedad: data.humedad != null ? Number(data.humedad) : null,
-      impurezas: data.impurezas != null ? Number(data.impurezas) : null,
-      materia_extrana: data.materia_extrana != null ? Number(data.materia_extrana) : null,
-      color: data.color || null,
-      olor: data.olor || null,
-      presencia_insectos: data.presencia_insectos || null,
-      estado_producto: data.estado_producto || null,
-      categoria: data.categoria || null,
-      destino: data.destino || null,
-      resultado: data.resultado || null,
-      motivo: data.motivo || null,
-      observaciones: data.observaciones || null,
-      documento_firmado: data.documento_firmado ?? false,
-      firma_responsable_url: data.firma_responsable_url || null,
-      estado: data.estado || 'PENDIENTE_PESAJE',
-      created_by: userId || null,
-      sacos_detalle: sacosData.length > 0 ? {
-        create: sacosData.map(s => ({
-          codigo: s.codigo,
-          peso: Number(s.peso),
-          observaciones: s.observaciones || null,
-        })),
-      } : undefined,
-    },
-    include: RECEPCION_INCLUDE,
+  // Obtener el cultivo desde el acopio (para la nomenclatura del kardex)
+  let cultivo = 'Grano';
+  if (data.acopio_id) {
+    const detalle = await prisma.acopio_detalle.findFirst({
+      where: { acopio_id: data.acopio_id },
+      include: { cultivo: { select: { cultivo: true } } },
+    });
+    if (detalle?.cultivo?.cultivo) cultivo = detalle.cultivo.cultivo;
+  }
+
+  return prisma.$transaction(async (tx: PrismaTransaction) => {
+    const recepcion = await tx.recepcion.create({
+      data: {
+        codigo,
+        acopio_id: data.acopio_id,
+        lote_productor: data.lote_productor || null,
+        fecha: new Date(data.fecha),
+        responsable: data.responsable,
+        planta: data.planta,
+        sacos: data.sacos ?? sacosData.length,
+        peso_campo: pesoCampo,
+        peso_bruto: pesoBruto,
+        tara: tara,
+        peso_neto: pesoNeto,
+        diferencia,
+        merma,
+        humedad: data.humedad != null ? Number(data.humedad) : null,
+        impurezas: data.impurezas != null ? Number(data.impurezas) : null,
+        materia_extrana: data.materia_extrana != null ? Number(data.materia_extrana) : null,
+        color: data.color || null,
+        olor: data.olor || null,
+        presencia_insectos: data.presencia_insectos || null,
+        estado_producto: data.estado_producto || null,
+        categoria: data.categoria || null,
+        destino: data.destino || null,
+        resultado: data.resultado || null,
+        motivo: data.motivo || null,
+        observaciones: data.observaciones || null,
+        documento_firmado: data.documento_firmado ?? false,
+        firma_responsable_url: data.firma_responsable_url || null,
+        estado: data.estado || 'PENDIENTE_PESAJE',
+        created_by: userId || null,
+        sacos_detalle: sacosData.length > 0 ? {
+          create: sacosData.map(s => ({
+            codigo: s.codigo,
+            peso: Number(s.peso),
+            observaciones: s.observaciones || null,
+          })),
+        } : undefined,
+      },
+      include: RECEPCION_INCLUDE,
+    });
+
+    // Entrada automática al kardex: el producto de campo ingresa al almacén
+    if (pesoNeto && pesoNeto > 0) {
+      await ingresoPorRecepcion(
+        recepcion.id,
+        {
+          cultivo,
+          pesoNeto,
+          loteProductor: data.lote_productor || null,
+          planta: data.planta,
+          responsable: data.responsable,
+        },
+        tx,
+      );
+    }
+
+    return recepcion;
   });
 };
 

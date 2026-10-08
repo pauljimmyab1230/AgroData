@@ -1,5 +1,6 @@
 ﻿import prisma, { type PrismaTransaction } from '../config/database';
 import { createError } from '../middleware/error.middleware';
+import { ingresosPorOrden } from './kardex-integracion.service';
 
 // Tolerancia del balance de masa: si la diferencia supera este % se bloquea la finalización.
 const TOLERANCIA_BALANCE = Number(process.env.BALANCE_TOLERANCIA_PCT ?? 1);
@@ -567,64 +568,27 @@ export const finalizar = async (ordenId: number, userId?: string) => {
       },
     });
 
-    // Registrar en kardex el producto bueno con destino KARDEX.
-    const productoBueno = orden.salidas.find(
-      (s) => s.tipo_salida === 'PRODUCTO_BUENO' && s.destino === 'KARDEX',
+    // Entradas automáticas al kardex: productos, subproductos y envases
+    const ingresos = await ingresosPorOrden(
+      ordenId,
+      {
+        productoSalida: orden.producto_salida,
+        etapa: orden.etapa as 'PRIMARIA' | 'SECUNDARIA' | 'EMPAQUE',
+        planta: orden.planta,
+        responsable: orden.responsable,
+      },
+      orden.salidas.map((s) => ({
+        tipo_salida: s.tipo_salida,
+        descripcion: s.descripcion,
+        cantidad: Number(s.cantidad),
+        unidad: s.unidad,
+        destino: s.destino,
+        cuenta_en_balance: s.cuenta_en_balance,
+      })),
+      tx,
     );
-    if (productoBueno && productoBueno.unidad === 'KG') {
-      const cantidad = Number(productoBueno.cantidad);
-      const yaExiste = await tx.kardex.findFirst({
-        where: { producto: { contains: orden.producto_salida } },
-      });
-      if (yaExiste) {
-        await tx.kardex.update({
-          where: { id: yaExiste.id },
-          data: { cantidad_actual: { increment: cantidad } },
-        });
-        await tx.kardex_movimiento.create({
-          data: {
-            kardex_id: yaExiste.id,
-            tipo: 'ENTRADA',
-            cantidad,
-            saldo_anterior: Number(yaExiste.cantidad_actual),
-            saldo_posterior: Number(yaExiste.cantidad_actual) + cantidad,
-            referencia: orden.codigo,
-            responsable: orden.responsable,
-            fecha: new Date(),
-            observaciones: `Producto terminado de la orden ${orden.codigo} (${orden.etapa})`,
-          },
-        });
-      } else {
-        const nuevo = await tx.kardex.create({
-          data: {
-            codigo: `KAR-${String(Date.now()).slice(-6)}`,
-            producto: `${orden.producto_salida} (${orden.formato_salida})`,
-            categoria: 'PRODUCTO_PROCESADO',
-            unidad: 'KG',
-            cantidad_actual: cantidad,
-            cantidad_minima: 0,
-            ubicacion: orden.planta,
-            estado: 'DISPONIBLE',
-            fecha_ingreso: new Date(),
-          },
-        });
-        await tx.kardex_movimiento.create({
-          data: {
-            kardex_id: nuevo.id,
-            tipo: 'ENTRADA',
-            cantidad,
-            saldo_anterior: 0,
-            saldo_posterior: cantidad,
-            referencia: orden.codigo,
-            responsable: orden.responsable,
-            fecha: new Date(),
-            observaciones: `Producto terminado de la orden ${orden.codigo} (${orden.etapa})`,
-          },
-        });
-      }
-    }
 
-    return actualizada;
+    return { ...actualizada, ingresos_kardex: ingresos };
   });
 };
 
