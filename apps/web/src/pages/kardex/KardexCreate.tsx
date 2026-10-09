@@ -24,7 +24,13 @@ const unidadOptions = [
   { value: "LB", label: "Libras (LB)" },
 ];
 
-export default function KardexCreate() {
+interface KardexCreateProps {
+  inModal?: boolean;
+  onSave?: () => void;
+  onClose?: () => void;
+}
+
+export default function KardexCreate({ inModal, onSave, onClose }: KardexCreateProps) {
   const navigate = useNavigate();
   const [form, setForm] = useState<KardexItemFormData>({ ...emptyKardexItemForm });
   const [saving, setSaving] = useState(false);
@@ -59,7 +65,12 @@ export default function KardexCreate() {
     setSaving(true);
     try {
       const created = await createKardexItem(form);
-      navigate(`/kardex/${created.id}`);
+      if (inModal) {
+        onSave?.();
+        onClose?.();
+      } else {
+        navigate(`/kardex/${created.id}`);
+      }
     } catch {
       setSaving(false);
     }
@@ -67,15 +78,17 @@ export default function KardexCreate() {
 
   return (
     <div>
-      <div className="mb-8 flex items-center gap-4">
-        <Button variant="ghost" as="link" to="/kardex" iconLeft={<ArrowLeft className="h-4 w-4" />}>
-          Volver
-        </Button>
-        <SectionHeader
-          title="Nuevo Item de Kardex"
-          description="Registrar un nuevo producto en el kardex."
-        />
-      </div>
+      {!inModal && (
+        <div className="mb-8 flex items-center gap-4">
+          <Button variant="ghost" as="link" to="/kardex" iconLeft={<ArrowLeft className="h-4 w-4" />}>
+            Volver
+          </Button>
+          <SectionHeader
+            title="Nuevo Item de Kardex"
+            description="Registrar un nuevo producto en el kardex."
+          />
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>
@@ -218,9 +231,15 @@ export default function KardexCreate() {
         </Card>
 
         <div className="flex items-center justify-end gap-3">
-          <Button variant="ghost" type="button" as="link" to="/kardex">
-            Cancelar
-          </Button>
+          {inModal ? (
+            <Button variant="ghost" type="button" onClick={onClose}>
+              Cancelar
+            </Button>
+          ) : (
+            <Button variant="ghost" type="button" as="link" to="/kardex">
+              Cancelar
+            </Button>
+          )}
           <Button type="submit" disabled={saving} iconLeft={<Save className="h-4 w-4" />}>
             {saving ? "Guardando..." : "Crear Item"}
           </Button>

@@ -1,5 +1,4 @@
 ﻿import { useState } from "react";
-import { Link } from "react-router-dom";
 import {
   AlertTriangle,
   ArrowDownRight,
@@ -23,6 +22,7 @@ import { AlertasCard } from "../../components/kardex/AlertasCard";
 import { StatsCard } from "../../components/kardex/StatsCard";
 import { BajaModal } from "../../components/kardex/BajaModal";
 import { SalidaModal } from "../../components/kardex/SalidaModal";
+import KardexModal from "../../components/kardex/KardexModal";
 import {
   useInventario,
   useAlertas,
@@ -84,6 +84,11 @@ export default function KardexList() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [bajaItem, setBajaItem] = useState<InventarioItem | null>(null);
   const [salidaItem, setSalidaItem] = useState<InventarioItem | null>(null);
+  const [modalState, setModalState] = useState<
+    | { mode: "create" }
+    | { mode: "edit" | "view"; kardexId: number }
+    | null
+  >(null);
 
   const filters = {
     search: search || undefined,
@@ -154,7 +159,7 @@ export default function KardexList() {
         title="Kardex"
         description="Inventario vivo de la planta/almacén: productos de campo, procesados, subproductos y envases."
         actions={
-          <Button as="link" to="/kardex/nuevo" iconLeft={<Plus className="h-4 w-4" />}>
+          <Button iconLeft={<Plus className="h-4 w-4" />} onClick={() => setModalState({ mode: "create" })}>
             Nuevo Item
           </Button>
         }
@@ -266,12 +271,13 @@ export default function KardexList() {
                   return (
                     <tr key={item.id} className="hover:bg-gray-50/50">
                       <td className="px-3 py-2.5">
-                        <Link
-                          to={`/kardex/${item.id}`}
+                        <button
+                          type="button"
+                          onClick={() => setModalState({ mode: "view", kardexId: item.id })}
                           className="font-medium text-gray-900 hover:text-forest-700 hover:underline"
                         >
                           {item.producto}
-                        </Link>
+                        </button>
                         <p className="text-xs text-gray-500">{item.codigo}</p>
                       </td>
                       <td className="px-3 py-2.5">
@@ -302,16 +308,22 @@ export default function KardexList() {
                       </td>
                       <td className="px-3 py-2.5">
                         <div className="flex justify-end gap-1">
-                          <Link to={`/kardex/${item.id}`}>
-                            <Button variant="ghost" size="sm" title="Ver detalle">
-                              <Eye className="h-3.5 w-3.5" />
-                            </Button>
-                          </Link>
-                          <Link to={`/kardex/${item.id}/editar`}>
-                            <Button variant="ghost" size="sm" title="Editar">
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                          </Link>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Ver detalle"
+                            onClick={() => setModalState({ mode: "view", kardexId: item.id })}
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Editar"
+                            onClick={() => setModalState({ mode: "edit", kardexId: item.id })}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -375,6 +387,15 @@ export default function KardexList() {
       </Card>
 
       {/* Modales */}
+      <KardexModal
+        open={modalState !== null}
+        onClose={() => setModalState(null)}
+        onSave={() => setModalState(null)}
+        onEdit={(kardexId) => setModalState({ mode: "edit", kardexId })}
+        mode={modalState?.mode ?? "view"}
+        kardexId={modalState?.mode === "view" || modalState?.mode === "edit" ? modalState.kardexId : undefined}
+      />
+
       <BajaModal
         open={bajaItem !== null}
         onClose={() => setBajaItem(null)}

@@ -43,8 +43,16 @@ function toFormData(item: KardexItem): KardexItemFormData {
   };
 }
 
-export default function KardexEdit() {
-  const { id } = useParams();
+interface KardexEditProps {
+  inModal?: boolean;
+  kardexId?: number;
+  onSave?: () => void;
+  onClose?: () => void;
+}
+
+export default function KardexEdit({ inModal, kardexId, onSave, onClose }: KardexEditProps) {
+  const { id: idParam } = useParams();
+  const id = (inModal ? kardexId : idParam) as string;
   const navigate = useNavigate();
   const { data: item, isLoading: loading } = useKardexItem(id);
   const updateMutation = useUpdateKardex();
@@ -85,7 +93,12 @@ export default function KardexEdit() {
     setSaving(true);
     try {
       await updateMutation.mutateAsync({ id, data: form });
-      navigate(`/kardex/${id}`);
+      if (inModal) {
+        onSave?.();
+        onClose?.();
+      } else {
+        navigate(`/kardex/${id}`);
+      }
     } catch {
       setSaving(false);
     }
@@ -109,20 +122,22 @@ export default function KardexEdit() {
 
   return (
     <div>
-      <div className="mb-8 flex items-center gap-4">
-        <Button
-          variant="ghost"
-          as="link"
-          to={`/kardex/${item.id}`}
-          iconLeft={<ArrowLeft className="h-4 w-4" />}
-        >
-          Volver
-        </Button>
-        <SectionHeader
-          title="Editar Item de Kardex"
-          description={`Actualizando la información de ${item.producto}`}
-        />
-      </div>
+      {!inModal && (
+        <div className="mb-8 flex items-center gap-4">
+          <Button
+            variant="ghost"
+            as="link"
+            to={`/kardex/${item.id}`}
+            iconLeft={<ArrowLeft className="h-4 w-4" />}
+          >
+            Volver
+          </Button>
+          <SectionHeader
+            title="Editar Item de Kardex"
+            description={`Actualizando la información de ${item.producto}`}
+          />
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>
@@ -256,9 +271,15 @@ export default function KardexEdit() {
         </Card>
 
         <div className="flex items-center justify-end gap-3">
-          <Button variant="ghost" type="button" as="link" to={`/kardex/${item.id}`}>
-            Cancelar
-          </Button>
+          {inModal ? (
+            <Button variant="ghost" type="button" onClick={onClose}>
+              Cancelar
+            </Button>
+          ) : (
+            <Button variant="ghost" type="button" as="link" to={`/kardex/${item.id}`}>
+              Cancelar
+            </Button>
+          )}
           <Button type="submit" disabled={saving} iconLeft={<Save className="h-4 w-4" />}>
             {saving ? "Guardando..." : "Guardar Cambios"}
           </Button>

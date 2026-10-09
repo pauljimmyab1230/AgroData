@@ -29,8 +29,16 @@ const tipoMovimientoOptions = [
   { value: "AJUSTE", label: "Ajuste" },
 ];
 
-export default function KardexView() {
-  const { id } = useParams();
+interface KardexViewProps {
+  inModal?: boolean;
+  kardexId?: number;
+  onEdit?: (kardexId: number) => void;
+  onClose?: () => void;
+}
+
+export default function KardexView({ inModal, kardexId, onEdit, onClose: _onClose }: KardexViewProps) {
+  const { id: idParam } = useParams();
+  const id = (inModal ? kardexId : idParam) as string;
   const { data: item, isLoading: loading } = useKardexItem(id);
   const addMovimientoMutation = useAddMovimiento();
   const removeMovimientoMutation = useRemoveMovimiento();
@@ -99,11 +107,13 @@ export default function KardexView() {
 
   return (
     <div>
-      <div className="mb-8 flex items-center gap-4">
-        <Button variant="ghost" as="link" to="/kardex" iconLeft={<ArrowLeft className="h-4 w-4" />}>
-          Kardex
-        </Button>
-      </div>
+      {!inModal && (
+        <div className="mb-8 flex items-center gap-4">
+          <Button variant="ghost" as="link" to="/kardex" iconLeft={<ArrowLeft className="h-4 w-4" />}>
+            Kardex
+          </Button>
+        </div>
+      )}
 
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -118,14 +128,20 @@ export default function KardexView() {
           >
             Nuevo Movimiento
           </Button>
-          <Button
-            variant="secondary"
-            as="link"
-            to={`/kardex/${item.id}/editar`}
-            iconLeft={<Pencil className="h-4 w-4" />}
-          >
-            Editar
-          </Button>
+          {inModal ? (
+            <Button variant="secondary" iconLeft={<Pencil className="h-4 w-4" />} onClick={() => onEdit?.(item.id)}>
+              Editar
+            </Button>
+          ) : (
+            <Button
+              variant="secondary"
+              as="link"
+              to={`/kardex/${item.id}/editar`}
+              iconLeft={<Pencil className="h-4 w-4" />}
+            >
+              Editar
+            </Button>
+          )}
         </div>
       </div>
 
