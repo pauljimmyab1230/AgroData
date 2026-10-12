@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import DashboardScreen from "../screens/DashboardScreen";
 import ProductoresScreen from "../screens/ProductoresScreen";
@@ -34,6 +34,9 @@ import AcopioFormScreen from "../screens/AcopioFormScreen";
 import KardexScreen from "../screens/KardexScreen";
 import KardexDetailScreen from "../screens/KardexDetailScreen";
 import KardexFormScreen from "../screens/KardexFormScreen";
+import ProcesamientosScreen from "../screens/ProcesamientosScreen";
+import ProcesamientoDetailScreen from "../screens/ProcesamientoDetailScreen";
+import ProcesamientoFormScreen from "../screens/ProcesamientoFormScreen";
 
 const screenOptions = { headerShown: false };
 
@@ -96,3 +99,4 @@ export const OperacionesStack = React.memo(() => (
     <OperacionesNativeStack.Screen name="KardexForm" component={KardexFormScreen} />
   </OperacionesNativeStack.Navigator>
 ));
+

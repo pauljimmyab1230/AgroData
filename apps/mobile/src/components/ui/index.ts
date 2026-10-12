@@ -1,4 +1,4 @@
-export { Card } from "./Card";
+﻿export { Card } from "./Card";
 export { Badge } from "./Badge";
 export { LoadingSpinner } from "./LoadingSpinner";
 export { SearchInput } from "./SearchInput";
@@ -12,3 +12,5 @@ export { PageHeader } from "./PageHeader";
 export { KpiGrid } from "./KpiGrid";
 export { SectionHeader } from "./SectionHeader";
 export type { KpiItem } from "./KpiGrid";
+
+export { ConfirmDialog } from './ConfirmDialog';
