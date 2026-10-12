@@ -444,13 +444,18 @@ export async function ingresosPorOrden(
 // ==================== Utilidades ====================
 
 async function generarCodigoKardex(db: PrismaTransaction | typeof prisma): Promise<string> {
-  const year = new Date().getFullYear();
-  const last = await db.kardex.findFirst({
+  const items = await db.kardex.findMany({
     where: { codigo: { startsWith: 'KAR-' } },
-    orderBy: { created_at: 'desc' },
     select: { codigo: true },
   });
-  if (!last) return 'KAR-0001';
-  const num = parseInt(last.codigo.replace('KAR-', ''), 10) + 1;
-  return `KAR-${String(num).padStart(4, '0')}`;
+  let max = 0;
+  for (const it of items) {
+    const m = it.codigo.match(/KAR-(\d+)/);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      if (!isNaN(n) && n > max) max = n;
+    }
+  }
+  const num = max + 1;
+  return `KAR-${String(num).padStart(6, '0')}`;
 }
