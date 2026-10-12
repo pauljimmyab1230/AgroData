@@ -94,7 +94,9 @@ export default function AppRoutes() {
                     <Route path="/recepcion" element={<RecepcionList />} />
                     <Route path="/recepcion/:id" element={<RecepcionView />} />
                     <Route path="/procesamiento" element={<OrdenList />} />
-                    <Route path="/procesamiento/nueva" element={<OrdenCreate />} />`n                    <Route path="/procesamiento/:id" element={<OrdenView />} />`n                    <Route path="/procesamiento/:id/editar" element={<OrdenEdit />} />
+                    <Route path="/procesamiento/nueva" element={<OrdenCreate />} />
+                    <Route path="/procesamiento/:id" element={<OrdenView />} />
+                    <Route path="/procesamiento/:id/editar" element={<OrdenEdit />} />
                     <Route path="/kardex" element={<KardexList />} />
                     <Route path="/kardex/nuevo" element={<KardexCreate />} />
                     <Route path="/kardex/:id" element={<KardexView />} />

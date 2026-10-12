@@ -31,6 +31,9 @@ import RecepcionFormScreen from "../screens/RecepcionFormScreen";
 import AcopiosScreen from "../screens/AcopiosScreen";
 import AcopioDetailScreen from "../screens/AcopioDetailScreen";
 import AcopioFormScreen from "../screens/AcopioFormScreen";
+import KardexScreen from "../screens/KardexScreen";
+import KardexDetailScreen from "../screens/KardexDetailScreen";
+import KardexFormScreen from "../screens/KardexFormScreen";
 
 const screenOptions = { headerShown: false };
 
@@ -88,5 +91,8 @@ export const OperacionesStack = React.memo(() => (
     <OperacionesNativeStack.Screen name="Recepciones" component={RecepcionesScreen} />
     <OperacionesNativeStack.Screen name="RecepcionDetail" component={RecepcionDetailScreen} />
     <OperacionesNativeStack.Screen name="RecepcionForm" component={RecepcionFormScreen} />
+    <OperacionesNativeStack.Screen name="Kardex" component={KardexScreen} />
+    <OperacionesNativeStack.Screen name="KardexDetail" component={KardexDetailScreen} />
+    <OperacionesNativeStack.Screen name="KardexForm" component={KardexFormScreen} />
   </OperacionesNativeStack.Navigator>
 ));
