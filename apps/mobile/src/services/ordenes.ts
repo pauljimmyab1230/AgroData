@@ -179,6 +179,11 @@ export async function fetchRecetasActivas(etapa?: string): Promise<Receta[]> {
   return res.data.data ?? [];
 }
 
+export async function fetchReceta(id: number): Promise<Receta> {
+  const res = await api.get(`/recetas/${id}`);
+  return res.data.data;
+}
+
 export async function fetchOrdenes(params?: {
   search?: string;
   estado?: string;

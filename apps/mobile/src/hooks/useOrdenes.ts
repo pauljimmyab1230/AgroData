@@ -7,6 +7,7 @@ import {
   fetchOrdenStats,
   fetchOperacionesActivas,
   fetchRecetasActivas,
+  fetchReceta,
   createOrden,
   updateOrden,
   deleteOrden,
@@ -88,6 +89,14 @@ export function useRecetasActivas(etapa?: string) {
   return useQuery({
     queryKey: ["recetas-activas", etapa],
     queryFn: () => fetchRecetasActivas(etapa),
+  });
+}
+
+export function useReceta(id: number | null) {
+  return useQuery({
+    queryKey: ["receta", id],
+    queryFn: () => fetchReceta(id!),
+    enabled: id !== null,
   });
 }
 
