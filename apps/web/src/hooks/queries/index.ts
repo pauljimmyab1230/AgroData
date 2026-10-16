@@ -70,11 +70,6 @@ export {
   useCreateRecepcion,
   useUpdateRecepcion,
   useDeleteRecepcion,
-  useProcesamientos,
-  useProcesamiento,
-  useCreateProcesamiento,
-  useUpdateProcesamiento,
-  useDeleteProcesamiento,
   useDashboard,
 } from "./useModules";
 

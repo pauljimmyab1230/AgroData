@@ -38,15 +38,6 @@ import {
   type RecepcionesQuery,
   type RecepcionStats,
 } from "../../services/recepciones";
-import {
-  fetchProcesamientos,
-  fetchProcesamiento,
-  createProcesamiento,
-  updateProcesamiento,
-  deleteProcesamiento,
-  type OrdenProcesamiento,
-  type ProcesamientosQuery,
-} from "../../services/procesamientos";
 
 export type { Actividad } from "../../services/actividades";
 
@@ -237,48 +228,6 @@ export function useDeleteRecepcion() {
   return useMutation({
     mutationFn: (id: string | number) => deleteRecepcion(String(id)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["recepciones"] }),
-  });
-}
-
-// ===================== Procesamientos =====================
-export function useProcesamientos(filters?: ProcesamientosQuery) {
-  return useQuery({
-    queryKey: ["procesamientos", "lista", filters],
-    queryFn: () => fetchProcesamientos(filters),
-    placeholderData: keepPreviousData,
-  });
-}
-
-export function useProcesamiento(id: string | number | null | undefined) {
-  return useQuery<OrdenProcesamiento>({
-    queryKey: ["procesamientos", "detalle", id],
-    queryFn: () => fetchProcesamiento(String(id)),
-    enabled: id != null && id !== "",
-  });
-}
-
-export function useCreateProcesamiento() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (data: Partial<OrdenProcesamiento>) => createProcesamiento(data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["procesamientos"] }),
-  });
-}
-
-export function useUpdateProcesamiento() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string | number; data: Partial<OrdenProcesamiento> }) =>
-      updateProcesamiento(String(id), data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["procesamientos"] }),
-  });
-}
-
-export function useDeleteProcesamiento() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string | number) => deleteProcesamiento(String(id)),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["procesamientos"] }),
   });
 }
 
