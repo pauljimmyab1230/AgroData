@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   bottomSpacer: {
-    paddingBottom: 40,
+    paddingBottom: 140,
   },
   footer: {
     flexDirection: "row",

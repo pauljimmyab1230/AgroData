@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { SelectField, DatePickerField } from "../components/ui";
 import { FormScreenLayout, FormSection, FormField } from "../components/layouts/FormScreenLayout";
 import { useTheme } from "../contexts/ThemeContext";
+import { fechaHoyLocal, fechaLocalAISO } from "../utils/fechas";
 import api from "../services/api";
 
 const STEPS = ["General", "Productores", "Resumen"];
@@ -36,7 +37,7 @@ export default function AcopioFormScreen() {
   const [saving, setSaving] = useState(false);
   const [loadingData, setLoadingData] = useState(isEdit);
 
-  const [fecha, setFecha] = useState(new Date().toISOString().split("T")[0]);
+  const [fecha, setFecha] = useState(fechaHoyLocal());
   const [acopiador, setAcopiador] = useState("");
   const [vehiculo, setVehiculo] = useState("");
   const [rutaAcopio, setRutaAcopio] = useState("");
@@ -79,7 +80,7 @@ export default function AcopioFormScreen() {
         setAcopiador(d.acopiador ?? "");
         setVehiculo(d.vehiculo ?? "");
         setRutaAcopio(d.ruta_acopio ?? "");
-        setEstado(d.estado ?? "PENDIENTE");
+        setEstado(d.estado ?? "EN_CAMPO");
         setObservaciones(d.observaciones ?? "");
         setDetalles((d.detalles ?? []).map((det: any) => ({
           id: det.id,
@@ -139,8 +140,8 @@ export default function AcopioFormScreen() {
 
   const quickAddSaco = (detalleIdx: number) => {
     const pesoStr = quickPeso[detalleIdx] || "";
-    if (!pesoStr || Number(pesoStr) <= 0) return;
-    const peso = Number(pesoStr);
+    const peso = Number(pesoStr.replace(",", "."));
+    if (!pesoStr || !Number.isFinite(peso) || peso <= 0) return;
     const copy = [...detalles];
     const numSaco = copy[detalleIdx].sacos.length + 1;
     const sacos = [...copy[detalleIdx].sacos, { codigo: `SACO-${numSaco}`, peso, observaciones: "" }];
@@ -174,7 +175,7 @@ export default function AcopioFormScreen() {
     setSaving(true);
     try {
       const payload: Record<string, unknown> = {
-        fecha: fecha.includes("T") ? fecha : `${fecha}T00:00:00.000Z`,
+        fecha: fechaLocalAISO(fecha),
         acopiador, vehiculo, ruta_acopio: rutaAcopio, estado, observaciones,
         total_sacos: totalSacos, peso_total: pesoTotal,
         detalles: detalles.map(d => ({
@@ -194,8 +195,16 @@ export default function AcopioFormScreen() {
 
   const handleDelete = async () => {
     if (!isEdit || !editId) return;
-    try { await api.delete(`/acopios/${editId}`); queryClient.invalidateQueries({ queryKey: ["acopios"] }); navigation.goBack(); }
-    catch { Alert.alert("Error", "No se pudo eliminar"); }
+    Alert.alert("Eliminar acopio", "¿Eliminar este acopio?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Eliminar", style: "destructive",
+        onPress: async () => {
+          try { await api.delete(`/acopios/${editId}`); queryClient.invalidateQueries({ queryKey: ["acopios"] }); navigation.goBack(); }
+          catch { Alert.alert("Error", "No se pudo eliminar"); }
+        },
+      },
+    ]);
   };
 
   const renderStep0 = () => (
@@ -271,7 +280,7 @@ export default function AcopioFormScreen() {
 
   return (
     <FormScreenLayout
-      title={`${isEdit ? "Editar" : "Nuevo"} Acopio`}
+      title="Acopio"
       isEdit={isEdit}
       steps={STEPS}
       currentStep={step}

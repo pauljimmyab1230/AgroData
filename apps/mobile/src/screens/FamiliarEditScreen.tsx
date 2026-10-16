@@ -6,10 +6,7 @@ import { FormScreenLayout, FormSection, FormField } from "../components/layouts/
 import { SelectField } from "../components/ui/SelectField";
 import { DatePickerField } from "../components/ui/DatePickerField";
 import { useTheme } from "../contexts/ThemeContext";
-
-const SEXO_OPTIONS = ["MASCULINO", "FEMENINO"];
-const PARENTESCO_OPTIONS = ["CONYUGE", "HIJO", "PADRE", "MADRE", "HERMANO", "OTRO"];
-const NIVEL_EDUCATIVO_OPTIONS = ["SIN_ESTUDIOS", "PRIMARIA", "SECUNDARIA", "TECNICO", "UNIVERSITARIO"];
+import { SEXO_OPTIONS, PARENTESCO_OPTIONS, NIVEL_EDUCATIVO_OPTIONS } from "../constants/options";
 
 export default function FamiliarEditScreen() {
   const { colors } = useTheme();
@@ -38,7 +35,7 @@ export default function FamiliarEditScreen() {
     Alert.alert("Eliminar Familiar", `¿Eliminar a ${form.nombres}?`, [
       { text: "Cancelar", style: "cancel" },
       { text: "Eliminar", style: "destructive", onPress: async () => {
-        try { await deleteFamiliar(productorId, familiar.id); navigation.goBack(); }
+        try { await deleteFamiliar(productorId, familiar.id); navigation.navigate("Familiares", { refresh: true, productorId, productorNombre: route.params?.productorNombre }); }
         catch { Alert.alert("Error", "No se pudo eliminar"); }
       }},
     ]);

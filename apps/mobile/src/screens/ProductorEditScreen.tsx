@@ -39,9 +39,7 @@ export default function ProductorEditScreen() {
         if (!controller.signal.aborted) {
           setForm(p);
           setFamiliares(fams);
-          if (p.departamento) ubigeo.setDepartamento(p.departamento);
-          if (p.provincia) ubigeo.setProvincia(p.provincia);
-          if (p.distrito) ubigeo.setDistrito(p.distrito);
+          ubigeo.precargar(p.departamento ?? "", p.provincia ?? "", p.distrito ?? "");
         }
       } catch { Alert.alert("Error", "No se pudo cargar"); }
       finally { if (!controller.signal.aborted) setLoading(false); }
@@ -77,6 +75,9 @@ export default function ProductorEditScreen() {
     if (!form.nombres?.trim() || !form.apellidoPaterno?.trim()) {
       Alert.alert("Error", "Nombres y apellido paterno son obligatorios"); return;
     }
+    if (form.dni != null && String(form.dni).trim() !== "" && !/^\d{8}$/.test(String(form.dni).trim())) {
+      Alert.alert("Error", "El DNI debe tener 8 digitos"); return;
+    }
     setSaving(true);
     try {
       await updateProductor(id, form);
@@ -89,7 +90,7 @@ export default function ProductorEditScreen() {
     Alert.alert("Eliminar Productor", `¿Eliminar a ${form.nombres} ${form.apellidoPaterno}?`, [
       { text: "Cancelar", style: "cancel" },
       { text: "Eliminar", style: "destructive", onPress: async () => {
-        try { await deleteProductor(id); navigation.goBack(); }
+        try { await deleteProductor(id); navigation.navigate("ProductoresMain", { refresh: true }); }
         catch { Alert.alert("Error", "No se pudo eliminar"); }
       }},
     ]);

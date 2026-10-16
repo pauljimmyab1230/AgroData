@@ -20,6 +20,21 @@ export const STATUS_COLORS: Record<string, StatusConfig> = {
   APROBADA: { color: "#16A34A", bg: "#DCFCE7", label: "Aprobada" },
   RECHAZADA: { color: "#DC2626", bg: "#FEE2E2", label: "Rechazada" },
   OBSERVADA: { color: "#D97706", bg: "#FEF3C7", label: "Observada" },
+  EN_CRECIMIENTO: { color: "#16A34A", bg: "#DCFCE7", label: "En crecimiento" },
+  COSECHADO: { color: "#6B7280", bg: "#F3F4F6", label: "Cosechado" },
+  PERDIDO: { color: "#DC2626", bg: "#FEE2E2", label: "Perdido" },
+  PENDIENTE_PESAJE: { color: "#D97706", bg: "#FEF3C7", label: "Pendiente de pesaje" },
+  EN_CONTROL_CALIDAD: { color: "#2563EB", bg: "#DBEAFE", label: "En control de calidad" },
+  DISPONIBLE: { color: "#16A34A", bg: "#DCFCE7", label: "Disponible" },
+  CONSUMIDO: { color: "#6B7280", bg: "#F3F4F6", label: "Consumido" },
+  VENCIDO: { color: "#DC2626", bg: "#FEE2E2", label: "Vencido" },
+  EN_CAMPO: { color: "#16A34A", bg: "#DCFCE7", label: "En campo" },
+  EN_TRANSITO: { color: "#2563EB", bg: "#DBEAFE", label: "En tr��nsito" },
+  RECIBIDO: { color: "#16A34A", bg: "#DCFCE7", label: "Recibido" },
+  BORRADOR: { color: "#6B7280", bg: "#F3F4F6", label: "Borrador" },
+  FINALIZADO: { color: "#16A34A", bg: "#DCFCE7", label: "Finalizado" },
+  PAUSADA: { color: "#D97706", bg: "#FEF3C7", label: "Pausada" },
+  NO_CONFORME: { color: "#DC2626", bg: "#FEE2E2", label: "No conforme" },
 };
 
 export const GENERO_COLORS: Record<string, { icon: string; color: string }> = {

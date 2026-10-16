@@ -144,8 +144,23 @@ export default function CultivoFormScreen() {
     if (form.areaSembrada) {
       const supNum = Number(form.areaSembrada);
       if (!Number.isFinite(supNum) || supNum <= 0) {
-        Alert.alert("Error", "El área sembrada debe ser un número mayor a 0");
+        Alert.alert("Error", "El ǭrea sembrada debe ser un nǧmero mayor a 0");
         return;
+      }
+    }
+    const camposNumericos: Array<[string, string]> = [
+      ["cantidadSemilla", "La cantidad de semilla"],
+      ["rendimientoEsperado", "El rendimiento esperado"],
+      ["produccionEstimada", "La producci��n estimada"],
+    ];
+    for (const [clave, etiqueta] of camposNumericos) {
+      const valor = (form as unknown as Record<string, unknown>)[clave];
+      if (valor !== "" && valor != null) {
+        const n = Number(valor);
+        if (!Number.isFinite(n) || n < 0) {
+          Alert.alert("Error", `${etiqueta} debe ser un nǧmero mayor o igual a 0`);
+          return;
+        }
       }
     }
 
@@ -203,8 +218,8 @@ export default function CultivoFormScreen() {
         <FormField label="Variedad">
           <TextInput style={inputStyle} value={form.variedad} onChangeText={(v) => update("variedad", v)} placeholderTextColor={colors.placeholder} />
         </FormField>
-        <SelectField label="Parcela *" value={parcelas.find(p => String(p.id) === form.parcelaId)?.label || ""} options={parcelas.map(p => p.label)} onSelect={(v) => { const p = parcelas.find(x => x.label === v); if (p) update("parcelaId", String(p.id)); }} />
-        <SelectField label="Campaña *" value={campanias.find(c => String(c.id) === form.campaniaId)?.label || ""} options={campanias.map(c => c.label)} onSelect={(v) => { const c = campanias.find(x => x.label === v); if (c) update("campaniaId", String(c.id)); }} />
+        <SelectField label="Parcela *" value={form.parcelaId} options={parcelas.map(p => ({ value: String(p.id), label: p.label }))} onSelect={(v) => update("parcelaId", v)} />
+        <SelectField label="Campaña *" value={form.campaniaId} options={campanias.map(c => ({ value: String(c.id), label: c.label }))} onSelect={(v) => update("campaniaId", v)} />
         <FormField label="Área Sembrada (ha)">
           <TextInput style={inputStyle} value={form.areaSembrada} onChangeText={(v) => update("areaSembrada", v)} keyboardType="numeric" placeholderTextColor={colors.placeholder} />
         </FormField>

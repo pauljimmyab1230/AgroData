@@ -97,6 +97,9 @@ export const OperacionesStack = React.memo(() => (
     <OperacionesNativeStack.Screen name="Kardex" component={KardexScreen} />
     <OperacionesNativeStack.Screen name="KardexDetail" component={KardexDetailScreen} />
     <OperacionesNativeStack.Screen name="KardexForm" component={KardexFormScreen} />
+    <OperacionesNativeStack.Screen name="Procesamientos" component={ProcesamientosScreen} />
+    <OperacionesNativeStack.Screen name="ProcesamientoDetail" component={ProcesamientoDetailScreen} />
+    <OperacionesNativeStack.Screen name="ProcesamientoForm" component={ProcesamientoFormScreen} />
   </OperacionesNativeStack.Navigator>
 ));
 

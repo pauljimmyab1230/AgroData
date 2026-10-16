@@ -128,6 +128,15 @@ export default function InspeccionFormScreen() {
     if (!form.cultivoId) { Alert.alert("Error", "El cultivo es obligatorio"); return; }
     if (!form.fecha) { Alert.alert("Error", "La fecha es obligatoria"); return; }
     if (!form.inspector?.trim()) { Alert.alert("Error", "El inspector es obligatorio"); return; }
+    if (form.nivelCumplimiento) {
+      const n = Number(form.nivelCumplimiento);
+      if (!Number.isFinite(n) || n < 0 || n > 100) {
+        Alert.alert("Error", "El nivel de cumplimiento debe estar entre 0 y 100"); return;
+      }
+    }
+    if (form.fechaProximaInspeccion && form.fechaProximaInspeccion < form.fecha) {
+      Alert.alert("Error", "La pr��xima inspecci��n no puede ser anterior a la fecha de la inspecci��n"); return;
+    }
 
     setSaving(true);
     try {

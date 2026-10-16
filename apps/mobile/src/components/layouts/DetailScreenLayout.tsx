@@ -63,6 +63,16 @@ export function DetailScreenLayout({
     );
   }
 
+  if (!title && notFoundText) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={["top"]}>
+        <View style={styles.notFound}>
+          <Text style={[styles.notFoundText, { color: colors.textSecondary }]}>{notFoundText}</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={["top"]}>
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -140,6 +150,16 @@ export function DetailScreenLayout({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+  },
+  notFound: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+  },
+  notFoundText: {
+    fontSize: 16,
+    textAlign: "center",
   },
   scroll: {
     flex: 1,

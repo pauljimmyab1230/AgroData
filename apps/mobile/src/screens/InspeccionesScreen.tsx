@@ -22,14 +22,14 @@ export default function InspeccionesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const debouncedSearch = useDebounce(search, 300);
 
-  const { data, refetch } = useInspecciones({ search: debouncedSearch, page, limit: 20 });
+  const { data, isLoading, refetch } = useInspecciones({ search: debouncedSearch, page, limit: 20 });
   const { data: stats } = useInspeccionStats();
 
   useEffect(() => {
-    if (route.params?.refresh) { refetch(); navigation.setParams({ refresh: undefined }); }
+    if (route.params?.refresh) { setPage(1); refetch(); navigation.setParams({ refresh: undefined }); }
   }, [route.params?.refresh, refetch, navigation]);
 
-  const onRefresh = useCallback(async () => { setRefreshing(true); await refetch(); setRefreshing(false); }, [refetch]);
+  const onRefresh = useCallback(async () => { setRefreshing(true); setPage(1); await refetch(); setRefreshing(false); }, [refetch]);
 
   const inspecciones = data?.data ?? [];
   const totalPages = data?.totalPages ?? 1;
@@ -83,10 +83,11 @@ export default function InspeccionesScreen() {
       keyExtractor={(item) => String(item.id)}
       onRefresh={onRefresh}
       refreshing={refreshing}
+      isLoading={isLoading}
       emptyTitle="No hay inspecciones"
       emptyDescription="No se encontraron inspecciones."
       onEndReached={() => { if (page < totalPages) setPage(page + 1); }}
-      ListFooterComponent={page < totalPages ? <View style={{ paddingVertical: 16 }}><LoadingSpinner text="Cargando más..." size="small" /></View> : null}
+      ListFooterComponent={page < totalPages && isLoading ? <View style={{ paddingVertical: 16 }}><LoadingSpinner text="Cargando más..." size="small" /></View> : null}
     />
   );
 }

@@ -16,7 +16,11 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert("Error", "Ingresa tu correo y contraseña");
+      Alert.alert("Error", "Ingresa tu correo y contrase��a");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      Alert.alert("Error", "Ingresa un correo v��lido");
       return;
     }
     setLoading(true);
@@ -24,7 +28,10 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
       await login(email.trim(), password);
       onLoginSuccess();
     } catch (err: any) {
-      const msg = err?.response?.data?.message || "Credenciales incorrectas";
+      const msg = err?.response?.data?.message
+        || (err?.response
+          ? "Credenciales incorrectas"
+          : "No se pudo conectar con el servidor. Verifica tu conexi��n.");
       Alert.alert("Error de acceso", msg);
     } finally {
       setLoading(false);

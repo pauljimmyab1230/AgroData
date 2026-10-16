@@ -67,14 +67,18 @@ export default function ProductorCreateScreen() {
     if (!form.dni.trim() || !form.nombres.trim() || !form.apellidoPaterno.trim()) {
       Alert.alert("Error", "DNI, nombres y apellido paterno son obligatorios"); return;
     }
-    if (form.dni.length !== 8) { Alert.alert("Error", "El DNI debe tener 8 dígitos"); return; }
+    if (!/^\d{8}$/.test(form.dni.trim())) { Alert.alert("Error", "El DNI debe tener 8 d��gitos"); return; }
+    if (!form.sexo?.trim()) { Alert.alert("Error", "El sexo es obligatorio"); return; }
+    if (!form.comunidad?.trim()) { Alert.alert("Error", "La comunidad es obligatoria"); return; }
     setSaving(true);
     try {
       const productor = await createProductor(form);
+      const fallidos: string[] = [];
       for (const fam of familiares) {
-        try { await createFamiliar(productor.id, fam); } catch {}
+        try { await createFamiliar(productor.id, fam); } catch { fallidos.push(fam.nombres || "familiar sin nombre"); }
       }
-      Alert.alert("Éxito", "Productor creado correctamente", [{ text: "OK", onPress: () => navigation.goBack() }]);
+      const aviso = fallidos.length > 0 ? ` No se guardaron ${fallidos.length} familiar(es): ${fallidos.join(", ")}.` : "";
+      Alert.alert("�%xito", `Productor creado correctamente.${aviso}`, [{ text: "OK", onPress: () => navigation.navigate("ProductoresMain", { refresh: true }) }]);
     } catch (err: any) {
       const errors = err?.response?.data?.errors;
       let message = err?.response?.data?.message || "Error al guardar";

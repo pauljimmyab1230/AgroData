@@ -11,7 +11,7 @@ export async function fetchCatalogo(tipo: string): Promise<string[]> {
 
 export async function fetchProductoresOpciones(): Promise<{ id: number; label: string }[]> {
   try {
-    const { data } = await api.get("/productores");
+    const { data } = await api.get("/productores?limit=500");
     const items = data.data ?? [];
     if (!Array.isArray(items)) return [];
     return items.map((p: any) => ({
@@ -19,7 +19,7 @@ export async function fetchProductoresOpciones(): Promise<{ id: number; label: s
       label: `${p.codigo || ""} - ${p.nombres || ""} ${p.apellido_paterno || p.apellidoPaterno || ""}`.trim(),
     }));
   } catch (e) {
-    console.log("Error fetching productores options:", e);
+    console.error("Error fetching productores options:", e);
     return [];
   }
 }
@@ -34,7 +34,7 @@ export async function fetchParcelasOpciones(): Promise<{ id: number; label: stri
       label: `${p.codigo || ""} - ${p.nombre || ""}`.trim(),
     }));
   } catch (e) {
-    console.log("Error fetching parcelas options:", e);
+    console.error("Error fetching parcelas options:", e);
     return [];
   }
 }
@@ -49,7 +49,7 @@ export async function fetchCampaniasOpciones(): Promise<{ id: number; label: str
       label: `${c.codigo || ""} - ${c.nombre || ""}`.trim(),
     }));
   } catch (e) {
-    console.log("Error fetching campanias options:", e);
+    console.error("Error fetching campanias options:", e);
     return [];
   }
 }
@@ -64,7 +64,7 @@ export async function fetchCultivosOpciones(): Promise<{ id: number; label: stri
       label: `${c.codigo || ""} - ${c.cultivo || ""}`.trim(),
     }));
   } catch (e) {
-    console.log("Error fetching cultivos options:", e);
+    console.error("Error fetching cultivos options:", e);
     return [];
   }
 }

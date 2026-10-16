@@ -22,10 +22,10 @@ export default function RecepcionesScreen() {
   const { data, isLoading, refetch } = useRecepciones({ search: debouncedSearch, page, limit: 20 });
 
   useEffect(() => {
-    if (route.params?.refresh) { refetch(); navigation.setParams({ refresh: undefined }); }
+    if (route.params?.refresh) { setPage(1); refetch(); navigation.setParams({ refresh: undefined }); }
   }, [route.params?.refresh, refetch, navigation]);
 
-  const onRefresh = useCallback(async () => { setRefreshing(true); await refetch(); setRefreshing(false); }, [refetch]);
+  const onRefresh = useCallback(async () => { setRefreshing(true); setPage(1); await refetch(); setRefreshing(false); }, [refetch]);
 
   const recepciones = data?.data ?? [];
   const totalPages = data?.totalPages ?? 1;
@@ -85,13 +85,14 @@ export default function RecepcionesScreen() {
       searchPlaceholder="Buscar por código o responsable..."
       searchValue={search}
       onSearchChange={(t) => { setSearch(t); setPage(1); }}
-      resultCount={recepciones.length}
+      resultCount={data?.total ?? 0}
       resultLabel="recepciones"
       data={recepciones}
       renderItem={renderItem}
       keyExtractor={keyExtractor}
       onRefresh={onRefresh}
       refreshing={refreshing}
+      isLoading={isLoading}
       emptyTitle="No hay recepciones"
       emptyDescription="Registra un nuevo ingreso a planta."
       onEndReached={() => { if (page < totalPages) setPage(page + 1); }}

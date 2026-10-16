@@ -6,6 +6,7 @@ import { useProductores, useProductorStats } from "../hooks/useProductores";
 import { ListScreenLayout } from "../components/layouts/ListScreenLayout";
 import { useLogout } from "../hooks/useLogout";
 import { getStatusConfig, GENERO_COLORS } from "../utils/statusConfig";
+import { LoadingSpinner } from "../components/ui";
 import HeaderUsuario from "../components/ui/HeaderUsuario";
 import { useTheme } from "../contexts/ThemeContext";
 import type { Productor } from "../services/productores";
@@ -23,10 +24,10 @@ export default function ProductoresScreen() {
   const { data: stats } = useProductorStats();
 
   useEffect(() => {
-    if (route.params?.refresh) { refetch(); navigation.setParams({ refresh: false }); }
-  }, [route.params?.refresh]);
+    if (route.params?.refresh) { setPage(1); refetch(); navigation.setParams({ refresh: undefined }); }
+  }, [route.params?.refresh, refetch, navigation]);
 
-  const onRefresh = useCallback(async () => { setRefreshing(true); await refetch(); setRefreshing(false); }, [refetch]);
+  const onRefresh = useCallback(async () => { setRefreshing(true); setPage(1); await refetch(); setRefreshing(false); }, [refetch]);
 
   const productores = data?.data ?? [];
   const totalPages = data?.totalPages ?? 1;
@@ -87,10 +88,11 @@ export default function ProductoresScreen() {
       keyExtractor={(item) => String(item.id)}
       onRefresh={onRefresh}
       refreshing={refreshing}
+      isLoading={isLoading}
       emptyTitle="No hay socios"
       emptyDescription="No se encontraron productores con los filtros aplicados."
       onEndReached={() => { if (page < totalPages) setPage(page + 1); }}
-      ListFooterComponent={page < totalPages ? undefined : null}
+      ListFooterComponent={page < totalPages && isLoading ? <View style={{ paddingVertical: 16 }}><LoadingSpinner text="Cargando m�s..." size="small" /></View> : null}
     />
   );
 }

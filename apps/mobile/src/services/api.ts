@@ -1,7 +1,12 @@
 import axios from "axios";
 import { API_BASE_URL } from "../config";
 import { emit } from "../events";
-import { getToken, setToken, refresh } from "./auth";
+import {
+  guardarSesion,
+  limpiarSesion,
+  obtenerRefreshToken,
+  obtenerToken,
+} from "./sesion";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -10,7 +15,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = getToken();
+  const token = obtenerToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -20,14 +25,26 @@ api.interceptors.request.use((config) => {
 // Rutas de auth donde un 401 es esperado (credenciales incorrectas).
 const RUTAS_AUTH = ["/auth/login", "/auth/refresh"];
 
+async function refrescarSesion(): Promise<boolean> {
+  try {
+    const refreshToken = await obtenerRefreshToken();
+    if (!refreshToken) return false;
+
+    const { data } = await api.post("/auth/refresh", { refreshToken });
+    const resultado = data.data ?? data;
+
+    await guardarSesion(resultado.token, resultado.refreshToken, resultado.user);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 let refrescando: Promise<boolean> | null = null;
 
 async function intentarRefresh(): Promise<boolean> {
   if (refrescando) return refrescando;
-  refrescando = (async () => {
-    const resultado = await refresh();
-    return resultado !== null;
-  })();
+  refrescando = refrescarSesion();
   try {
     return await refrescando;
   } finally {
@@ -46,10 +63,12 @@ api.interceptors.response.use(
       const ok = await intentarRefresh();
       if (ok) {
         error.config._reintentoRefresh = true;
-        error.config.headers.Authorization = `Bearer ${getToken()}`;
+        error.config.headers.Authorization = `Bearer ${obtenerToken()}`;
         return api(error.config);
       }
-      setToken(null);
+      // Sesión irrecuperable: limpiar también el almacenamiento persistente
+      // para que el próximo arranque no "resucite" una sesión inválida.
+      await limpiarSesion();
       emit("LOGOUT");
     }
     return Promise.reject(error);

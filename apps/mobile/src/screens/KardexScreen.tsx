@@ -37,6 +37,7 @@ export default function KardexScreen() {
 
   useEffect(() => {
     if (route.params?.refresh) {
+      setPage(1);
       refetch();
       navigation.setParams({ refresh: undefined });
     }
@@ -44,6 +45,7 @@ export default function KardexScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
+    setPage(1);
     await refetch();
     setRefreshing(false);
   }, [refetch]);
@@ -148,13 +150,14 @@ export default function KardexScreen() {
         setSearch(t);
         setPage(1);
       }}
-      resultCount={items.length}
+      resultCount={data?.total ?? 0}
       resultLabel="items"
       data={items}
       renderItem={renderItem}
       keyExtractor={keyExtractor}
       onRefresh={onRefresh}
       refreshing={refreshing}
+      isLoading={isLoading}
       emptyTitle="No hay items en el inventario"
       emptyDescription="Los productos ingresan automáticamente desde recepción y procesamiento."
       onEndReached={() => {

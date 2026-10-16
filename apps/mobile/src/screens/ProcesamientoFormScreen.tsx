@@ -6,6 +6,7 @@ import { ArrowLeft, Save } from "lucide-react-native";
 import { Card, LoadingSpinner } from "../components/ui";
 import { useTheme } from "../contexts/ThemeContext";
 import { toast } from "../utils/toast";
+import { fechaHoyLocal, isoAFechaLocal, esFechaValida, fechaNoAnteriorA } from "../utils/fechas";
 import {
   useOrden,
   useCreateOrden,
@@ -91,11 +92,12 @@ export default function ProcesamientoFormScreen() {
   const navigation = useNavigation<any>();
   const { colors } = useTheme();
   const id = route.params?.id as number | undefined;
+  const ordenOrigenId = route.params?.orden_origen_id as number | undefined;
   const isEdit = !!id;
 
   const [planta, setPlanta] = useState("Planta San Juan");
   const [responsable, setResponsable] = useState("");
-  const [fechaInicio, setFechaInicio] = useState(new Date().toISOString().split("T")[0]);
+  const [fechaInicio, setFechaInicio] = useState(fechaHoyLocal());
   const [fechaFin, setFechaFin] = useState("");
   const [etapa, setEtapa] = useState<(typeof ETAPA_OPTIONS)[number]>("PRIMARIA");
   const [formatoSalida, setFormatoSalida] = useState<(typeof FORMATO_OPTIONS)[number]>("GRANO");
@@ -109,6 +111,7 @@ export default function ProcesamientoFormScreen() {
   const [recepcionesAsignadas, setRecepcionesAsignadas] = useState<RecepcionAsignada[]>([]);
 
   const { data: orden, isLoading: loadingOrden } = useOrden(id || null);
+  const { data: ordenOrigen } = useOrden(ordenOrigenId ?? null);
   const { data: recetas = [] } = useRecetasActivas(etapa);
   const { data: recetaDetalle } = useReceta(recetaId);
   const { data: catalogoOperaciones = [] } = useOperacionesActivas();
@@ -120,8 +123,8 @@ export default function ProcesamientoFormScreen() {
     if (isEdit && orden) {
       setPlanta(orden.planta);
       setResponsable(orden.responsable);
-      setFechaInicio(orden.fecha_inicio?.slice(0, 10) ?? "");
-      setFechaFin(orden.fecha_fin ? orden.fecha_fin.slice(0, 10) : "");
+    setFechaInicio(orden.fecha_inicio ? isoAFechaLocal(orden.fecha_inicio) : "");
+    setFechaFin(orden.fecha_fin ? isoAFechaLocal(orden.fecha_fin) : "");
       setEtapa(orden.etapa as any);
       setFormatoSalida(orden.formato_salida as any);
       setRecetaId(orden.receta_id);
@@ -156,7 +159,20 @@ export default function ProcesamientoFormScreen() {
         })),
       );
     }
+    // Como en la web: la receta también precarga formato y producto de salida.
+    if (recetaDetalle?.formato_salida) setFormatoSalida(recetaDetalle.formato_salida as (typeof FORMATO_OPTIONS)[number]);
+    if (recetaDetalle?.nombre) setProductoSalida(recetaDetalle.nombre);
   }, [recetaDetalle]);
+
+  const moverOperacion = (indice: number, delta: number) => {
+    setOperaciones((prev) => {
+      const destino = indice + delta;
+      if (destino < 0 || destino >= prev.length) return prev;
+      const copia = [...prev];
+      [copia[indice], copia[destino]] = [copia[destino], copia[indice]];
+      return copia;
+    });
+  };
 
   const toggleOperacion = (op: OpSeleccion) => {
     setOperaciones((prev) => {
@@ -184,6 +200,44 @@ export default function ProcesamientoFormScreen() {
       toast.error("Completa planta, responsable y producto de salida");
       return;
     }
+    if (fechaInicio && !esFechaValida(fechaInicio)) {
+      toast.error("La fecha de inicio no tiene formato valido (YYYY-MM-DD)");
+      return;
+    }
+    if (fechaFin) {
+      if (!esFechaValida(fechaFin)) {
+        toast.error("La fecha de fin no tiene formato valido (YYYY-MM-DD)");
+        return;
+      }
+      if (fechaInicio && !fechaNoAnteriorA(fechaFin, fechaInicio)) {
+        toast.error("La fecha de fin no puede ser anterior a la fecha de inicio");
+        return;
+      }
+    }
+    const pesoEntradaNum = pesoEntrada ? Number(pesoEntrada) : 0;
+    if (!Number.isFinite(pesoEntradaNum) || pesoEntradaNum < 0) {
+      toast.error("El peso de entrada debe ser un numero mayor o igual a 0");
+      return;
+    }
+    const humedadNum = humedadFinal ? Number(humedadFinal) : null;
+    if (humedadNum != null && (!Number.isFinite(humedadNum) || humedadNum < 0 || humedadNum > 100)) {
+      toast.error("La humedad final debe estar entre 0 y 100");
+      return;
+    }
+    const disponibles = new Map((recepcionesResult?.data ?? []).map((r) => [r.id, r]));
+    for (const asig of recepcionesAsignadas) {
+      if (asig.cantidad_asignada === "" || Number(asig.cantidad_asignada) <= 0) continue;
+      const cant = Number(asig.cantidad_asignada);
+      const rec = disponibles.get(asig.recepcion_id);
+      if (!Number.isFinite(cant)) {
+        toast.error("Hay una cantidad asignada no valida");
+        return;
+      }
+      if (rec?.pesoNeto != null && cant > rec.pesoNeto) {
+        toast.error(`La cantidad asignada de ${rec.codigo} excede su peso neto (${rec.pesoNeto} kg)`);
+        return;
+      }
+    }
     const payload: any = {
       planta: planta.trim(),
       responsable: responsable.trim(),
@@ -192,9 +246,10 @@ export default function ProcesamientoFormScreen() {
       etapa,
       formato_salida: formatoSalida,
       receta_id: recetaId,
+      orden_origen_id: ordenOrigenId ?? null,
       producto_salida: productoSalida.trim(),
-      peso_entrada: pesoEntrada ? Number(pesoEntrada) : 0,
-      humedad_final: humedadFinal ? Number(humedadFinal) : null,
+      peso_entrada: pesoEntradaNum,
+      humedad_final: humedadNum,
       calidad: calidad || null,
       observaciones: observaciones.trim() || null,
       operaciones: operaciones.map((o, i) => ({ operacion_id: o.operacion_id, orden: i + 1 })),
@@ -245,6 +300,14 @@ export default function ProcesamientoFormScreen() {
         </View>
 
         <Card style={{ padding: 16 }}>
+          {!!ordenOrigenId && (
+            <View style={{ marginBottom: 10, padding: 10, borderRadius: 10, backgroundColor: colors.primaryLight }}>
+              <Text style={{ fontSize: 11, fontWeight: "600", color: colors.primary }}>Siguiente etapa</Text>
+              <Text style={{ marginTop: 2, fontSize: 12, color: colors.text }}>
+                Orden origen: {ordenOrigen ? `${ordenOrigen.codigo} - ${ordenOrigen.producto_salida}` : `#${ordenOrigenId}`}
+              </Text>
+            </View>
+          )}
           <Text style={{ fontSize: 14, fontWeight: "600", color: colors.text, marginBottom: 8 }}>Datos de la orden</Text>
 
           <Text style={{ fontSize: 11, color: colors.textSecondary }}>Planta</Text>
@@ -315,7 +378,21 @@ export default function ProcesamientoFormScreen() {
             })}
           </View>
           {operaciones.length > 0 && (
-            <Text style={{ marginTop: 8, fontSize: 11, color: colors.textSecondary }}>{operaciones.length} operacion(es) en orden</Text>
+            <View style={{ marginTop: 8 }}>
+              <Text style={{ fontSize: 11, color: colors.textSecondary, marginBottom: 4 }}>Orden del proceso ({operaciones.length})</Text>
+              {operaciones.map((o, idx) => (
+                <View key={o.operacion_id} style={{ flexDirection: "row", alignItems: "center", marginTop: 4, padding: 8, borderRadius: 8, backgroundColor: colors.background }}>
+                  <Text style={{ width: 22, fontSize: 11, color: colors.textMuted }}>{idx + 1}.</Text>
+                  <Text style={{ flex: 1, fontSize: 12, color: colors.text }}>{o.nombre}</Text>
+                  <TouchableOpacity disabled={idx === 0} onPress={() => moverOperacion(idx, -1)} style={{ padding: 6 }}>
+                    <Text style={{ fontSize: 12, color: idx === 0 ? colors.textMuted : colors.primary }}>Subir</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity disabled={idx === operaciones.length - 1} onPress={() => moverOperacion(idx, 1)} style={{ padding: 6 }}>
+                    <Text style={{ fontSize: 12, color: idx === operaciones.length - 1 ? colors.textMuted : colors.primary }}>Bajar</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
           )}
         </Card>
 

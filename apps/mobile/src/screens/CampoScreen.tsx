@@ -16,9 +16,9 @@ const menuItems = [
 ];
 
 const quickActions = [
-  { id: "nuevaActividad", title: "Nueva\nActividad", icon: Wrench, color: "#10B981", bg: "#ECFDF5", screen: "Actividades" },
-  { id: "nuevoAcopio", title: "Nuevo\nAcopio", icon: Package, color: "#D97706", bg: "#FEF3C7", screen: "Acopios" },
-  { id: "nuevaInspeccion", title: "Nueva\nInspección", icon: ClipboardCheck, color: "#2563EB", bg: "#DBEAFE", screen: "Inspecciones" },
+  { id: "nuevaActividad", title: "Nueva\nActividad", icon: Wrench, color: "#10B981", bg: "#ECFDF5", screen: "ActividadForm" },
+  { id: "nuevoAcopio", title: "Nuevo\nAcopio", icon: Package, color: "#D97706", bg: "#FEF3C7", screen: "AcopioForm" },
+  { id: "nuevaInspeccion", title: "Nueva\nInspecci�n", icon: ClipboardCheck, color: "#2563EB", bg: "#DBEAFE", screen: "InspeccionForm" },
   { id: "verParcelas", title: "Ver\nParcelas", icon: MapPin, color: "#F59E0B", bg: "#FFFBEB", screen: "Parcelas" },
 ];
 

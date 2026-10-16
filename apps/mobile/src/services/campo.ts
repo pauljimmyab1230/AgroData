@@ -1,16 +1,7 @@
 import api from "./api";
+import { isoAFechaLocal, fechaLocalAISO } from "../utils/fechas";
 
 // ─── Sanitization Utilities ────────────────────────────────
-
-function sanitizeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#x27;")
-    .replace(/`/g, "&#x60;");
-}
 
 function sanitizeNumber(value: unknown, fallback: number = 0): number {
   const n = Number(value);
@@ -30,8 +21,7 @@ function sanitizeStringOrNull(value: unknown): string | null {
 
 function formatDateToISO(dateStr: string | undefined | null): string | undefined {
   if (!dateStr) return undefined;
-  if (dateStr.includes('T')) return dateStr;
-  return `${dateStr}T00:00:00.000Z`;
+  return fechaLocalAISO(dateStr);
 }
 
 // ─── Parcelas ───────────────────────────────────────────────
@@ -418,6 +408,28 @@ export async function fetchCampania(id: number, signal?: AbortSignal): Promise<C
   return campaniaToFrontend(data.data ?? data);
 }
 
+export interface CampaniaGlobalStats {
+  total: number;
+  estados: Record<string, number>;
+}
+
+export async function fetchCampaniaStats(filters?: {
+  search?: string;
+  estado?: string;
+  anio_agricola?: string;
+}, signal?: AbortSignal): Promise<CampaniaGlobalStats> {
+  const params = new URLSearchParams();
+  if (filters?.search) params.append("search", filters.search);
+  if (filters?.estado) params.append("estado", filters.estado);
+  if (filters?.anio_agricola) params.append("anio_agricola", filters.anio_agricola);
+
+  const { data } = await api.get(`/campanias/stats?${params.toString()}`, { signal });
+  return {
+    total: data.data?.total ?? 0,
+    estados: data.data?.estados ?? {},
+  };
+}
+
 export async function createCampania(data: Partial<Campania>): Promise<Campania> {
   const { data: res } = await api.post("/campanias", campaniaToBackend(data));
   return campaniaToFrontend(res.data ?? res);
@@ -508,7 +520,7 @@ function cultivoToFrontend(dto: Record<string, unknown>): Cultivo {
     campaniaId: sanitizeNumber(dto.campania_id ?? (dto as Record<string, unknown>).campaniaId ?? 0),
     campania: campania ? { id: sanitizeNumber(campania.id), nombre: String(campania.nombre ?? ""), codigo: String(campania.codigo ?? "") } : undefined,
     areaSembrada: sanitizeNumberOrNull(dto.area_sembrada),
-    fechaSiembra: sanitizeStringOrNull(dto.fecha_siembra)?.split("T")[0] ?? null,
+    fechaSiembra: dto.fecha_siembra ? isoAFechaLocal(String(dto.fecha_siembra)) : null,
     metodoSiembra: sanitizeStringOrNull(dto.metodo_siembra),
     sistemaProductivo: sanitizeStringOrNull(dto.sistema_productivo),
     tipoAgricultura: sanitizeStringOrNull(dto.tipo_agricultura),
@@ -516,7 +528,7 @@ function cultivoToFrontend(dto: Record<string, unknown>): Cultivo {
     procedenciaSemilla: sanitizeStringOrNull(dto.procedencia_semilla),
     cantidadSemilla: sanitizeNumberOrNull(dto.cantidad_semilla),
     unidadSemilla: sanitizeStringOrNull(dto.unidad_semilla),
-    fechaCosecha: sanitizeStringOrNull(dto.fecha_cosecha)?.split("T")[0] ?? null,
+    fechaCosecha: dto.fecha_cosecha ? isoAFechaLocal(String(dto.fecha_cosecha)) : null,
     estado: String(dto.estado ?? "EN_CRECIMIENTO"),
     observaciones: sanitizeStringOrNull(dto.observaciones),
     rendimientoEsperado: sanitizeNumberOrNull(dto.rendimiento_esperado),
@@ -612,4 +624,4 @@ export async function fetchCultivoStats(filters?: {
   return data.data ?? data;
 }
 
-export { sanitizeHtml, sanitizeNumber, sanitizeNumberOrNull, sanitizeStringOrNull };
+

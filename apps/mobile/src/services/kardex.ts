@@ -1,4 +1,5 @@
 import api from "./api";
+import { isoAFechaLocal } from "../utils/fechas";
 
 // ─── Inventario ─────────────────────────────────────────────
 
@@ -43,8 +44,8 @@ function inventarioToFrontend(dto: Record<string, unknown>): InventarioItem {
     ubicacion: dto.ubicacion != null ? String(dto.ubicacion) : null,
     estado: String(dto.estado ?? ""),
     costo_unitario: dto.costo_unitario != null ? Number(dto.costo_unitario) : null,
-    fecha_ingreso: String(dto.fecha_ingreso ?? "").split("T")[0],
-    fecha_vencimiento: dto.fecha_vencimiento != null ? String(dto.fecha_vencimiento).split("T")[0] : null,
+    fecha_ingreso: isoAFechaLocal(String(dto.fecha_ingreso ?? "")),
+    fecha_vencimiento: dto.fecha_vencimiento != null ? isoAFechaLocal(String(dto.fecha_vencimiento)) : null,
   };
 }
 
@@ -58,7 +59,8 @@ export async function fetchInventario(params?: {
   limit?: number;
   signal?: AbortSignal;
 }): Promise<InventarioResponse> {
-  const res = await api.get("/kardex/inventario", { params, signal: params?.signal });
+  const { signal, ...query } = params ?? {};
+  const res = await api.get("/kardex/inventario", { params: query, signal });
   return {
     data: (res.data.data ?? []).map(inventarioToFrontend),
     total: res.data.total ?? 0,
@@ -140,11 +142,11 @@ function kardexItemToFrontend(dto: Record<string, unknown>): KardexItem {
     ubicacion: dto.ubicacion != null ? String(dto.ubicacion) : null,
     estado: String(dto.estado ?? ""),
     costo_unitario: dto.costo_unitario != null ? Number(dto.costo_unitario) : null,
-    fecha_ingreso: String(dto.fecha_ingreso ?? "").split("T")[0],
-    fecha_vencimiento: dto.fecha_vencimiento != null ? String(dto.fecha_vencimiento).split("T")[0] : null,
+    fecha_ingreso: isoAFechaLocal(String(dto.fecha_ingreso ?? "")),
+    fecha_vencimiento: dto.fecha_vencimiento != null ? isoAFechaLocal(String(dto.fecha_vencimiento)) : null,
     proveedor: dto.proveedor != null ? String(dto.proveedor) : null,
     observaciones: dto.observaciones != null ? String(dto.observaciones) : null,
-    movimientos: (Array.isArray(dto.movimientos)? dto.movimientos : ((Array.isArray(dto.movimientos)?dto.movimientos:(dto.movimientos as any)||[]))).map(movimientoToFrontend),
+    movimientos: (Array.isArray(dto.movimientos) ? dto.movimientos : []).map(movimientoToFrontend),
   };
 }
 

@@ -1,4 +1,5 @@
 import api from "./api";
+import { isoAFechaLocal, fechaLocalAISO } from "../utils/fechas";
 
 export interface Productor {
   id: number;
@@ -53,7 +54,7 @@ function productorToFrontend(dto: any): Productor {
     apellidoPaterno: dto.apellido_paterno ?? "",
     apellidoMaterno: dto.apellido_materno ?? "",
     sexo: dto.sexo,
-    fechaNacimiento: dto.fecha_nacimiento?.split("T")[0] ?? "",
+    fechaNacimiento: isoAFechaLocal(String(dto.fecha_nacimiento ?? "")),
     estadoCivil: dto.estado_civil,
     telefono: dto.telefono,
     correo: dto.correo,
@@ -66,18 +67,17 @@ function productorToFrontend(dto: any): Productor {
     idiomaPrincipal: dto.idioma_principal,
     idiomaSecundario: dto.idioma_secundario,
     estado: dto.estado,
-    fechaIngreso: dto.fecha_ingreso?.split("T")[0] ?? "",
+    fechaIngreso: isoAFechaLocal(String(dto.fecha_ingreso ?? "")),
     organizacion: dto.organizacion,
     cargo: dto.cargo,
     nroHijos: dto.nroHijos ?? null,
-    nroFamiliares: dto.nroFamiliares ?? null,
+    nroFamiliares: (dto._count as { familiares?: number } | undefined)?.familiares ?? null,
   };
 }
 
 function formatDateToISO(dateStr: string | undefined): string | undefined {
   if (!dateStr) return undefined;
-  if (dateStr.includes('T')) return dateStr;
-  return `${dateStr}T00:00:00.000Z`;
+  return fechaLocalAISO(dateStr);
 }
 
 function toBackend(data: Partial<Productor>): Record<string, unknown> {
@@ -198,7 +198,7 @@ function familiarToFrontend(dto: any): Familiar {
     parentesco: dto.parentesco,
     dni: dto.dni,
     sexo: dto.sexo,
-    fechaNacimiento: dto.fecha_nacimiento?.split("T")[0] ?? "",
+    fechaNacimiento: isoAFechaLocal(String(dto.fecha_nacimiento ?? "")),
     ocupacion: dto.ocupacion,
     nivelEducativo: dto.nivel_educativo,
     telefono: dto.telefono,

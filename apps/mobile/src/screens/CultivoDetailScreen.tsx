@@ -15,7 +15,7 @@ export default function CultivoDetailScreen() {
   const { data: cultivo, isLoading } = useCultivo(id);
 
   if (!cultivo) {
-    return <DetailScreenLayout isLoading={false} notFoundText="Cultivo no encontrado" title="" />;
+    return <DetailScreenLayout isLoading={isLoading} notFoundText="Cultivo no encontrado" title="" />;
   }
 
   const statusCfg = getStatusConfig(cultivo.estado);
@@ -24,7 +24,7 @@ export default function CultivoDetailScreen() {
     Alert.alert("Eliminar Cultivo", `¿Eliminar ${cultivo.cultivo}?`, [
       { text: "Cancelar", style: "cancel" },
       { text: "Eliminar", style: "destructive", onPress: async () => {
-        try { await deleteCultivo(id); navigation.goBack(); }
+        try { await deleteCultivo(id); navigation.navigate("Cultivos", { refresh: true }); }
         catch { Alert.alert("Error", "No se pudo eliminar"); }
       }},
     ]);

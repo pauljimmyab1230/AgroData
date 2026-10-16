@@ -31,7 +31,7 @@ export default function InspeccionDetailScreen() {
       <DetailScreenLayout
         isLoading={isLoading}
         loadingText="Cargando inspección..."
-        title="..."
+        title=""
         notFoundText="Inspección no encontrada"
       />
     );
@@ -145,7 +145,7 @@ export default function InspeccionDetailScreen() {
     Alert.alert("Eliminar Inspección", `¿Eliminar inspección ${inspeccion.codigo}?`, [
       { text: "Cancelar", style: "cancel" },
       { text: "Eliminar", style: "destructive", onPress: async () => {
-        try { await deleteInspeccion(id); navigation.goBack(); }
+        try { await deleteInspeccion(id); navigation.navigate("Inspecciones", { refresh: true }); }
         catch { Alert.alert("Error", "No se pudo eliminar"); }
       }},
     ]);

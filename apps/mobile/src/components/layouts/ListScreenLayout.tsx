@@ -18,9 +18,11 @@ interface ListScreenLayoutProps<T> {
   searchPlaceholder?: string;
   searchValue: string;
   onSearchChange: (v: string) => void;
+  filters?: ReactElement;
   resultCount: number;
   resultLabel?: string;
   isSearching?: boolean;
+  isLoading?: boolean;
   data: T[];
   renderItem: (item: T) => ReactElement;
   keyExtractor: (item: T) => string;
@@ -44,9 +46,11 @@ export function ListScreenLayout<T>({
   searchPlaceholder = "Buscar...",
   searchValue,
   onSearchChange,
+  filters,
   resultCount,
   resultLabel = "resultados",
   isSearching,
+  isLoading,
   data,
   renderItem,
   keyExtractor,
@@ -87,6 +91,8 @@ export function ListScreenLayout<T>({
               />
             </View>
 
+            {filters}
+
             <View style={styles.resultRow}>
               <Text style={[styles.resultCount, { color: colors.textSecondary }]}>
                 {resultCount} {resultLabel}
@@ -98,7 +104,11 @@ export function ListScreenLayout<T>({
           </View>
         }
         ListEmptyComponent={
-          <EmptyState title={emptyTitle} description={emptyDescription} />
+          isLoading ? (
+            <LoadingSpinner text="Cargando..." />
+          ) : (
+            <EmptyState title={emptyTitle} description={emptyDescription} />
+          )
         }
         ItemSeparatorComponent={ItemSeparatorComponent ?? (() => <View style={styles.separator} />)}
         onEndReached={onEndReached}

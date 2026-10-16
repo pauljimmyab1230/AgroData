@@ -3,7 +3,6 @@ export { Badge } from "./Badge";
 export { LoadingSpinner } from "./LoadingSpinner";
 export { SearchInput } from "./SearchInput";
 export { EmptyState } from "./EmptyState";
-export { StatCard } from "./StatCard";
 export { SelectField } from "./SelectField";
 export { InfoRow } from "./InfoRow";
 export { UbigeoSelect } from "./UbigeoSelect";

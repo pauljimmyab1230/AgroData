@@ -91,11 +91,20 @@ export default function KardexDetailScreen() {
       Alert.alert("Error", "Selecciona un motivo.");
       return;
     }
+    const cant = cantidad ? Number(cantidad) : undefined;
+    if (cantidad && (!Number.isFinite(cant!) || cant! <= 0)) {
+      Alert.alert("Error", "Ingresa una cantidad v��lida.");
+      return;
+    }
+    if (cant != null && cant > data.cantidad_actual) {
+      Alert.alert("Error", "La cantidad excede el stock disponible.");
+      return;
+    }
     try {
       await bajaMutation.mutateAsync({
         kardexId: data.id,
         motivo,
-        cantidad: cantidad ? Number(cantidad) : undefined,
+        cantidad: cant,
         responsable: responsable || undefined,
       });
       setModal(null);
@@ -125,7 +134,7 @@ export default function KardexDetailScreen() {
 
   if (!data && !isLoading) {
     return (
-      <DetailScreenLayout isLoading={false} title="..." notFoundText="Item no encontrado" />
+      <DetailScreenLayout isLoading={false} title="" notFoundText="Item no encontrado" />
     );
   }
 

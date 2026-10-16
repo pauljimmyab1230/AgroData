@@ -22,7 +22,7 @@ export default function ParcelaDetailScreen() {
   const { data: p, isLoading } = useParcela(id);
 
   if (!p) {
-    return <DetailScreenLayout isLoading={false} notFoundText="Parcela no encontrada" title="" />;
+    return <DetailScreenLayout isLoading={isLoading} notFoundText="Parcela no encontrada" title="" />;
   }
 
   const statusCfg = getStatusConfig(p.estado);
@@ -41,7 +41,7 @@ export default function ParcelaDetailScreen() {
     Alert.alert("Eliminar Parcela", `¿Eliminar ${p.nombre}?`, [
       { text: "Cancelar", style: "cancel" },
       { text: "Eliminar", style: "destructive", onPress: async () => {
-        try { await deleteParcela(id); navigation.goBack(); }
+        try { await deleteParcela(id); navigation.navigate("Parcelas", { refresh: true }); }
         catch { Alert.alert("Error", "No se pudo eliminar"); }
       }},
     ]);

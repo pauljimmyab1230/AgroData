@@ -2,11 +2,12 @@
 import { View, Text, TouchableOpacity } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { MapPin, Plus, Ruler, Sprout } from "lucide-react-native";
-import { useParcelas, useParcelasStatsLocal } from "../hooks/useCampo";
+import { useParcelas, useParcelasStatsFromAPI } from "../hooks/useCampo";
 import { ListScreenLayout } from "../components/layouts/ListScreenLayout";
 import { useLogout } from "../hooks/useLogout";
 import { useDebounce } from "../hooks/useDebounce";
 import { getStatusConfig } from "../utils/statusConfig";
+import { LoadingSpinner } from "../components/ui";
 import HeaderUsuario from "../components/ui/HeaderUsuario";
 import { useTheme } from "../contexts/ThemeContext";
 import type { Parcela } from "../services/campo";
@@ -22,22 +23,22 @@ export default function ParcelasScreen() {
   const handleLogout = useLogout();
 
   const { data, isLoading, refetch } = useParcelas({ search: debouncedSearch, page, limit: 20 });
-  const stats = useParcelasStatsLocal(data?.data);
+  const { data: stats } = useParcelasStatsFromAPI({ search: debouncedSearch });
 
   useEffect(() => {
-    if (route.params?.refresh) { refetch(); navigation.setParams({ refresh: undefined }); }
+    if (route.params?.refresh) { setPage(1); refetch(); navigation.setParams({ refresh: undefined }); }
   }, [route.params?.refresh, refetch, navigation]);
 
-  const onRefresh = useCallback(async () => { setRefreshing(true); await refetch(); setRefreshing(false); }, [refetch]);
+  const onRefresh = useCallback(async () => { setRefreshing(true); setPage(1); await refetch(); setRefreshing(false); }, [refetch]);
 
   const parcelas = data?.data ?? [];
   const totalPages = data?.totalPages ?? 1;
 
   const kpis = [
-    { label: "Total", value: String(stats.total), hint: "parcelas", icon: MapPin, color: "#F59E0B", bg: "#FFFBEB" },
-    { label: "Hectáreas", value: stats.hectareas.toFixed(1), hint: "ha totales", icon: Ruler, color: "#10B981", bg: "#ECFDF5" },
-    { label: "Activas", value: String(stats.activas), hint: "en uso", icon: MapPin, color: "#16A34A", bg: "#DCFCE7" },
-    { label: "Con Polígono", value: String(stats.conPoligono), hint: "georeferenciadas", icon: Sprout, color: "#6366F1", bg: "#EEF2FF" },
+    { label: "Total", value: String(stats?.total ?? 0), hint: "parcelas", icon: MapPin, color: "#F59E0B", bg: "#FFFBEB" },
+    { label: "Hect�reas", value: (stats?.areaTotal ?? 0).toFixed(1), hint: "ha totales", icon: Ruler, color: "#10B981", bg: "#ECFDF5" },
+    { label: "Productores", value: String(stats?.productoresUnicos ?? 0), hint: "con parcelas", icon: Sprout, color: "#16A34A", bg: "#DCFCE7" },
+    { label: "Certificadas", value: String(stats?.certificadas ?? 0), hint: "con documento", icon: MapPin, color: "#6366F1", bg: "#EEF2FF" },
   ];
 
   const renderItem = (item: Parcela) => {
@@ -89,10 +90,11 @@ export default function ParcelasScreen() {
       keyExtractor={(item) => String(item.id)}
       onRefresh={onRefresh}
       refreshing={refreshing}
+      isLoading={isLoading}
       emptyTitle="No hay parcelas"
       emptyDescription="No se encontraron parcelas con los filtros aplicados."
       onEndReached={() => { if (page < totalPages) setPage(page + 1); }}
-      ListFooterComponent={page < totalPages ? undefined : null}
+      ListFooterComponent={page < totalPages && isLoading ? <View style={{ paddingVertical: 16 }}><LoadingSpinner text="Cargando m�s..." size="small" /></View> : null}
     />
   );
 }

@@ -22,14 +22,14 @@ export default function CultivosScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const debouncedSearch = useDebounce(search, 300);
 
-  const { data, refetch } = useCultivos({ search: debouncedSearch, page, limit: 20 });
+  const { data, isLoading, refetch } = useCultivos({ search: debouncedSearch, page, limit: 20 });
   const { data: stats } = useCultivoStats();
 
   useEffect(() => {
-    if (route.params?.refresh) { refetch(); navigation.setParams({ refresh: undefined }); }
+    if (route.params?.refresh) { setPage(1); refetch(); navigation.setParams({ refresh: undefined }); }
   }, [route.params?.refresh, refetch, navigation]);
 
-  const onRefresh = useCallback(async () => { setRefreshing(true); await refetch(); setRefreshing(false); }, [refetch]);
+  const onRefresh = useCallback(async () => { setRefreshing(true); setPage(1); await refetch(); setRefreshing(false); }, [refetch]);
 
   const cultivos = data?.data ?? [];
   const totalPages = data?.totalPages ?? 1;
@@ -84,10 +84,11 @@ export default function CultivosScreen() {
       keyExtractor={(item) => String(item.id)}
       onRefresh={onRefresh}
       refreshing={refreshing}
+      isLoading={isLoading}
       emptyTitle="No hay cultivos"
       emptyDescription="No se encontraron cultivos con los filtros aplicados."
       onEndReached={() => { if (page < totalPages) setPage(page + 1); }}
-      ListFooterComponent={page < totalPages ? <View style={{ paddingVertical: 16 }}><LoadingSpinner text="Cargando más..." size="small" /></View> : null}
+      ListFooterComponent={page < totalPages && isLoading ? <View style={{ paddingVertical: 16 }}><LoadingSpinner text="Cargando más..." size="small" /></View> : null}
     />
   );
 }

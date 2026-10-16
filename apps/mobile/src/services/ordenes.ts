@@ -169,18 +169,18 @@ export interface OperacionEjecutadaInput {
 
 // ─── API ────────────────────────────────────────────────────
 
-export async function fetchOperacionesActivas(): Promise<OperacionProceso[]> {
-  const res = await api.get("/operaciones-proceso/activas");
+export async function fetchOperacionesActivas(signal?: AbortSignal): Promise<OperacionProceso[]> {
+  const res = await api.get("/operaciones-proceso/activas", { signal });
   return res.data.data ?? [];
 }
 
-export async function fetchRecetasActivas(etapa?: string): Promise<Receta[]> {
-  const res = await api.get("/recetas/activas", { params: etapa ? { etapa } : {} });
+export async function fetchRecetasActivas(etapa?: string, signal?: AbortSignal): Promise<Receta[]> {
+  const res = await api.get("/recetas/activas", { params: etapa ? { etapa } : {}, signal });
   return res.data.data ?? [];
 }
 
-export async function fetchReceta(id: number): Promise<Receta> {
-  const res = await api.get(`/recetas/${id}`);
+export async function fetchReceta(id: number, signal?: AbortSignal): Promise<Receta> {
+  const res = await api.get(`/recetas/${id}`, { signal });
   return res.data.data;
 }
 
@@ -192,8 +192,8 @@ export async function fetchOrdenes(params?: {
   receta_id?: number;
   page?: number;
   limit?: number;
-}): Promise<{ data: OrdenProcesamiento[]; total: number; page: number; limit: number; totalPages: number }> {
-  const res = await api.get("/ordenes-procesamiento", { params });
+}, signal?: AbortSignal): Promise<{ data: OrdenProcesamiento[]; total: number; page: number; limit: number; totalPages: number }> {
+  const res = await api.get("/ordenes-procesamiento", { params, signal });
   return {
     data: res.data.data ?? [],
     total: res.data.total ?? 0,
@@ -203,23 +203,23 @@ export async function fetchOrdenes(params?: {
   };
 }
 
-export async function fetchOrden(id: number): Promise<OrdenProcesamiento> {
-  const res = await api.get(`/ordenes-procesamiento/${id}`);
+export async function fetchOrden(id: number, signal?: AbortSignal): Promise<OrdenProcesamiento> {
+  const res = await api.get(`/ordenes-procesamiento/${id}`, { signal });
   return res.data.data;
 }
 
-export async function fetchBalance(id: number): Promise<BalanceOrden> {
-  const res = await api.get(`/ordenes-procesamiento/${id}/balance`);
+export async function fetchBalance(id: number, signal?: AbortSignal): Promise<BalanceOrden> {
+  const res = await api.get(`/ordenes-procesamiento/${id}/balance`, { signal });
   return res.data.data;
 }
 
-export async function fetchTrazabilidad(id: number): Promise<Record<string, unknown>> {
-  const res = await api.get(`/ordenes-procesamiento/${id}/trazabilidad`);
+export async function fetchTrazabilidad(id: number, signal?: AbortSignal): Promise<Record<string, unknown>> {
+  const res = await api.get(`/ordenes-procesamiento/${id}/trazabilidad`, { signal });
   return res.data.data;
 }
 
-export async function fetchOrdenStats(): Promise<OrdenStats> {
-  const res = await api.get("/ordenes-procesamiento/stats");
+export async function fetchOrdenStats(signal?: AbortSignal): Promise<OrdenStats> {
+  const res = await api.get("/ordenes-procesamiento/stats", { signal });
   return res.data.data;
 }
 

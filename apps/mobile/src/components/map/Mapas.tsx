@@ -3,16 +3,6 @@ import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from "rea
 import { WebView } from "react-native-webview";
 import { Crosshair, Trash2, MapPin, Undo2, Layers, Mountain, Map, Globe, Satellite as SatelliteIcon } from "lucide-react-native";
 
-function sanitizeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#x27;")
-    .replace(/`/g, "&#x60;");
-}
-
 function getMapHtml(lat: number | null, lng: number | null, initialLayer: string): string {
   const centerLat = lat ?? -13.62;
   const centerLng = lng ?? -73.87;
@@ -102,7 +92,11 @@ function getPolygonMapHtml(lat: number | null, lng: number | null, polygon: numb
   const centerLat = lat ?? -13.62;
   const centerLng = lng ?? -73.87;
   const hasMarker = lat !== null && lng !== null;
-  const polygonStr = JSON.stringify(polygon);
+  // Solo coordenadas numéricas finitas; el escape de "</" evita romper el bloque <script>.
+  const polygonLimpio = (polygon ?? [])
+    .filter((p) => Array.isArray(p) && p.length >= 2 && Number.isFinite(Number(p[0])) && Number.isFinite(Number(p[1])))
+    .map((p) => [Number(p[0]), Number(p[1])]);
+  const polygonStr = JSON.stringify(polygonLimpio).replace(/<\//g, "<\\/");
 
   return `
     <!DOCTYPE html>

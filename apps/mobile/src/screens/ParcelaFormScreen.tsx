@@ -162,9 +162,7 @@ export default function ParcelaFormScreen() {
           fechaLevantamiento: p.fechaLevantamiento || "",
           responsable: p.responsable || "",
         });
-        if (p.departamento) ubigeo.onDepartamentoChange(p.departamento);
-        if (p.provincia) setTimeout(() => ubigeo.onProvinciaChange(p.provincia), 100);
-        if (p.distrito) setTimeout(() => ubigeo.onDistritoChange(p.distrito), 200);
+        ubigeo.precargar(p.departamento || "", p.provincia || "", p.distrito || "");
       } catch {
         if (!cancelled) Alert.alert("Error", "No se pudo cargar la parcela");
       } finally {
@@ -218,9 +216,38 @@ export default function ParcelaFormScreen() {
         return;
       }
       if (certNum > areaNum) {
-        Alert.alert("Error", "El área certificada no puede ser mayor al área total");
+        Alert.alert("Error", "El ǭrea certificada no puede ser mayor al ǭrea total");
         return;
       }
+    }
+    if (form.latitud) {
+      const lat = Number(form.latitud);
+      if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
+        Alert.alert("Error", "La latitud debe estar entre -90 y 90"); return;
+      }
+    }
+    if (form.longitud) {
+      const lon = Number(form.longitud);
+      if (!Number.isFinite(lon) || lon < -180 || lon > 180) {
+        Alert.alert("Error", "La longitud debe estar entre -180 y 180"); return;
+      }
+    }
+    if (form.altitud) {
+      const alt = Number(form.altitud);
+      if (!Number.isFinite(alt) || alt < -500 || alt > 7000) {
+        Alert.alert("Error", "La altitud debe ser un valor entre -500 y 7000 m"); return;
+      }
+    }
+    if (form.utmEste || form.utmNorte || form.utmZona) {
+      const este = Number(form.utmEste || 0);
+      const norte = Number(form.utmNorte || 0);
+      const zona = Number(form.utmZona || 0);
+      if (!Number.isFinite(este) || !Number.isFinite(norte) || !Number.isFinite(zona) || zona < 1 || zona > 60) {
+        Alert.alert("Error", "Los valores UTM no son v��lidos (zona entre 1 y 60)"); return;
+      }
+    }
+    if (form.poligono && form.poligono.length > 0 && form.poligono.length < 3) {
+      Alert.alert("Error", "El pol��gono necesita al menos 3 v��rtices"); return;
     }
 
     setSaving(true);
@@ -280,10 +307,10 @@ export default function ParcelaFormScreen() {
           </FormField>
           <FormField label="Productor *">
             <SelectField
-              label="Productor *"
-              value={productores.find(p => String(p.id) === form.productorId)?.label || ""}
-              options={productores.map(p => p.label)}
-              onSelect={(v) => { const p = productores.find(x => x.label === v); if (p) update("productorId", String(p.id)); }}
+              label=""
+              value={form.productorId}
+              options={productores.map(p => ({ value: String(p.id), label: p.label }))}
+              onSelect={(v) => update("productorId", v)}
             />
           </FormField>
           <View style={{ flexDirection: "row", gap: 12 }}>

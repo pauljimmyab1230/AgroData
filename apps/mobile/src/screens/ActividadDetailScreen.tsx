@@ -41,7 +41,7 @@ export default function ActividadDetailScreen() {
       <DetailScreenLayout
         isLoading={isLoading}
         loadingText="Cargando actividad..."
-        title="..."
+        title=""
         notFoundText="Actividad no encontrada"
       />
     );

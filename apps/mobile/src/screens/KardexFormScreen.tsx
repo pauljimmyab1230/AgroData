@@ -6,6 +6,7 @@ import { SelectField, DatePickerField } from "../components/ui";
 import { FormScreenLayout, FormSection, FormField } from "../components/layouts/FormScreenLayout";
 import { useTheme } from "../contexts/ThemeContext";
 import { fetchKardexItem, deleteKardexItem, type KardexItem } from "../services/kardex";
+import { fechaHoyLocal, fechaLocalAISO, esFechaValida, fechaNoAnteriorA } from "../utils/fechas";
 import api from "../services/api";
 
 const CATEGORIAS = ["PRODUCTO_CAMPO", "PRODUCTO_PROCESADO", "SUBPRODUCTO", "ENVASE"];
@@ -32,7 +33,7 @@ export default function KardexFormScreen() {
   const [cantidadMaxima, setCantidadMaxima] = useState("");
   const [ubicacion, setUbicacion] = useState("");
   const [estado, setEstado] = useState("DISPONIBLE");
-  const [fechaIngreso, setFechaIngreso] = useState(new Date().toISOString().split("T")[0]);
+  const [fechaIngreso, setFechaIngreso] = useState(fechaHoyLocal());
   const [fechaVencimiento, setFechaVencimiento] = useState("");
   const [proveedor, setProveedor] = useState("");
   const [costoUnitario, setCostoUnitario] = useState("");
@@ -68,12 +69,37 @@ export default function KardexFormScreen() {
       return;
     }
     if (!categoria) {
-      Alert.alert("Error", "La categoría es obligatoria.");
+      Alert.alert("Error", "La categor��a es obligatoria.");
       return;
     }
     if (!fechaIngreso) {
       Alert.alert("Error", "La fecha de ingreso es obligatoria.");
       return;
+    }
+    const cantActual = Number(cantidadActual || 0);
+    const cantMinima = cantidadMinima ? Number(cantidadMinima) : null;
+    const cantMaxima = cantidadMaxima ? Number(cantidadMaxima) : null;
+    const costo = costoUnitario ? Number(costoUnitario) : null;
+    if (!Number.isFinite(cantActual) || cantActual < 0) {
+      Alert.alert("Error", "La cantidad actual debe ser un nǧmero mayor o igual a 0."); return;
+    }
+    if (cantMinima != null && (!Number.isFinite(cantMinima) || cantMinima < 0)) {
+      Alert.alert("Error", "La cantidad m��nima debe ser un nǧmero mayor o igual a 0."); return;
+    }
+    if (cantMaxima != null && (!Number.isFinite(cantMaxima) || cantMaxima < 0)) {
+      Alert.alert("Error", "La cantidad m��xima debe ser un nǧmero mayor o igual a 0."); return;
+    }
+    if (cantMinima != null && cantMinima > cantActual) {
+      Alert.alert("Error", "La cantidad m��nima no puede superar la cantidad actual."); return;
+    }
+    if (cantMaxima != null && cantMaxima < cantActual) {
+      Alert.alert("Error", "La cantidad m��xima no puede ser menor que la cantidad actual."); return;
+    }
+    if (costo != null && (!Number.isFinite(costo) || costo < 0)) {
+      Alert.alert("Error", "El costo unitario debe ser un nǧmero mayor o igual a 0."); return;
+    }
+    if (fechaVencimiento && (!esFechaValida(fechaVencimiento) || !fechaNoAnteriorA(fechaVencimiento, fechaIngreso))) {
+      Alert.alert("Error", "La fecha de vencimiento debe ser posterior a la fecha de ingreso."); return;
     }
     setSaving(true);
     try {
@@ -82,17 +108,15 @@ export default function KardexFormScreen() {
         producto: producto.trim(),
         categoria,
         unidad,
-        cantidad_actual: cantidadActual ? Number(cantidadActual) : 0,
-        cantidad_minima: cantidadMinima ? Number(cantidadMinima) : null,
-        cantidad_maxima: cantidadMaxima ? Number(cantidadMaxima) : null,
+        cantidad_actual: cantActual,
+        cantidad_minima: cantMinima,
+        cantidad_maxima: cantMaxima,
         ubicacion: ubicacion.trim() || null,
         estado,
-        fecha_ingreso: fechaIngreso.includes("T") ? fechaIngreso : `${fechaIngreso}T00:00:00.000Z`,
-        fecha_vencimiento: fechaVencimiento
-          ? (fechaVencimiento.includes("T") ? fechaVencimiento : `${fechaVencimiento}T00:00:00.000Z`)
-          : null,
+        fecha_ingreso: fechaLocalAISO(fechaIngreso),
+        fecha_vencimiento: fechaVencimiento ? fechaLocalAISO(fechaVencimiento) : null,
         proveedor: proveedor.trim() || null,
-        costo_unitario: costoUnitario ? Number(costoUnitario) : null,
+        costo_unitario: costo,
         observaciones: observaciones.trim() || null,
       };
       if (isEdit && editId) await api.put(`/kardex/${editId}`, payload);
@@ -108,13 +132,21 @@ export default function KardexFormScreen() {
 
   const handleDelete = async () => {
     if (!isEdit || !editId) return;
-    try {
-      await deleteKardexItem(editId);
-      queryClient.invalidateQueries({ queryKey: ["kardex"] });
-      navigation.goBack();
-    } catch {
-      Alert.alert("Error", "No se pudo eliminar");
-    }
+    Alert.alert("Eliminar item", "¿Eliminar este item del kardex?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Eliminar", style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteKardexItem(editId);
+            queryClient.invalidateQueries({ queryKey: ["kardex"] });
+            navigation.goBack();
+          } catch {
+            Alert.alert("Error", "No se pudo eliminar");
+          }
+        },
+      },
+    ]);
   };
 
   return (

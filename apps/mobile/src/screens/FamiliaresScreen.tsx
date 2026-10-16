@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { View, Text, TouchableOpacity, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -7,15 +7,7 @@ import { fetchFamiliares, deleteFamiliar, type Familiar } from "../services/prod
 import { useTheme } from "../contexts/ThemeContext";
 import { ListScreenLayout } from "../components/layouts/ListScreenLayout";
 import { Badge, LoadingSpinner } from "../components/ui";
-
-const parentescoLabels: Record<string, string> = {
-  CONYUGE: "Cónyuge",
-  HIJO: "Hijo/a",
-  PADRE: "Padre",
-  MADRE: "Madre",
-  HERMANO: "Hermano/a",
-  OTRO: "Otro",
-};
+import { PARENTESCO_LABELS } from "../constants/options";
 
 export default function FamiliaresScreen() {
   const navigation = useNavigation<any>();
@@ -26,14 +18,16 @@ export default function FamiliaresScreen() {
   const [familiares, setFamiliares] = useState<Familiar[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
   const loadData = useCallback(async () => {
     try {
       const data = await fetchFamiliares(productorId);
       setFamiliares(data);
-    } catch {
-      // silently fail
+      setError(null);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "No se pudieron cargar los familiares");
     } finally {
       setIsLoading(false);
       setRefreshing(false);
@@ -45,13 +39,23 @@ export default function FamiliaresScreen() {
   }, [loadData]);
 
   useEffect(() => {
-    if (route.params?.refresh) { loadData(); navigation.setParams({ refresh: false }); }
+    if (route.params?.refresh) { loadData(); navigation.setParams({ refresh: undefined }); }
   }, [route.params?.refresh]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     loadData();
   }, [loadData]);
+
+  const familiaresFiltrados = useMemo(() => {
+    const texto = search.trim().toLowerCase();
+    if (!texto) return familiares;
+    return familiares.filter((f) =>
+      (f.nombres ?? "").toLowerCase().includes(texto) ||
+      (f.dni ?? "").includes(texto) ||
+      (f.parentesco ?? "").toLowerCase().includes(texto)
+    );
+  }, [familiares, search]);
 
   const handleDelete = (familiar: Familiar) => {
     Alert.alert(
@@ -104,7 +108,7 @@ export default function FamiliaresScreen() {
       <View style={{ flex: 1, marginLeft: 12 }}>
         <Text style={{ fontSize: 14, fontWeight: "500", color: colors.text }} numberOfLines={1}>{item.nombres}</Text>
         <Text style={{ marginTop: 2, fontSize: 12, color: colors.textSecondary }}>
-          {parentescoLabels[item.parentesco] || item.parentesco}
+          {PARENTESCO_LABELS[item.parentesco] || item.parentesco}
           {item.dni ? ` · DNI: ${item.dni}` : ""}
         </Text>
         <View style={{ flexDirection: "row", gap: 6, marginTop: 4 }}>
@@ -143,23 +147,6 @@ export default function FamiliaresScreen() {
           <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 8 }}>
             <ArrowLeft size={20} color={colors.text} />
           </TouchableOpacity>
-          <View style={{ flex: 1, marginLeft: 8 }}>
-            <Text style={{ fontSize: 18, fontWeight: "600", color: colors.text }}>Familiares</Text>
-            <Text style={{ fontSize: 12, color: colors.textSecondary }} numberOfLines={1}>{productorNombre}</Text>
-          </View>
-          <TouchableOpacity
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 18,
-              backgroundColor: colors.success,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-            onPress={() => navigation.navigate("FamiliarCreate", { productorId, productorNombre })}
-          >
-            <Plus size={20} color="#FFFFFF" />
-          </TouchableOpacity>
         </View>
       }
       onAdd={() => navigation.navigate("FamiliarCreate", { productorId, productorNombre })}
@@ -167,13 +154,13 @@ export default function FamiliaresScreen() {
       addIcon={Plus}
       searchValue={search}
       onSearchChange={(t) => { setSearch(t); }}
-      resultCount={familiares.length}
-      data={familiares}
+      resultCount={familiaresFiltrados.length}
+      data={familiaresFiltrados}
       renderItem={renderItem}
       keyExtractor={(item) => String(item.id)}
       onRefresh={onRefresh}
       refreshing={refreshing}
-      emptyTitle="No hay familiares"
+      emptyTitle={error ? "Error al cargar" : "No hay familiares"}
       emptyDescription="Agrega familiares del productor tocando el botón +"
     />
   );

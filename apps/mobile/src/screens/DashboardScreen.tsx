@@ -54,10 +54,10 @@ export default function DashboardScreen() {
   ];
 
   const shortcuts = [
-    { label: "Bitácora", icon: ClipboardList, color: "#10B981", screen: "Campo", sub: "Actividades" },
-    { label: "Acopio", icon: Package, color: "#F59E0B", screen: "Campo", sub: "Recolección" },
-    { label: "Recepción", icon: Truck, color: "#6366F1", screen: "Operaciones", sub: "Ingreso" },
-    { label: "Reportes", icon: TrendingUp, color: "#EC4899", screen: "Dashboard", sub: "Estadísticas" },
+    { label: "Bit�cora", icon: ClipboardList, color: "#10B981", tab: "Campo", screen: "Actividades", sub: "Actividades" },
+    { label: "Acopio", icon: Package, color: "#F59E0B", tab: "Campo", screen: "Acopios", sub: "Recolecci�n" },
+    { label: "Recepci�n", icon: Truck, color: "#6366F1", tab: "Operaciones", screen: "Recepciones", sub: "Ingreso" },
+    { label: "Kardex", icon: TrendingUp, color: "#EC4899", tab: "Operaciones", screen: "Kardex", sub: "Inventario" },
   ];
 
   return (
@@ -78,7 +78,7 @@ export default function DashboardScreen() {
           <Text style={[styles.sectionLabel, { color: colors.text }]}>Accesos Rápidos</Text>
           <View style={styles.shortcutsGrid}>
             {shortcuts.map((item) => (
-              <TouchableOpacity key={item.label} style={[styles.shortcutCard, { backgroundColor: colors.surface }]} onPress={() => navigation.navigate(item.screen)} activeOpacity={0.7}>
+              <TouchableOpacity key={item.label} style={[styles.shortcutCard, { backgroundColor: colors.surface }]} onPress={() => navigation.navigate(item.tab, { screen: item.screen })} activeOpacity={0.7}>
                 <View style={[styles.shortcutIcon, { backgroundColor: item.color + "15" }]}>
                   <item.icon size={24} color={item.color} />
                 </View>
@@ -92,7 +92,7 @@ export default function DashboardScreen() {
         {data?.campaniaActiva && (
           <View style={styles.section}>
             <Text style={[styles.sectionLabel, { color: colors.text }]}>Campaña Activa</Text>
-            <TouchableOpacity style={styles.campaignCard} activeOpacity={0.7}>
+            <TouchableOpacity style={styles.campaignCard} activeOpacity={0.7} onPress={() => navigation.navigate("Campo", { screen: "Campanias" })}>
               <View style={styles.campaignHeader}>
                 <View style={styles.campaignIcon}><Sprout size={20} color="#FFFFFF" /></View>
                 <View style={styles.campaignInfo}>

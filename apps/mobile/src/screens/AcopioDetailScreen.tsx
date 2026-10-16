@@ -17,8 +17,8 @@ export default function AcopioDetailScreen() {
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["acopio", id],
-    queryFn: async () => { const res = await api.get(`/acopios/${id}`); return res.data.data; },
+    queryKey: ["acopios", "detalle", id],
+    queryFn: async ({ signal }) => { const res = await api.get(`/acopios/${id}`, { signal }); return res.data.data; },
     enabled: !!id,
   });
 
@@ -34,7 +34,7 @@ export default function AcopioDetailScreen() {
 
   if (!data) {
     return (
-      <DetailScreenLayout isLoading={isLoading} loadingText="Cargando..." title="..." notFoundText="Acopio no encontrado" />
+      <DetailScreenLayout isLoading={isLoading} loadingText="Cargando..." title="" notFoundText="Acopio no encontrado" />
     );
   }
 

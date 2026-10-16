@@ -2,11 +2,12 @@
 import { View, Text, TouchableOpacity } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { CalendarDays, Plus } from "lucide-react-native";
-import { useCampanias } from "../hooks/useCampo";
+import { useCampanias, useCampaniasStatsFromAPI } from "../hooks/useCampo";
 import { ListScreenLayout } from "../components/layouts/ListScreenLayout";
 import { useLogout } from "../hooks/useLogout";
 import { useDebounce } from "../hooks/useDebounce";
 import { getStatusConfig } from "../utils/statusConfig";
+import { LoadingSpinner } from "../components/ui";
 import HeaderUsuario from "../components/ui/HeaderUsuario";
 import { useTheme } from "../contexts/ThemeContext";
 import type { Campania } from "../services/campo";
@@ -22,25 +23,22 @@ export default function CampaniasScreen() {
   const handleLogout = useLogout();
 
   const { data, isLoading, refetch } = useCampanias({ search: debouncedSearch, page, limit: 20 });
+  const { data: stats } = useCampaniasStatsFromAPI({ search: debouncedSearch });
 
   useEffect(() => {
-    if (route.params?.refresh) { refetch(); navigation.setParams({ refresh: undefined }); }
+    if (route.params?.refresh) { setPage(1); refetch(); navigation.setParams({ refresh: undefined }); }
   }, [route.params?.refresh, refetch, navigation]);
 
-  const onRefresh = useCallback(async () => { setRefreshing(true); await refetch(); setRefreshing(false); }, [refetch]);
+  const onRefresh = useCallback(async () => { setRefreshing(true); setPage(1); await refetch(); setRefreshing(false); }, [refetch]);
 
   const campanias = data?.data ?? [];
   const totalPages = data?.totalPages ?? 1;
 
-  const totalActivas = campanias.filter((c) => c.estado === "ACTIVA").length;
-  const totalPlanificadas = campanias.filter((c) => c.estado === "PLANIFICADA").length;
-  const totalFinalizadas = campanias.filter((c) => c.estado === "FINALIZADA").length;
-
   const kpis = [
-    { label: "Total", value: String(data?.total ?? 0), hint: "campañas", icon: CalendarDays, color: "#6366F1", bg: "#EEF2FF" },
-    { label: "Activas", value: String(totalActivas), hint: "en curso", icon: CalendarDays, color: "#16A34A", bg: "#DCFCE7" },
-    { label: "Planificadas", value: String(totalPlanificadas), hint: "pendientes", icon: CalendarDays, color: "#D97706", bg: "#FEF3C7" },
-    { label: "Finalizadas", value: String(totalFinalizadas), hint: "completadas", icon: CalendarDays, color: "#6B7280", bg: "#F3F4F6" },
+    { label: "Total", value: String(stats?.total ?? 0), hint: "campañas", icon: CalendarDays, color: "#6366F1", bg: "#EEF2FF" },
+    { label: "Activas", value: String(stats?.estados?.ACTIVA ?? 0), hint: "en curso", icon: CalendarDays, color: "#16A34A", bg: "#DCFCE7" },
+    { label: "Planificadas", value: String(stats?.estados?.PLANIFICADA ?? 0), hint: "pendientes", icon: CalendarDays, color: "#D97706", bg: "#FEF3C7" },
+    { label: "Finalizadas", value: String(stats?.estados?.FINALIZADA ?? 0), hint: "completadas", icon: CalendarDays, color: "#6B7280", bg: "#F3F4F6" },
   ];
 
   const renderItem = (item: Campania) => {
@@ -92,10 +90,11 @@ export default function CampaniasScreen() {
       keyExtractor={(item) => String(item.id)}
       onRefresh={onRefresh}
       refreshing={refreshing}
+      isLoading={isLoading}
       emptyTitle="No hay campañas"
       emptyDescription="No se encontraron campañas con los filtros aplicados."
       onEndReached={() => { if (page < totalPages) setPage(page + 1); }}
-      ListFooterComponent={page < totalPages ? undefined : null}
+      ListFooterComponent={page < totalPages && isLoading ? <View style={{ paddingVertical: 16 }}><LoadingSpinner text="Cargando m�s..." size="small" /></View> : null}
     />
   );
 }

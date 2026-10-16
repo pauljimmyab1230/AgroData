@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   fetchInspecciones,
   fetchInspeccion,
@@ -6,6 +6,7 @@ import {
   type Inspeccion,
   type InspeccionStats,
 } from "../services/inspecciones";
+import { useAcumulado } from "./acumularLista";
 
 interface FetchResult<T> {
   data: T | null;
@@ -14,16 +15,21 @@ interface FetchResult<T> {
   refetch: () => void;
 }
 
-function useFetch<T>(fetcher: (signal: AbortSignal) => Promise<T>, deps: unknown[]): FetchResult<T> {
+function useFetch<T>(
+  fetcher: (signal: AbortSignal) => Promise<T>,
+  deps: unknown[],
+  opciones?: { habilitado?: boolean },
+): FetchResult<T> {
+  const habilitado = opciones?.habilitado !== false;
   const [data, setData] = useState<T | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(habilitado);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(true);
-  const depsRef = useRef(deps);
-  depsRef.current = deps;
+  const fetcherRef = useRef(fetcher);
+  fetcherRef.current = fetcher;
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -31,7 +37,7 @@ function useFetch<T>(fetcher: (signal: AbortSignal) => Promise<T>, deps: unknown
     setError(null);
 
     try {
-      const result = await fetcher(controller.signal);
+      const result = await fetcherRef.current(controller.signal);
       if (mountedRef.current && !controller.signal.aborted) setData(result);
     } catch (err: unknown) {
       if (mountedRef.current && !controller.signal.aborted) {
@@ -41,16 +47,22 @@ function useFetch<T>(fetcher: (signal: AbortSignal) => Promise<T>, deps: unknown
     } finally {
       if (mountedRef.current && !controller.signal.aborted) setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     mountedRef.current = true;
-    fetchData();
+    if (habilitado) {
+      fetchData();
+    } else {
+      abortRef.current?.abort();
+      setData(null);
+      setIsLoading(false);
+    }
     return () => {
       mountedRef.current = false;
       abortRef.current?.abort();
     };
-  }, deps);
+  }, [fetchData, habilitado, ...deps]);
 
   return { data, isLoading, error, refetch: fetchData };
 }
@@ -62,16 +74,22 @@ export function useInspecciones(filters?: {
   page?: number;
   limit?: number;
 }): FetchResult<{ data: Inspeccion[]; total: number; totalPages: number }> {
-  return useFetch(
+  const pagina = filters?.page ?? 1;
+  const clave = JSON.stringify([filters?.search, filters?.estado, filters?.cultivo_id, filters?.limit]);
+  const acumular = useAcumulado<Inspeccion>();
+  const resultado = useFetch(
     (signal) => fetchInspecciones({ ...filters }, signal),
-    [filters?.search, filters?.estado, filters?.cultivo_id, filters?.page, filters?.limit],
+    [clave, pagina],
   );
+  const items = acumular(clave, pagina, resultado.data?.data);
+  return { ...resultado, data: resultado.data ? { ...resultado.data, data: items } : null };
 }
 
 export function useInspeccion(id: number | null): FetchResult<Inspeccion> {
   return useFetch(
     (signal) => fetchInspeccion(id!, signal),
     [id],
+    { habilitado: id !== null },
   );
 }
 

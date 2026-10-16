@@ -6,7 +6,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { SelectField, DatePickerField } from "../components/ui";
 import { FormScreenLayout, FormSection, FormField } from "../components/layouts/FormScreenLayout";
 import { useTheme } from "../contexts/ThemeContext";
-import { fetchRecepcion, deleteRecepcion, type Recepcion, type RecepcionSaco } from "../services/recepciones";
+import { fetchRecepcion, createRecepcion, updateRecepcion, deleteRecepcion, type Recepcion, type RecepcionSaco } from "../services/recepciones";
+import { fechaHoyLocal, fechaLocalAISO } from "../utils/fechas";
 import api from "../services/api";
 
 const STEPS = ["General", "Sacos", "Pesaje", "Calidad", "Resumen"];
@@ -23,7 +24,7 @@ export default function RecepcionFormScreen() {
   const [saving, setSaving] = useState(false);
   const [loadingData, setLoadingData] = useState(isEdit);
 
-  const [fecha, setFecha] = useState(new Date().toISOString().split("T")[0]);
+  const [fecha, setFecha] = useState(fechaHoyLocal());
   const [responsable, setResponsable] = useState("");
   const [planta, setPlanta] = useState("");
   const [loteProductor, setLoteProductor] = useState("");
@@ -87,8 +88,8 @@ export default function RecepcionFormScreen() {
   const mermaCalc = Number(pesoCampo) > 0 ? (diferenciaCalc / Number(pesoCampo)) * 100 : 0;
 
   const quickAddSaco = () => {
-    if (!quickPeso || Number(quickPeso) <= 0) return;
     const peso = Number(quickPeso);
+    if (!quickPeso || !Number.isFinite(peso) || peso <= 0) return;
     const numSaco = sacos.length + 1;
     setSacos([...sacos, { codigo: `SACO-${numSaco}`, peso, observaciones: "" }]);
     setQuickPeso("");
@@ -99,33 +100,36 @@ export default function RecepcionFormScreen() {
   const handleSave = async () => {
     if (!fecha || !responsable.trim()) { Alert.alert("Campos obligatorios", "Fecha y responsable son obligatorios."); return; }
     if (!planta.trim()) { Alert.alert("Error", "La planta es obligatoria."); return; }
+    if (!pesoBruto.trim() || !Number.isFinite(Number(pesoBruto)) || Number(pesoBruto) <= 0) {
+      Alert.alert("Error", "El peso bruto es obligatorio y debe ser un número positivo."); return;
+    }
     if (sacos.length === 0) { Alert.alert("Error", "Debe agregar al menos un saco."); return; }
     setSaving(true);
     try {
-      const payload: Record<string, unknown> = {
-        fecha: fecha.includes("T") ? fecha : `${fecha}T00:00:00.000Z`,
+      const payload: Partial<Recepcion> = {
+        fecha: fechaLocalAISO(fecha),
         responsable, planta,
-        lote_productor: loteProductor || null,
-        acopio_id: acopioId ? Number(acopioId) : null,
-        peso_campo: pesoCampo ? Number(pesoCampo) : null,
-        peso_bruto: pesoBruto ? Number(pesoBruto) : null,
+        loteProductor: loteProductor || null,
+        acopioId: acopioId ? Number(acopioId) : null,
+        pesoCampo: pesoCampo ? Number(pesoCampo) : null,
+        pesoBruto: Number(pesoBruto),
         tara: tara ? Number(tara) : null,
-        peso_neto: pesoNetoCalc,
+        pesoNeto: pesoNetoCalc,
         diferencia: diferenciaCalc,
         merma: mermaCalc,
         humedad: humedad ? Number(humedad) : null,
         impurezas: impurezas ? Number(impurezas) : null,
-        materia_extrana: materiaExtrana ? Number(materiaExtrana) : null,
+        materiaExtrana: materiaExtrana ? Number(materiaExtrana) : null,
         color: color || null, olor: olor || null,
-        presencia_insectos: presenciaInsectos || null,
-        estado_producto: estadoProducto || null,
+        presenciaInsectos: presenciaInsectos || null,
+        estadoProducto: estadoProducto || null,
         categoria: categoria || null, destino: destino || null,
         observaciones: observaciones || null,
         sacos: sacos.length,
-        sacos_detalle: sacos.map(s => ({ codigo: s.codigo, peso: s.peso, observaciones: s.observaciones || null })),
+        sacosDetalle: sacos,
       };
-      if (isEdit && editId) await api.put(`/recepcion/${editId}`, payload);
-      else await api.post("/recepcion", payload);
+      if (isEdit && editId) await updateRecepcion(editId, payload);
+      else await createRecepcion(payload);
       queryClient.invalidateQueries({ queryKey: ["recepciones"] });
       navigation.goBack();
     } catch (err: any) {
@@ -135,8 +139,16 @@ export default function RecepcionFormScreen() {
 
   const handleDelete = async () => {
     if (!isEdit || !editId) return;
-    try { await deleteRecepcion(editId); queryClient.invalidateQueries({ queryKey: ["recepciones"] }); navigation.goBack(); }
-    catch { Alert.alert("Error", "No se pudo eliminar"); }
+    Alert.alert("Eliminar recepción", "¿Eliminar esta recepción?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Eliminar", style: "destructive",
+        onPress: async () => {
+          try { await deleteRecepcion(editId); queryClient.invalidateQueries({ queryKey: ["recepciones"] }); navigation.goBack(); }
+          catch { Alert.alert("Error", "No se pudo eliminar"); }
+        },
+      },
+    ]);
   };
 
   const renderStep0 = () => (
@@ -274,7 +286,7 @@ export default function RecepcionFormScreen() {
 
   return (
     <FormScreenLayout
-      title={`${isEdit ? "Editar" : "Nueva"} Recepción`}
+      title={`Recepción`}
       isEdit={isEdit}
       steps={STEPS}
       currentStep={step}

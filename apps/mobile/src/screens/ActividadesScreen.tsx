@@ -2,7 +2,7 @@
 import { View, Text, TouchableOpacity } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Wrench, Plus, Clock, Play, CheckCircle } from "lucide-react-native";
-import { useActividades } from "../hooks/useActividades";
+import { useActividades, useActividadStats } from "../hooks/useActividades";
 import { useDebounce } from "../hooks/useDebounce";
 import { useLogout } from "../hooks/useLogout";
 import { useTheme } from "../contexts/ThemeContext";
@@ -22,26 +22,23 @@ export default function ActividadesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const debouncedSearch = useDebounce(search, 300);
 
-  const { data, refetch } = useActividades({ search: debouncedSearch, page, limit: 20 });
+  const { data, isLoading, isFetching, refetch } = useActividades({ search: debouncedSearch, page, limit: 20 });
+  const { data: stats } = useActividadStats();
 
   useEffect(() => {
-    if (route.params?.refresh) { refetch(); navigation.setParams({ refresh: undefined }); }
+    if (route.params?.refresh) { setPage(1); refetch(); navigation.setParams({ refresh: undefined }); }
   }, [route.params?.refresh, refetch, navigation]);
 
-  const onRefresh = useCallback(async () => { setRefreshing(true); await refetch(); setRefreshing(false); }, [refetch]);
+  const onRefresh = useCallback(async () => { setRefreshing(true); setPage(1); await refetch(); setRefreshing(false); }, [refetch]);
 
   const actividades = data?.data ?? [];
   const totalPages = data?.totalPages ?? 1;
 
-  const totalProgramadas = actividades.filter((a) => a.estado === "PROGRAMADA").length;
-  const totalEnProceso = actividades.filter((a) => a.estado === "EN_PROCESO").length;
-  const totalCompletadas = actividades.filter((a) => a.estado === "COMPLETADA").length;
-
   const kpis = [
-    { label: "Total", value: String(data?.total ?? 0), hint: "actividades", icon: Wrench, color: "#059669", bg: "#ECFDF5" },
-    { label: "Programadas", value: String(totalProgramadas), hint: "pendientes", icon: Clock, color: "#D97706", bg: "#FEF3C7" },
-    { label: "En Proceso", value: String(totalEnProceso), hint: "ejecutando", icon: Play, color: "#2563EB", bg: "#DBEAFE" },
-    { label: "Completadas", value: String(totalCompletadas), hint: "finalizadas", icon: CheckCircle, color: "#16A34A", bg: "#DCFCE7" },
+    { label: "Total", value: String(stats?.total ?? 0), hint: "actividades", icon: Wrench, color: "#059669", bg: "#ECFDF5" },
+    { label: "Programadas", value: String(stats?.programadas ?? 0), hint: "pendientes", icon: Clock, color: "#D97706", bg: "#FEF3C7" },
+    { label: "En Proceso", value: String(stats?.enProceso ?? 0), hint: "ejecutando", icon: Play, color: "#2563EB", bg: "#DBEAFE" },
+    { label: "Completadas", value: String(stats?.completadas ?? 0), hint: "finalizadas", icon: CheckCircle, color: "#16A34A", bg: "#DCFCE7" },
   ];
 
   const getTipoLabel = (value: string) => tiposActividad.find((t) => t.value === value)?.label ?? value;
@@ -90,10 +87,11 @@ export default function ActividadesScreen() {
       keyExtractor={(item) => String(item.id)}
       onRefresh={onRefresh}
       refreshing={refreshing}
+      isLoading={isLoading}
       emptyTitle="No hay actividades"
       emptyDescription="Registra una nueva actividad en la bitácora."
       onEndReached={() => { if (page < totalPages) setPage(page + 1); }}
-      ListFooterComponent={page < totalPages ? <View style={{ paddingVertical: 16 }}><LoadingSpinner text="Cargando más..." size="small" /></View> : null}
+      ListFooterComponent={page < totalPages && isFetching ? <View style={{ paddingVertical: 16 }}><LoadingSpinner text="Cargando más..." size="small" /></View> : null}
     />
   );
 }

@@ -17,6 +17,7 @@ import {
   type StatsKardex,
   type AlertasKardex,
 } from "../services/kardex";
+import { useAcumulado } from "./acumularLista";
 
 export function useInventario(params?: {
   search?: string;
@@ -27,11 +28,19 @@ export function useInventario(params?: {
   page?: number;
   limit?: number;
 }) {
-  return useQuery<InventarioResponse>({
+  const pagina = params?.page ?? 1;
+  const clave = JSON.stringify([params?.search, params?.origen, params?.categoria, params?.etapa, params?.estado, params?.limit]);
+  const acumular = useAcumulado<InventarioItem>();
+  const consulta = useQuery<InventarioResponse>({
     queryKey: ["kardex", "inventario", params],
     queryFn: ({ signal }) => fetchInventario({ ...params, signal }),
     placeholderData: (prev) => prev,
   });
+  const items = acumular(clave, pagina, consulta.data?.data);
+  return {
+    ...consulta,
+    data: consulta.data ? { ...consulta.data, data: items } : undefined,
+  };
 }
 
 export function useKardexItem(id: number | null) {

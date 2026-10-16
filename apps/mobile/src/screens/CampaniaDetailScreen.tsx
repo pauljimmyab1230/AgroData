@@ -15,7 +15,7 @@ export default function CampaniaDetailScreen() {
   const { data: c, isLoading } = useCampania(id);
 
   if (!c) {
-    return <DetailScreenLayout isLoading={false} notFoundText="Campaña no encontrada" title="" />;
+    return <DetailScreenLayout isLoading={isLoading} notFoundText="Campaña no encontrada" title="" />;
   }
 
   const statusCfg = getStatusConfig(c.estado);
@@ -25,7 +25,7 @@ export default function CampaniaDetailScreen() {
     Alert.alert("Eliminar Campaña", `¿Eliminar ${c.nombre}?`, [
       { text: "Cancelar", style: "cancel" },
       { text: "Eliminar", style: "destructive", onPress: async () => {
-        try { await deleteCampania(id); navigation.goBack(); }
+        try { await deleteCampania(id); navigation.navigate("Campanias", { refresh: true }); }
         catch { Alert.alert("Error", "No se pudo eliminar"); }
       }},
     ]);

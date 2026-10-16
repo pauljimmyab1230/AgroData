@@ -1,19 +1,13 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   fetchParcelas, fetchParcela, fetchParcelaStats, fetchParcelaHistorial,
   fetchParcelaDocumentos, fetchParcelaFotos,
-  fetchCampanias, fetchCampania, fetchCultivos, fetchCultivo, fetchCultivoStats,
+  fetchCampanias, fetchCampania, fetchCampaniaStats, fetchCultivos, fetchCultivo, fetchCultivoStats,
   type Parcela, type ParcelaStats as ParcelaStatsAPI, type ParcelaHistorial,
   type ParcelaDocumento, type ParcelaFoto,
-  type Campania, type Cultivo, type CultivoStats,
+  type Campania, type CampaniaGlobalStats, type Cultivo, type CultivoStats,
 } from "../services/campo";
-
-export interface ParcelaStats {
-  total: number;
-  hectareas: number;
-  activas: number;
-  conPoligono: number;
-}
+import { useAcumulado } from "./acumularLista";
 
 export function useParcelasStatsFromAPI(filters?: {
   search?: string;
@@ -47,35 +41,34 @@ export function useParcelasStatsFromAPI(filters?: {
   return { data, isLoading, error };
 }
 
-export function useParcelasStatsLocal(parcelas: Parcela[] | undefined): ParcelaStats {
-  return useMemo(() => {
-    if (!parcelas || parcelas.length === 0) return { total: 0, hectareas: 0, activas: 0, conPoligono: 0 };
-    return {
-      total: parcelas.length,
-      hectareas: parcelas.reduce((sum, p) => sum + (Number(p.area) || 0), 0),
-      activas: parcelas.filter((p) => p.estado === "ACTIVA").length,
-      conPoligono: parcelas.filter((p) => p.poligono && p.poligono.length >= 3).length,
-    };
-  }, [parcelas]);
-}
+export function useCampaniasStatsFromAPI(filters?: {
+  search?: string;
+  estado?: string;
+  anio_agricola?: string;
+}): { data: CampaniaGlobalStats | null; isLoading: boolean; error: string | null } {
+  const [data, setData] = useState<CampaniaGlobalStats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef(true);
 
-export interface CampaniaStats {
-  total: number;
-  activas: number;
-  planificadas: number;
-  finalizadas: number;
-}
+  useEffect(() => {
+    mountedRef.current = true;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    setIsLoading(true);
+    setError(null);
 
-export function useCampaniasStats(campanias: Campania[] | undefined): CampaniaStats {
-  return useMemo(() => {
-    if (!campanias || campanias.length === 0) return { total: 0, activas: 0, planificadas: 0, finalizadas: 0 };
-    return {
-      total: campanias.length,
-      activas: campanias.filter((c) => c.estado === "ACTIVA").length,
-      planificadas: campanias.filter((c) => c.estado === "PLANIFICADA").length,
-      finalizadas: campanias.filter((c) => c.estado === "FINALIZADA").length,
-    };
-  }, [campanias]);
+    fetchCampaniaStats(filters, controller.signal)
+      .then((r) => { if (mountedRef.current && !controller.signal.aborted) setData(r); })
+      .catch((e) => { if (mountedRef.current && !controller.signal.aborted) setError(e?.response?.data?.message || "Error al cargar estad��sticas"); })
+      .finally(() => { if (mountedRef.current && !controller.signal.aborted) setIsLoading(false); });
+
+    return () => { mountedRef.current = false; controller.abort(); };
+  }, [filters?.search, filters?.estado, filters?.anio_agricola]);
+
+  return { data, isLoading, error };
 }
 
 interface FetchResult<T> {
@@ -85,27 +78,32 @@ interface FetchResult<T> {
   refetch: () => void;
 }
 
-function useFetch<T>(fetcher: (signal: AbortSignal) => Promise<T>, deps: unknown[]): FetchResult<T> {
+function useFetch<T>(
+  fetcher: (signal: AbortSignal) => Promise<T>,
+  deps: unknown[],
+  opciones?: { habilitado?: boolean },
+): FetchResult<T> {
+  const habilitado = opciones?.habilitado !== false;
   const [data, setData] = useState<T | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(habilitado);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(true);
   const dataRef = useRef<T | null>(null);
-  const depsRef = useRef(deps);
-  depsRef.current = deps;
+  const fetcherRef = useRef(fetcher);
+  fetcherRef.current = fetcher;
 
   const fetchData = useCallback(async () => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
 
-    // Only show loading if we have no data yet
-    if (!dataRef.current) setIsLoading(true);
+    // Solo mostrar carga inicial si aún no hay datos
+    setIsLoading(true);
     setError(null);
 
     try {
-      const result = await fetcher(controller.signal);
+      const result = await fetcherRef.current(controller.signal);
       if (mountedRef.current && !controller.signal.aborted) {
         dataRef.current = result;
         setData(result);
@@ -122,70 +120,97 @@ function useFetch<T>(fetcher: (signal: AbortSignal) => Promise<T>, deps: unknown
 
   useEffect(() => {
     mountedRef.current = true;
-    fetchData();
+    if (habilitado) {
+      fetchData();
+    } else {
+      abortRef.current?.abort();
+      dataRef.current = null;
+      setData(null);
+      setIsLoading(false);
+    }
     return () => {
       mountedRef.current = false;
       abortRef.current?.abort();
     };
-  }, [fetchData, ...deps]);
+  }, [fetchData, habilitado, ...deps]);
 
   return { data, isLoading, error, refetch: fetchData };
 }
 
 export function useParcelas(filters?: { search?: string; page?: number; limit?: number; estado?: string; productor_id?: number }): FetchResult<{ data: Parcela[]; total: number; totalPages: number }> {
-  return useFetch(
+  const pagina = filters?.page ?? 1;
+  const clave = JSON.stringify([filters?.search, filters?.limit, filters?.estado, filters?.productor_id]);
+  const acumular = useAcumulado<Parcela>();
+  const resultado = useFetch(
     (signal) => fetchParcelas({ ...filters }, signal),
-    [filters?.search, filters?.page, filters?.limit, filters?.estado, filters?.productor_id],
+    [clave, pagina],
   );
+  const items = acumular(clave, pagina, resultado.data?.data);
+  return { ...resultado, data: resultado.data ? { ...resultado.data, data: items } : null };
 }
 
 export function useParcela(id: number | null): FetchResult<Parcela> {
   return useFetch(
     (signal) => fetchParcela(id!, signal),
     [id],
+    { habilitado: id !== null },
   );
 }
 
 export function useParcelaHistorial(id: number | null): FetchResult<ParcelaHistorial[]> {
   return useFetch(
-    (signal) => id ? fetchParcelaHistorial(id, signal) : Promise.resolve([]),
+    (signal) => fetchParcelaHistorial(id!, signal),
     [id],
+    { habilitado: id !== null },
   );
 }
 
 export function useParcelaDocumentos(id: number | null): FetchResult<ParcelaDocumento[]> {
   return useFetch(
-    (signal) => id ? fetchParcelaDocumentos(id, signal) : Promise.resolve([]),
+    (signal) => fetchParcelaDocumentos(id!, signal),
     [id],
+    { habilitado: id !== null },
   );
 }
 
 export function useParcelaFotos(id: number | null): FetchResult<ParcelaFoto[]> {
   return useFetch(
-    (signal) => id ? fetchParcelaFotos(id, signal) : Promise.resolve([]),
+    (signal) => fetchParcelaFotos(id!, signal),
     [id],
+    { habilitado: id !== null },
   );
 }
 
 export function useCampanias(filters?: { search?: string; estado?: string; page?: number; limit?: number }): FetchResult<{ data: Campania[]; total: number; totalPages: number }> {
-  return useFetch(
+  const pagina = filters?.page ?? 1;
+  const clave = JSON.stringify([filters?.search, filters?.estado, filters?.limit]);
+  const acumular = useAcumulado<Campania>();
+  const resultado = useFetch(
     (signal) => fetchCampanias({ ...filters }, signal),
-    [filters?.search, filters?.estado, filters?.page, filters?.limit],
+    [clave, pagina],
   );
+  const items = acumular(clave, pagina, resultado.data?.data);
+  return { ...resultado, data: resultado.data ? { ...resultado.data, data: items } : null };
 }
 
 export function useCampania(id: number | null): FetchResult<Campania> {
   return useFetch(
     (signal) => fetchCampania(id!, signal),
     [id],
+    { habilitado: id !== null },
   );
 }
 
 export function useCultivos(filters?: { search?: string; page?: number; limit?: number; estado?: string; campania_id?: string }): FetchResult<{ data: Cultivo[]; total: number; totalPages: number }> {
-  return useFetch(
+  const pagina = filters?.page ?? 1;
+  const clave = JSON.stringify([filters?.search, filters?.limit, filters?.estado, filters?.campania_id]);
+  const acumular = useAcumulado<Cultivo>();
+  const resultado = useFetch(
     (signal) => fetchCultivos({ ...filters }, signal),
-    [filters?.search, filters?.page, filters?.limit, filters?.estado, filters?.campania_id],
+    [clave, pagina],
   );
+  const items = acumular(clave, pagina, resultado.data?.data);
+  return { ...resultado, data: resultado.data ? { ...resultado.data, data: items } : null };
 }
 
 export function useCultivoStats(filters?: { search?: string; estado?: string; campania_id?: string }): { data: CultivoStats | null; isLoading: boolean; error: string | null } {
@@ -218,5 +243,6 @@ export function useCultivo(id: number | null): FetchResult<Cultivo> {
   return useFetch(
     (signal) => fetchCultivo(id!, signal),
     [id],
+    { habilitado: id !== null },
   );
 }

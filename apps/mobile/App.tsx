@@ -10,10 +10,26 @@ import LoginScreen from "./src/screens/LoginScreen";
 import { getStoredAuth } from "./src/services/auth";
 import { onLogout } from "./src/events";
 import { ThemeProvider } from "./src/contexts/ThemeContext";
+import { instalarCompatAlertas } from "./src/utils/alertas";
 
-const queryClient = new QueryClient();
+// Debe ejecutarse antes de que cualquier pantalla use Alert.
+instalarCompatAlertas();
 
-SplashScreen.preventAutoHideAsync();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // No reintentar errores 4xx (credenciales/permisos); sí reintentar fallos de red.
+      retry: (fallo: number, error: unknown) => {
+        const estado = (error as { response?: { status?: number } })?.response?.status;
+        if (estado != null && estado >= 400 && estado < 500) return false;
+        return fallo < 2;
+      },
+      staleTime: 30_000,
+    },
+  },
+});
+
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const isWeb = Platform.OS === "web";
 
@@ -33,18 +49,28 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      const auth = await getStoredAuth();
-      setIsLoggedIn(!!auth?.user);
-      await SplashScreen.hideAsync();
+      try {
+        const auth = await getStoredAuth();
+        setIsLoggedIn(!!auth?.user);
+      } finally {
+        await SplashScreen.hideAsync();
+      }
     })();
   }, []);
 
   useEffect(() => {
-    const unsub = onLogout(() => setIsLoggedIn(false));
+    const unsub = onLogout(() => {
+      // Evita que los datos del usuario anterior queden en caché.
+      queryClient.clear();
+      setIsLoggedIn(false);
+    });
     return unsub;
   }, []);
 
-  const handleLoginSuccess = useCallback(() => setIsLoggedIn(true), []);
+  const handleLoginSuccess = useCallback(() => {
+    queryClient.clear();
+    setIsLoggedIn(true);
+  }, []);
 
   if (isLoggedIn === null) return null;
 

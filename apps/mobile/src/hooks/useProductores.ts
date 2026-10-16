@@ -1,13 +1,18 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { fetchProductores, fetchProductor, fetchProductorStats, type Productor, type ProductorStats } from "../services/productores";
+import { useAcumulado } from "./acumularLista";
 
 export function useProductores(filters?: { search?: string; estado?: string; page?: number; limit?: number }) {
+  const pagina = filters?.page ?? 1;
+  const clave = JSON.stringify([filters?.search, filters?.estado, filters?.limit]);
+  const acumular = useAcumulado<Productor>();
   const [data, setData] = useState<{ data: Productor[]; total: number; totalPages: number } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const busquedaAnterior = useRef<string | undefined>(filters?.search);
 
   const fetchData = useCallback(async (isSearch = false) => {
     abortRef.current?.abort();
@@ -35,19 +40,19 @@ export function useProductores(filters?: { search?: string; estado?: string; pag
         setIsSearching(false);
       }
     }
-  }, [filters?.search, filters?.estado, filters?.page, filters?.limit]);
+  }, [clave, pagina]);
 
   useEffect(() => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
 
-    const isSearchChange = filters?.search !== undefined;
-    const delay = isSearchChange ? 400 : 0;
+    const cambioBusqueda = filters?.search !== busquedaAnterior.current;
+    busquedaAnterior.current = filters?.search;
 
     debounceRef.current = setTimeout(() => {
-      fetchData(isSearchChange);
-    }, delay);
+      fetchData(cambioBusqueda);
+    }, cambioBusqueda ? 400 : 0);
 
     return () => {
       if (debounceRef.current) {
@@ -55,9 +60,17 @@ export function useProductores(filters?: { search?: string; estado?: string; pag
       }
       abortRef.current?.abort();
     };
-  }, [fetchData]);
+  }, [fetchData, clave, pagina]);
 
-  return { data, isLoading, isSearching, error, refetch: fetchData };
+  const items = acumular(clave, pagina, data?.data);
+
+  return {
+    data: data ? { ...data, data: items } : null,
+    isLoading,
+    isSearching,
+    error,
+    refetch: fetchData,
+  };
 }
 
 export function useProductor(id: number | null) {

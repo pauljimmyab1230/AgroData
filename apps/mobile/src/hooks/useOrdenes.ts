@@ -21,14 +21,15 @@ import {
   encadenarOrden,
   type OrdenProcesamiento,
   type OrdenInput,
+  type OperacionEjecutadaInput,
+  type SalidaInput,
 } from "../services/ordenes";
+import { useAcumulado } from "./acumularLista";
 
+// Todas las queries del módulo cuelgan del prefijo ["ordenes"] para que
+// invalidarOrdenes refresque listas, detalles, balances y trazabilidad.
 function invalidarOrdenes(qc: ReturnType<typeof useQueryClient>) {
   qc.invalidateQueries({ queryKey: ["ordenes"] });
-  qc.invalidateQueries({ queryKey: ["ordenes-stats"] });
-  qc.invalidateQueries({ queryKey: ["orden"] });
-  qc.invalidateQueries({ queryKey: ["orden-balance"] });
-  qc.invalidateQueries({ queryKey: ["orden-trazabilidad"] });
 }
 
 export function useOrdenes(params?: {
@@ -40,62 +41,70 @@ export function useOrdenes(params?: {
   page?: number;
   limit?: number;
 }) {
-  return useQuery({
-    queryKey: ["ordenes", params],
-    queryFn: () => fetchOrdenes(params),
+  const pagina = params?.page ?? 1;
+  const clave = JSON.stringify([params?.search, params?.estado, params?.etapa, params?.formato_salida, params?.receta_id, params?.limit]);
+  const acumular = useAcumulado<OrdenProcesamiento>();
+  const consulta = useQuery({
+    queryKey: ["ordenes", "lista", { ...params }],
+    queryFn: ({ signal }) => fetchOrdenes(params, signal),
     placeholderData: (prev) => prev,
   });
+  const items = acumular(clave, pagina, consulta.data?.data);
+  return {
+    ...consulta,
+    data: consulta.data ? { ...consulta.data, data: items } : undefined,
+  };
 }
 
 export function useOrden(id: number | null) {
   return useQuery<OrdenProcesamiento>({
-    queryKey: ["orden", id],
-    queryFn: () => fetchOrden(id!),
+    queryKey: ["ordenes", "detalle", id],
+    queryFn: ({ signal }) => fetchOrden(id!, signal),
     enabled: id !== null,
   });
 }
 
 export function useBalance(id: number | null) {
   return useQuery({
-    queryKey: ["orden-balance", id],
-    queryFn: () => fetchBalance(id!),
+    queryKey: ["ordenes", "balance", id],
+    queryFn: ({ signal }) => fetchBalance(id!, signal),
     enabled: id !== null,
   });
 }
 
 export function useTrazabilidad(id: number | null) {
   return useQuery({
-    queryKey: ["orden-trazabilidad", id],
-    queryFn: () => fetchTrazabilidad(id!),
+    queryKey: ["ordenes", "trazabilidad", id],
+    queryFn: ({ signal }) => fetchTrazabilidad(id!, signal),
     enabled: id !== null,
   });
 }
 
 export function useOrdenStats() {
   return useQuery({
-    queryKey: ["ordenes-stats"],
-    queryFn: fetchOrdenStats,
+    queryKey: ["ordenes", "stats"],
+    queryFn: ({ signal }) => fetchOrdenStats(signal),
   });
 }
 
 export function useOperacionesActivas() {
   return useQuery({
-    queryKey: ["operaciones-activas"],
-    queryFn: fetchOperacionesActivas,
+    queryKey: ["ordenes", "operaciones-activas"],
+    queryFn: ({ signal }) => fetchOperacionesActivas(signal),
   });
 }
 
 export function useRecetasActivas(etapa?: string) {
   return useQuery({
-    queryKey: ["recetas-activas", etapa],
-    queryFn: () => fetchRecetasActivas(etapa),
+    queryKey: ["ordenes", "recetas-activas", etapa],
+    queryFn: ({ signal }) => fetchRecetasActivas(etapa, signal),
   });
 }
 
 export function useReceta(id: number | null) {
   return useQuery({
-    queryKey: ["receta", id],
-    queryFn: () => fetchReceta(id!),
+    queryKey: ["ordenes", "receta", id],
+    queryFn: ({ signal }) => fetchReceta(id!, signal),
     enabled: id !== null,
   });
 }
@@ -127,7 +136,7 @@ export function useDeleteOrden() {
 export function useAddOperacion() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ ordenId, data }: { ordenId: number; data: any }) => addOperacion(ordenId, data),
+    mutationFn: ({ ordenId, data }: { ordenId: number; data: OperacionEjecutadaInput }) => addOperacion(ordenId, data),
     onSuccess: () => invalidarOrdenes(qc),
   });
 }
@@ -135,7 +144,7 @@ export function useAddOperacion() {
 export function useUpdateOperacion() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ ordenId, operacionOrdenId, data }: { ordenId: number; operacionOrdenId: number; data: any }) =>
+    mutationFn: ({ ordenId, operacionOrdenId, data }: { ordenId: number; operacionOrdenId: number; data: Partial<OperacionEjecutadaInput> }) =>
       updateOperacion(ordenId, operacionOrdenId, data),
     onSuccess: () => invalidarOrdenes(qc),
   });
@@ -153,7 +162,7 @@ export function useRemoveOperacion() {
 export function useAddSalida() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ ordenId, data }: { ordenId: number; data: any }) => addSalida(ordenId, data),
+    mutationFn: ({ ordenId, data }: { ordenId: number; data: SalidaInput }) => addSalida(ordenId, data),
     onSuccess: () => invalidarOrdenes(qc),
   });
 }
@@ -161,7 +170,7 @@ export function useAddSalida() {
 export function useUpdateSalida() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ ordenId, salidaId, data }: { ordenId: number; salidaId: number; data: any }) =>
+    mutationFn: ({ ordenId, salidaId, data }: { ordenId: number; salidaId: number; data: Partial<SalidaInput> }) =>
       updateSalida(ordenId, salidaId, data),
     onSuccess: () => invalidarOrdenes(qc),
   });

@@ -1,8 +1,9 @@
 import api from "./api";
+import { isoAFechaLocal } from "../utils/fechas";
 
 // ─── Types ─────────────────────────────────────────────────
 
-export type EstadoRecepcion = "PENDIENTE_PESAJE" | "EN_VERIFICACION" | "APROBADA" | "RECHAZADA";
+export type EstadoRecepcion = "PENDIENTE_PESAJE" | "EN_CONTROL_CALIDAD" | "DISPONIBLE" | "RECHAZADA";
 
 export interface RecepcionSaco {
   id?: number;
@@ -61,7 +62,7 @@ function recepcionToFrontend(dto: Record<string, unknown>): Recepcion {
     id: Number(dto.id ?? 0),
     codigo: String(dto.codigo ?? ""),
     loteProductor: dto.lote_productor != null ? String(dto.lote_productor) : null,
-    fecha: String(dto.fecha ?? "").split("T")[0],
+    fecha: isoAFechaLocal(String(dto.fecha ?? "")),
     responsable: String(dto.responsable ?? ""),
     planta: String(dto.planta ?? ""),
     sacos: Number(dto.sacos ?? 0),
@@ -110,7 +111,7 @@ export async function fetchRecepciones(params?: {
   if (params?.page) query.page = String(params.page);
   if (params?.limit) query.limit = String(params.limit);
 
-  const res = await api.get("/recepcion", { params: query, signal: params?.signal });
+  const res = await api.get("/recepciones", { params: query, signal: params?.signal });
   return {
     data: (res.data.data ?? []).map(recepcionToFrontend),
     total: res.data.total ?? 0,
@@ -121,10 +122,57 @@ export async function fetchRecepciones(params?: {
 }
 
 export async function fetchRecepcion(id: number, signal?: AbortSignal): Promise<Recepcion> {
-  const res = await api.get(`/recepcion/${id}`, { signal });
+  const res = await api.get(`/recepciones/${id}`, { signal });
+  return recepcionToFrontend(res.data.data);
+}
+
+function recepcionToBackend(data: Partial<Recepcion>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (data.acopioId !== undefined) out.acopio_id = data.acopioId || null;
+  if (data.loteProductor !== undefined) out.lote_productor = data.loteProductor || null;
+  if (data.fecha !== undefined) out.fecha = data.fecha;
+  if (data.responsable !== undefined) out.responsable = data.responsable;
+  if (data.planta !== undefined) out.planta = data.planta;
+  if (data.sacos !== undefined) out.sacos = data.sacos;
+  if (data.pesoCampo !== undefined) out.peso_campo = data.pesoCampo;
+  if (data.pesoBruto !== undefined) out.peso_bruto = data.pesoBruto;
+  if (data.tara !== undefined) out.tara = data.tara;
+  if (data.pesoNeto !== undefined) out.peso_neto = data.pesoNeto;
+  if (data.diferencia !== undefined) out.diferencia = data.diferencia;
+  if (data.merma !== undefined) out.merma = data.merma;
+  if (data.humedad !== undefined) out.humedad = data.humedad;
+  if (data.impurezas !== undefined) out.impurezas = data.impurezas;
+  if (data.materiaExtrana !== undefined) out.materia_extrana = data.materiaExtrana;
+  if (data.color !== undefined) out.color = data.color || null;
+  if (data.olor !== undefined) out.olor = data.olor || null;
+  if (data.presenciaInsectos !== undefined) out.presencia_insectos = data.presenciaInsectos || null;
+  if (data.estadoProducto !== undefined) out.estado_producto = data.estadoProducto || null;
+  if (data.categoria !== undefined) out.categoria = data.categoria || null;
+  if (data.destino !== undefined) out.destino = data.destino || null;
+  if (data.resultado !== undefined) out.resultado = data.resultado || null;
+  if (data.motivo !== undefined) out.motivo = data.motivo || null;
+  if (data.estado !== undefined) out.estado = data.estado;
+  if (data.observaciones !== undefined) out.observaciones = data.observaciones || null;
+  if (data.sacosDetalle !== undefined) {
+    out.sacos_detalle = data.sacosDetalle.map((s) => ({
+      codigo: s.codigo,
+      peso: s.peso,
+      observaciones: s.observaciones || null,
+    }));
+  }
+  return out;
+}
+
+export async function createRecepcion(data: Partial<Recepcion>): Promise<Recepcion> {
+  const res = await api.post("/recepciones", recepcionToBackend(data));
+  return recepcionToFrontend(res.data.data);
+}
+
+export async function updateRecepcion(id: number, data: Partial<Recepcion>): Promise<Recepcion> {
+  const res = await api.put(`/recepciones/${id}`, recepcionToBackend(data));
   return recepcionToFrontend(res.data.data);
 }
 
 export async function deleteRecepcion(id: number): Promise<void> {
-  await api.delete(`/recepcion/${id}`);
+  await api.delete(`/recepciones/${id}`);
 }

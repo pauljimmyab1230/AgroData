@@ -64,6 +64,7 @@ export default function CampaniaFormScreen() {
     if (!form.anio_agricola?.trim()) { Alert.alert("Error", "El año agrícola es obligatorio"); return; }
     if (!/^\d{4}-\d{4}$/.test(form.anio_agricola)) { Alert.alert("Error", "Formato: YYYY-YYYY (ej: 2024-2025)"); return; }
     if (!form.fechaInicio) { Alert.alert("Error", "La fecha de inicio es obligatoria"); return; }
+    if (form.fechaFin && form.fechaFin < form.fechaInicio) { Alert.alert("Error", "La fecha de fin no puede ser anterior a la fecha de inicio"); return; }
     if (!form.responsable?.trim()) { Alert.alert("Error", "El responsable es obligatorio"); return; }
     if (!form.tecnicoCoordinador?.trim()) { Alert.alert("Error", "El técnico coordinador es obligatorio"); return; }
     setSaving(true);

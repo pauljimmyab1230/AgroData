@@ -1,38 +1,37 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
+import { useQuery } from "@tanstack/react-query";
 import { Package, ChevronRight, Plus } from "lucide-react-native";
 import { useDebounce } from "../hooks/useDebounce";
 import { useTheme } from "../contexts/ThemeContext";
 import { getStatusConfig } from "../utils/statusConfig";
 import { ListScreenLayout } from "../components/layouts/ListScreenLayout";
 import { LoadingSpinner } from "../components/ui";
+import api from "../services/api";
 
 export default function AcopiosScreen() {
   const navigation = useNavigation<any>();
-  const route = useRoute<any>();
   const { colors } = useTheme();
   const [search, setSearch] = useState("");
   const [refreshing, setRefreshing] = useState(false);
-  const [data, setData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const debouncedSearch = useDebounce(search, 300);
 
-  const loadData = useCallback(async () => {
-    try {
-      const api = (await import("../services/api")).default;
-      const res = await api.get("/acopios", { params: { search: debouncedSearch || undefined, limit: 50 } });
-      setData(res.data.data ?? []);
-    } catch {} finally { setLoading(false); setRefreshing(false); }
-  }, [debouncedSearch]);
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["acopios", "lista", { search: debouncedSearch }],
+    queryFn: async ({ signal }) => {
+      const res = await api.get("/acopios", { params: { search: debouncedSearch || undefined, limit: 50 }, signal });
+      return (res.data.data ?? []) as any[];
+    },
+    placeholderData: (prev) => prev,
+  });
 
-  useEffect(() => { loadData(); }, [loadData]);
-  useEffect(() => { if (route.params?.refresh) { loadData(); navigation.setParams({ refresh: undefined }); } }, [route.params?.refresh]);
+  const acopios = data ?? [];
 
-  const onRefresh = useCallback(async () => { setRefreshing(true); await loadData(); }, [loadData]);
+  const onRefresh = useCallback(async () => { setRefreshing(true); await refetch(); setRefreshing(false); }, [refetch]);
 
-  if (loading) {
+  if (isLoading && !data) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
         <LoadingSpinner text="Cargando acopios..." />
@@ -47,12 +46,12 @@ export default function AcopiosScreen() {
       onAdd={() => navigation.navigate("AcopioForm")}
       addButtonLabel="Nuevo"
       addIcon={Plus}
-      searchPlaceholder="Buscar por código..."
+      searchPlaceholder="Buscar por c��digo..."
       searchValue={search}
       onSearchChange={setSearch}
-      resultCount={data.length}
+      resultCount={acopios.length}
       resultLabel="acopios"
-      data={data}
+      data={acopios}
       renderItem={(item) => {
         const statusConfig = getStatusConfig(item.estado);
         return (
@@ -96,8 +95,8 @@ export default function AcopiosScreen() {
       keyExtractor={(item) => String(item.id)}
       onRefresh={onRefresh}
       refreshing={refreshing}
-      emptyTitle="No hay acopios"
-      emptyDescription="Registra un nuevo acopio de cosecha."
+      emptyTitle={isError ? "Error al cargar acopios" : "No hay acopios"}
+      emptyDescription={isError ? "Intenta de nuevo deslizando hacia abajo." : "Registra un nuevo acopio de cosecha."}
     />
   );
 }

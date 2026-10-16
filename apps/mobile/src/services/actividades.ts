@@ -1,4 +1,5 @@
 import api from "./api";
+import { fechaLocalAISO, isoAFechaLocal } from "../utils/fechas";
 
 // ─── Types ─────────────────────────────────────────────────
 
@@ -139,7 +140,7 @@ function actividadToFrontend(dto: Record<string, unknown>): Actividad {
   return {
     id: Number(dto.id ?? 0),
     codigo: String(dto.codigo ?? ""),
-    fecha: sanitize(dto.fecha)?.split("T")[0] ?? "",
+    fecha: isoAFechaLocal(sanitize(dto.fecha) ?? ""),
     parcelaId: parcela?.id != null ? Number(parcela.id) : 0,
     parcelaNombre: String(parcela?.nombre ?? ""),
     parcelaCodigo: String(parcela?.codigo ?? ""),
@@ -251,7 +252,7 @@ function mapMaquinariaToBackend(maquinaria: ActividadMaquinaria[]): Record<strin
 
 export async function createActividad(data: Partial<Actividad>): Promise<Actividad> {
   const payload: Record<string, unknown> = {};
-  if (data.fecha) payload.fecha = data.fecha.includes("T") ? data.fecha : `${data.fecha}T00:00:00.000Z`;
+  if (data.fecha) payload.fecha = fechaLocalAISO(data.fecha);
   if (data.cultivoId) payload.cultivo_id = data.cultivoId;
   if (data.tipoActividad) payload.tipo_actividad = data.tipoActividad;
   if (data.descripcion !== undefined) payload.descripcion = data.descripcion || null;
@@ -269,7 +270,7 @@ export async function createActividad(data: Partial<Actividad>): Promise<Activid
 
 export async function updateActividad(id: number, data: Partial<Actividad>): Promise<Actividad> {
   const payload: Record<string, unknown> = {};
-  if (data.fecha) payload.fecha = data.fecha.includes("T") ? data.fecha : `${data.fecha}T00:00:00.000Z`;
+  if (data.fecha) payload.fecha = fechaLocalAISO(data.fecha);
   if (data.cultivoId) payload.cultivo_id = data.cultivoId;
   if (data.tipoActividad) payload.tipo_actividad = data.tipoActividad;
   if (data.descripcion !== undefined) payload.descripcion = data.descripcion || null;

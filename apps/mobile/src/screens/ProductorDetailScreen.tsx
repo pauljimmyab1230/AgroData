@@ -17,7 +17,7 @@ export default function ProductorDetailScreen() {
   if (!productor) {
     return (
       <DetailScreenLayout
-        isLoading={false}
+        isLoading={isLoading}
         notFoundText="Productor no encontrado"
         title=""
       />
@@ -31,7 +31,7 @@ export default function ProductorDetailScreen() {
     Alert.alert("Eliminar Productor", `¿Eliminar a ${productor.nombres}?`, [
       { text: "Cancelar", style: "cancel" },
       { text: "Eliminar", style: "destructive", onPress: async () => {
-        try { await deleteProductor(id); navigation.goBack(); }
+        try { await deleteProductor(id); navigation.navigate("ProductoresMain", { refresh: true }); }
         catch { Alert.alert("Error", "No se pudo eliminar"); }
       }},
     ]);

@@ -28,7 +28,7 @@ export default function RecepcionDetailScreen() {
 
   if (!data) {
     return (
-      <DetailScreenLayout isLoading={isLoading} loadingText="Cargando..." title="..." notFoundText="Recepción no encontrada" />
+      <DetailScreenLayout isLoading={isLoading} loadingText="Cargando..." title="" notFoundText="Recepción no encontrada" />
     );
   }
 

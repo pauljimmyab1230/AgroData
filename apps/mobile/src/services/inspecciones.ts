@@ -1,4 +1,5 @@
 import api from "./api";
+import { isoAFechaLocal, fechaLocalAISO } from "../utils/fechas";
 
 // ─── Types ─────────────────────────────────────────────────
 
@@ -116,8 +117,7 @@ function sanitizeStringOrNull(value: unknown): string | null {
 
 function formatDateToISO(dateStr: string | undefined | null): string | undefined {
   if (!dateStr) return undefined;
-  if (dateStr.includes('T')) return dateStr;
-  return `${dateStr}T00:00:00.000Z`;
+  return fechaLocalAISO(dateStr);
 }
 
 // ─── Mapping ───────────────────────────────────────────────
@@ -135,7 +135,7 @@ function inspeccionToFrontend(dto: Record<string, unknown>): Inspeccion {
   return {
     id: Number(dto.id ?? 0),
     codigo: String(dto.codigo ?? ""),
-    fecha: sanitizeStringOrNull(dto.fecha)?.split("T")[0] ?? "",
+    fecha: isoAFechaLocal(sanitizeStringOrNull(dto.fecha) ?? ""),
     cultivoId: Number(dto.cultivo_id ?? 0),
     cultivo: cultivo ? {
       id: Number(cultivo.id ?? 0),
@@ -174,15 +174,15 @@ function inspeccionToFrontend(dto: Record<string, unknown>): Inspeccion {
       descripcion: String(nc.descripcion ?? ""),
       severidad: (nc.severidad as Severidad) ?? "LEVE",
       responsable: String(nc.responsable ?? ""),
-      fechaCompromiso: sanitizeStringOrNull(nc.fecha_compromiso)?.split("T")[0] ?? "",
+      fechaCompromiso: isoAFechaLocal(sanitizeStringOrNull(nc.fecha_compromiso) ?? ""),
       estado: (nc.estado as EstadoNoConformidad) ?? "PENDIENTE",
       accionCorrectiva: sanitizeStringOrNull(nc.accion_correctiva) ?? "",
       acciones: ((nc.acciones as Array<Record<string, unknown>>) ?? []).map((ac) => ({
         id: Number(ac.id ?? 0),
         accion: String(ac.accion ?? ""),
         responsable: String(ac.responsable ?? ""),
-        fechaInicio: sanitizeStringOrNull(ac.fecha_inicio)?.split("T")[0] ?? "",
-        fechaLimite: sanitizeStringOrNull(ac.fecha_limite)?.split("T")[0] ?? "",
+        fechaInicio: isoAFechaLocal(sanitizeStringOrNull(ac.fecha_inicio) ?? ""),
+        fechaLimite: isoAFechaLocal(sanitizeStringOrNull(ac.fecha_limite) ?? ""),
         estado: (ac.estado as EstadoAccionCorrectiva) ?? "PENDIENTE",
         observaciones: sanitizeStringOrNull(ac.observaciones) ?? "",
       })),
@@ -191,7 +191,7 @@ function inspeccionToFrontend(dto: Record<string, unknown>): Inspeccion {
       id: Number(e.id ?? 0),
       nombre: String(e.nombre ?? ""),
       descripcion: sanitizeStringOrNull(e.descripcion) ?? "",
-      fecha: sanitizeStringOrNull(e.fecha)?.split("T")[0] ?? "",
+      fecha: isoAFechaLocal(sanitizeStringOrNull(e.fecha) ?? ""),
       responsable: sanitizeStringOrNull(e.responsable) ?? "",
       tipo: sanitizeStringOrNull(e.tipo) ?? "",
       rutaArchivo: sanitizeStringOrNull(e.ruta_archivo) ?? "",
@@ -205,10 +205,10 @@ function inspeccionToFrontend(dto: Record<string, unknown>): Inspeccion {
     recomendaciones: sanitizeStringOrNull(dto.recomendaciones) ?? "",
     prioridadRecomendacion: sanitizeStringOrNull(dto.prioridad_recomendacion) ?? "",
     responsableRecomendacion: sanitizeStringOrNull(dto.responsable_recomendacion) ?? "",
-    fechaRecomendacion: sanitizeStringOrNull(dto.fecha_recomendacion)?.split("T")[0] ?? "",
+    fechaRecomendacion: isoAFechaLocal(sanitizeStringOrNull(dto.fecha_recomendacion) ?? ""),
     riesgoGeneral: (dto.riesgo_general as Riesgo) ?? "BAJO",
     resumenEjecutivo: sanitizeStringOrNull(dto.resumen_ejecutivo) ?? "",
-    fechaProximaInspeccion: sanitizeStringOrNull(dto.fecha_proxima_inspeccion)?.split("T")[0] ?? "",
+    fechaProximaInspeccion: isoAFechaLocal(sanitizeStringOrNull(dto.fecha_proxima_inspeccion) ?? ""),
     nivelCumplimiento: sanitizeStringOrNull(dto.nivel_cumplimiento) ?? "",
   };
 }
